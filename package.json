@@ -1,0 +1,41 @@
+{
+  "name": "bopet-complaint-system",
+  "version": "1.0.0",
+  "description": "BOPET客诉闭环管理系统",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev --name init",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:studio": "prisma studio",
+    "db:reset": "prisma migrate reset --force"
+  },
+  "dependencies": {
+    "@pinia/nuxt": "^0.5.1",
+    "@prisma/client": "^5.10.0",
+    "dayjs": "^1.11.10",
+    "naive-ui": "^2.38.1",
+    "nuxt": "^3.10.0",
+    "pinia": "^2.1.7",
+    "vue": "^3.4.0",
+    "vue-router": "^4.2.5",
+    "zod": "^3.22.4",
+    "echarts": "^5.5.0",
+    "vue-echarts": "^6.6.9"
+  },
+  "devDependencies": {
+    "@nuxtjs/tailwindcss": "^6.11.0",
+    "@types/node": "^20.11.0",
+    "prisma": "^5.10.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0",
+    "vue-tsc": "^1.8.27"
+  }
+}

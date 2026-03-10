@@ -1,0 +1,74 @@
+// https://nuxt.com/docs/api/configuration/nuxt-config
+export default defineNuxtConfig({
+  compatibilityDate: '2024-04-03',
+  devtools: { enabled: true },
+
+  modules: [
+    '@pinia/nuxt',
+    '@nuxtjs/tailwindcss'
+  ],
+
+  css: [],
+
+  // Enable TypeScript
+  typescript: {
+    strict: false,
+    shim: false
+  },
+
+  // Runtime config
+  runtimeConfig: {
+    // Server-side only
+    databaseUrl: process.env.DATABASE_URL || 'file:./data/bopet.db',
+    jwtSecret: process.env.JWT_SECRET || 'bopet-complaint-secret-key-2024',
+    // Public
+    public: {
+      apiBase: '/api'
+    }
+  },
+
+  // Vite config - handle ESM/CommonJS interop for naive-ui
+  vite: {
+    optimizeDeps: {
+      include: [
+        'naive-ui',
+        'echarts',
+        'vue-echarts',
+        'vueuc',
+        '@css-render/vue3-ssr',
+        '@juggle/resize-observer'
+      ]
+    },
+    ssr: {
+      noExternal: ['naive-ui', 'vueuc', '@css-render/vue3-ssr']
+    }
+  },
+
+  // Build config - always transpile naive-ui related packages
+  build: {
+    transpile: [
+      'naive-ui',
+      'vueuc',
+      '@css-render/vue3-ssr',
+      '@juggle/resize-observer'
+    ]
+  },
+
+  // Imports
+  imports: {
+    dirs: ['stores', 'composables', 'utils']
+  },
+
+  // TailwindCSS
+  tailwindcss: {
+    cssPath: '~/assets/css/tailwind.css',
+    configPath: 'tailwind.config.js'
+  },
+
+  // Nitro config
+  nitro: {
+    externals: {
+      inline: ['naive-ui', 'vueuc']
+    }
+  }
+})

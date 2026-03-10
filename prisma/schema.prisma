@@ -1,0 +1,323 @@
+// Prisma schema for BOPET客诉闭环管理系统
+// Database: SQLite
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== 用户表 ====================
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  name      String
+  role      String   @default("operator") // admin, operator
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  complaints        ComplaintRecord[]      @relation("CreatedBy")
+  updatedComplaints ComplaintRecord[]      @relation("UpdatedBy")
+  operationLogs     OperationLog[]
+
+  @@map("users")
+}
+
+// ==================== 产线表 ====================
+model ProductionLine {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique
+  name      String
+  enabled   Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  complaints ComplaintRecord[]
+
+  @@index([enabled, sortOrder])
+  @@map("production_lines")
+}
+
+// ==================== 客户表 ====================
+model Customer {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique
+  name      String
+  shortName String?
+  enabled   Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  complaints ComplaintRecord[]
+
+  @@index([enabled, sortOrder])
+  @@map("customers")
+}
+
+// ==================== 产品型号表 ====================
+model ProductModel {
+  id           Int      @id @default(autoincrement())
+  code         String   @unique
+  name         String
+  thickness    String? // 厚度规格
+  application  String? // 用途
+  enabled      Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  complaints ComplaintRecord[]
+
+  @@index([enabled, sortOrder])
+  @@map("product_models")
+}
+
+// ==================== 问题大类表 ====================
+model ProblemCategory {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique
+  name      String
+  enabled   Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  subcategories    ProblemSubcategory[]
+  mappings         ComplaintProblemMapping[]
+  complaintRecords ComplaintRecord[]
+
+  @@index([enabled, sortOrder])
+  @@map("problem_categories")
+}
+
+// ==================== 问题小类表 ====================
+model ProblemSubcategory {
+  id               Int             @id @default(autoincrement())
+  code             String          @unique
+  name             String
+  categoryId       Int
+  category         ProblemCategory @relation(fields: [categoryId], references: [id])
+  enabled          Boolean         @default(true)
+  sortOrder        Int             @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  // Relations
+  mappings         ComplaintProblemMapping[]
+  complaintRecords ComplaintRecord[]
+
+  @@index([categoryId, enabled, sortOrder])
+  @@map("problem_subcategories")
+}
+
+// ==================== 客户诉求表 ====================
+model CustomerDemand {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique
+  name      String
+  enabled   Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  complaints ComplaintRecord[]
+
+  @@index([enabled, sortOrder])
+  @@map("customer_demands")
+}
+
+// ==================== 质量赔偿方式表 ====================
+model CompensationType {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique
+  name      String
+  enabled   Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  complaints ComplaintRecord[]
+
+  @@index([enabled, sortOrder])
+  @@map("compensation_types")
+}
+
+// ==================== 严重等级表 ====================
+model SeverityLevel {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique
+  name      String
+  level     Int      @default(1) // 1-5 等级
+  color     String? // 显示颜色
+  enabled   Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  complaints ComplaintRecord[]
+
+  @@index([enabled, sortOrder])
+  @@map("severity_levels")
+}
+
+// ==================== 责任部门表 ====================
+model ResponsibleDepartment {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique
+  name      String
+  enabled   Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  complaints ComplaintRecord[]
+  processes  ResponsibleProcess[]
+
+  @@index([enabled, sortOrder])
+  @@map("responsible_departments")
+}
+
+// ==================== 责任工序表 ====================
+model ResponsibleProcess {
+  id           Int                 @id @default(autoincrement())
+  code         String              @unique
+  name         String
+  departmentId Int
+  department   ResponsibleDepartment @relation(fields: [departmentId], references: [id])
+  enabled      Boolean             @default(true)
+  sortOrder    Int                 @default(0)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  // Relations
+  complaints ComplaintRecord[]
+
+  @@index([departmentId, enabled, sortOrder])
+  @@map("responsible_processes")
+}
+
+// ==================== 问题映射字典表 ====================
+model ComplaintProblemMapping {
+  id                   Int              @id @default(autoincrement())
+  customerExpression   String // 客户表述
+  keywordPattern       String? // 关键词/匹配词
+  internalComplaintName String // 内部标准问题名称
+  problemCategoryId    Int?
+  problemCategory      ProblemCategory? @relation(fields: [problemCategoryId], references: [id])
+  problemSubcategoryId Int?
+  problemSubcategory   ProblemSubcategory? @relation(fields: [problemSubcategoryId], references: [id])
+  enabled              Boolean          @default(true)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  @@index([enabled])
+  @@index([problemCategoryId])
+  @@map("complaint_problem_mappings")
+}
+
+// ==================== 客诉记录主表 ====================
+model ComplaintRecord {
+  id                      Int      @id @default(autoincrement())
+  complaintNo             String   @unique // 客诉编号
+
+  // 基础信息
+  feedbackDate            DateTime // 反馈日期
+  productionTime          DateTime? // 生产时间
+  productModelId          Int?
+  productModel            ProductModel? @relation(fields: [productModelId], references: [id])
+  thickness               String? // 厚度
+  rollNo                  String? // 轴号
+  customerId              Int?
+  customer                Customer? @relation(fields: [customerId], references: [id])
+  quantityInvolved        Float?   // 涉及数量
+  application             String? // 用途
+  productionLineId        Int?
+  productionLine          ProductionLine? @relation(fields: [productionLineId], references: [id])
+  shiftTeam               String? // 班组
+  machineNo               String? // 机台
+  batchNo                 String? // 批次号
+
+  // 客诉内容
+  feedbackContent         String? // 反馈内容
+  customerComplaintText   String? // 客诉问题（客户原始表述）
+  internalComplaintName   String? // 客诉问题内部映射名称
+  problemCategoryId       Int?
+  problemCategory         ProblemCategory? @relation(fields: [problemCategoryId], references: [id])
+  problemSubcategoryId    Int?
+  problemSubcategory      ProblemSubcategory? @relation(fields: [problemSubcategoryId], references: [id])
+  severityLevelId         Int?
+  severityLevel           SeverityLevel? @relation(fields: [severityLevelId], references: [id])
+  repeatedIssue           Boolean  @default(false) // 是否重复发生
+
+  // 诉求与处置
+  customerDemandId        Int?
+  customerDemand          CustomerDemand? @relation(fields: [customerDemandId], references: [id])
+  disposalResult          String? // 本例客诉处置结果
+  compensationTypeId      Int?
+  compensationType        CompensationType? @relation(fields: [compensationTypeId], references: [id])
+  closureStatus           String   @default("pending") // pending, processing, closed
+  responsibleDeptId       Int?
+  responsibleDept         ResponsibleDepartment? @relation(fields: [responsibleDeptId], references: [id])
+  responsibleProcessId    Int?
+  responsibleProcess      ResponsibleProcess? @relation(fields: [responsibleProcessId], references: [id])
+
+  // 原因与改善
+  rootCauseAnalysis       String? // 问题分析（原因）
+  correctiveAction        String? // 改善或者纠正措施
+  lessonsLearned          String? // 启示
+  reviewConclusion        String? // 复盘结论
+  standardizedAction      Boolean  @default(false) // 是否形成标准化措施
+
+  // 审计字段
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  createdById             Int?
+  createdBy               User?    @relation("CreatedBy", fields: [createdById], references: [id])
+  updatedById             Int?
+  updatedBy               User?    @relation("UpdatedBy", fields: [updatedById], references: [id])
+  remark                  String? // 备注
+
+  @@index([feedbackDate])
+  @@index([customerId])
+  @@index([productModelId])
+  @@index([productionLineId])
+  @@index([problemCategoryId])
+  @@index([closureStatus])
+  @@index([responsibleDeptId])
+  @@map("complaint_records")
+}
+
+// ==================== 操作日志表 ====================
+model OperationLog {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  action      String // create, update, delete
+  module      String // complaint, config, mapping
+  targetId    Int?     // 操作对象ID
+  targetName  String? // 操作对象名称
+  detail      String? // 操作详情JSON
+  ip          String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([module, action])
+  @@index([createdAt])
+  @@map("operation_logs")
+}

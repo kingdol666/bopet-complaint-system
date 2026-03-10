@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom industrial theme styles */
+@layer base {
+  body {
+    @apply bg-industrial-50 text-industrial-800;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  }
+}
+
+@layer components {
+  .page-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6;
+  }
+
+  .card {
+    @apply bg-white rounded-lg shadow-sm border border-industrial-200 p-6;
+  }
+
+  .page-title {
+    @apply text-2xl font-semibold text-industrial-900 mb-6;
+  }
+
+  .section-title {
+    @apply text-lg font-medium text-industrial-800 mb-4;
+  }
+
+  .btn-primary {
+    @apply bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 transition-colors;
+  }
+
+  .btn-secondary {
+    @apply bg-industrial-200 text-industrial-700 px-4 py-2 rounded-md hover:bg-industrial-300 transition-colors;
+  }
+
+  .form-label {
+    @apply block text-sm font-medium text-industrial-700 mb-1;
+  }
+
+  .form-input {
+    @apply w-full px-3 py-2 border border-industrial-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500;
+  }
+
+  .status-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .status-pending {
+    @apply bg-yellow-100 text-yellow-800;
+  }
+
+  .status-processing {
+    @apply bg-blue-100 text-blue-800;
+  }
+
+  .status-closed {
+    @apply bg-green-100 text-green-800;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white;
+    font-size: 12pt;
+  }
+
+  .card {
+    box-shadow: none;
+    border: 1px solid #e2e8f0;
+  }
+}

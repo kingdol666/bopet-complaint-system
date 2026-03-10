@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": false,
+    "jsx": "preserve",
+    "importHelpers": true,
+    "experimentalDecorators": true,
+    "strictNullChecks": false,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "#imports": ["./types/nitro-imports"],
+      "#build/*": [".nuxt/*"],
+      "~~/*": ["./*"],
+      "~/*": ["./*"],
+      "@/*": ["./*"]
+    }
+  },
+  "include": [
+    ".nuxt/nuxt.d.ts",
+    "**/*.ts",
+    "**/*.vue"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}
