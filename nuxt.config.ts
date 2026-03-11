@@ -26,7 +26,7 @@ export default defineNuxtConfig({
   // Runtime config
   runtimeConfig: {
     // Server-side only
-    databaseUrl: process.env.DATABASE_URL || 'file:./data/bopet.db',
+    databaseUrl: process.env.POSTGRES_PRISMA_URL || process.env.DATABASE_URL || '',
     jwtSecret: process.env.JWT_SECRET || '',
     // Public
     public: {

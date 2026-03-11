@@ -19,7 +19,7 @@
 - **样式**: TailwindCSS
 - **状态管理**: Pinia
 - **ORM**: Prisma
-- **数据库**: SQLite
+- **数据库**: PostgreSQL
 - **图表**: ECharts
 - **日期处理**: dayjs
 - **表单验证**: Zod
@@ -197,8 +197,11 @@ npm run db:reset
 复制 `.env.example` 为 `.env` 并根据需要修改：
 
 ```env
-# 数据库路径
-DATABASE_URL="file:./data/bopet.db"
+# 数据库连接
+POSTGRES_PRISMA_URL="postgresql://username:password@host/database?connect_timeout=15&sslmode=require"
+POSTGRES_URL_NON_POOLING="postgresql://username:password@host/database?sslmode=require"
+DATABASE_URL="postgresql://username:password@host/database?sslmode=require"
+DATABASE_URL_UNPOOLED="postgresql://username:password@host/database?sslmode=require"
 
 # JWT 密钥（生产环境请修改）
 JWT_SECRET="your-secret-key-here"
@@ -250,9 +253,9 @@ NUXT_PUBLIC_API_BASE="/api"
 ## 注意事项
 
 1. 生产环境请修改 `.env` 中的 `JWT_SECRET`
-2. SQLite 数据库文件位于 `prisma/data/bopet.db`
+2. 生产环境请使用远程 PostgreSQL，并通过环境变量注入连接串
 3. 管理员才能访问系统配置页面
-4. 建议定期备份数据库文件
+4. 建议定期备份远程数据库
 
 ## License
 
