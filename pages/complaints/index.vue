@@ -217,7 +217,7 @@ const columns: DataTableColumn<any>[] = [
   {
     title: '内部问题名称',
     key: 'internalComplaintName',
-    width: 120,
+    width: 160,
     ellipsis: { tooltip: true },
     render: (row) => row.internalComplaintName || '-'
   },
@@ -250,7 +250,7 @@ const columns: DataTableColumn<any>[] = [
   {
     title: '操作',
     key: 'actions',
-    width: 120,
+    width: 160,
     fixed: 'right',
     render: (row) => h(NSpace, { size: 'small' }, () => [
       h(NButton, {

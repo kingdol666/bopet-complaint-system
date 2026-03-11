@@ -17,18 +17,25 @@
       :style="layoutStyle"
     >
       <aside
-        class="fixed inset-y-0 left-0 z-50 w-[18rem] px-3 py-3 transition-transform duration-300 ease-out lg:static lg:w-auto lg:px-4 lg:py-4"
+        class="fixed inset-y-0 left-0 z-50 w-[18rem] px-3 py-3 transition-[padding,transform] duration-300 ease-out lg:static lg:w-auto lg:py-4"
         :class="[
           mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full',
-          'lg:translate-x-0'
+          'lg:translate-x-0',
+          isDesktopCollapsed ? 'lg:px-2' : 'lg:px-4'
         ]"
       >
-        <div class="glass-panel flex h-full flex-col rounded-[28px] px-3 pb-4 pt-3">
+        <div
+          class="glass-panel flex h-full flex-col rounded-[28px] pb-4 pt-3 transition-[padding] duration-300"
+          :class="isDesktopCollapsed ? 'px-2' : 'px-3'"
+        >
           <div
             class="flex items-center gap-3"
             :class="isDesktopCollapsed ? 'justify-center' : 'justify-between'"
           >
-            <div class="flex min-w-0 items-center gap-3">
+            <div
+              class="flex min-w-0 items-center transition-[gap] duration-200"
+              :class="isDesktopCollapsed ? 'gap-0' : 'gap-3'"
+            >
               <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 via-sky-400 to-cyan-300 text-base font-bold text-white shadow-lg shadow-primary-500/25">
                 BP
               </div>
@@ -46,7 +53,7 @@
             </div>
 
             <button
-              v-if="!isMobile"
+              v-if="!isMobile && !isDesktopCollapsed"
               class="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/60 bg-white/60 text-industrial-500 transition-all hover:-translate-y-0.5 hover:bg-white/85 hover:text-industrial-900"
               :aria-label="sidebarCollapsed ? '展开侧边栏' : '折叠侧边栏'"
               @click="toggleSidebar"
@@ -71,16 +78,22 @@
             </p>
           </div>
 
-          <nav class="mt-6 flex-1 space-y-2 overflow-y-auto pr-1">
+          <nav
+            class="mt-6 flex-1 space-y-2 overflow-y-auto transition-[padding] duration-200"
+            :class="isDesktopCollapsed ? 'pr-0' : 'pr-1'"
+          >
             <NuxtLink
               v-for="item in menuItems"
               :key="item.path"
               :to="item.path"
-              :title="item.label"
-              class="group flex items-center gap-3 rounded-2xl px-3 py-3 transition-all duration-200"
-              :class="isMenuItemActive(item)
-                ? 'bg-white/78 text-industrial-900 shadow-[0_14px_30px_rgba(148,163,184,0.22)] ring-1 ring-white/70'
-                : 'text-industrial-600 hover:bg-white/55 hover:text-industrial-900'"
+              :title="isDesktopCollapsed ? item.label : undefined"
+              class="group flex items-center rounded-2xl py-3 transition-all duration-200"
+              :class="[
+                isDesktopCollapsed ? 'justify-center gap-0 px-0' : 'gap-3 px-3',
+                isMenuItemActive(item)
+                  ? 'bg-white/78 text-industrial-900 shadow-[0_14px_30px_rgba(148,163,184,0.22)] ring-1 ring-white/70'
+                  : 'text-industrial-600 hover:bg-white/55 hover:text-industrial-900'
+              ]"
             >
               <span
                 class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition-all duration-200"
@@ -108,8 +121,8 @@
               </span>
 
               <span
-                class="ml-auto overflow-hidden text-industrial-300 transition-all duration-200"
-                :class="isDesktopCollapsed ? 'max-w-0 opacity-0' : 'max-w-4 opacity-100'"
+                class="overflow-hidden text-industrial-300 transition-all duration-200"
+                :class="isDesktopCollapsed ? 'max-w-0 opacity-0' : 'ml-auto max-w-4 opacity-100'"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5l7 7-7 7" />
@@ -118,8 +131,14 @@
             </NuxtLink>
           </nav>
 
-          <div class="mt-4 rounded-[24px] border border-white/55 bg-white/58 p-3 shadow-[0_10px_30px_rgba(148,163,184,0.12)]">
-            <div class="flex items-center gap-3" :class="isDesktopCollapsed ? 'justify-center' : ''">
+          <div
+            class="mt-4 rounded-[24px] border border-white/55 bg-white/58 shadow-[0_10px_30px_rgba(148,163,184,0.12)] transition-[padding] duration-200"
+            :class="isDesktopCollapsed ? 'p-2' : 'p-3'"
+          >
+            <div
+              class="flex items-center transition-[gap] duration-200"
+              :class="isDesktopCollapsed ? 'flex-col justify-center gap-2' : 'gap-3'"
+            >
               <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-white to-sky-50 text-sm font-semibold text-primary-700 shadow-inner shadow-white/90">
                 {{ userInitial }}
               </div>

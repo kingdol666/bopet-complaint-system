@@ -20,7 +20,7 @@
           </template>
           打印
         </n-button>
-        <n-button type="primary" @click="navigateTo(`/complaints/${complaint?.id}/edit`)">
+        <n-button type="primary" @click="navigateTo(`/complaints/edit/${complaint?.id}`)">
           编辑
         </n-button>
       </div>
