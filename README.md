@@ -59,6 +59,64 @@ npm run dev
 
 访问 http://localhost:3000
 
+## 启动方式
+
+### 本地启动（SQLite）
+
+本地开发默认使用 SQLite，只需要保留 `.env` 中的这两个配置：
+
+```env
+PRISMA_DB_PROVIDER="sqlite"
+DATABASE_URL="file:./data/bopet.db"
+```
+
+首次启动建议按下面顺序执行：
+
+```bash
+npm install
+npm run db:generate
+npm run db:push
+npm run db:seed
+npm run dev
+```
+
+说明：
+
+- `npm run dev` 会先执行 `prisma:prepare`，自动生成适用于 SQLite 的 `prisma/schema.prisma`
+- 本地数据库文件默认位于 `prisma/data/bopet.db`
+- 如果只想重新生成 Prisma Client，可以单独执行 `npm run db:generate`
+
+### 云端启动（Vercel + Neon PostgreSQL）
+
+云端部署时不要使用 SQLite，改为在 Vercel 环境变量中配置 PostgreSQL：
+
+```env
+PRISMA_DB_PROVIDER="postgresql"
+POSTGRES_PRISMA_URL="postgresql://username:password@host/database?connect_timeout=15&sslmode=require"
+POSTGRES_URL_NON_POOLING="postgresql://username:password@host/database?sslmode=require"
+JWT_SECRET="replace-with-a-random-secret"
+NUXT_PUBLIC_API_BASE="/api"
+```
+
+推荐部署步骤：
+
+```bash
+npm install
+npx vercel link
+npx vercel env add PRISMA_DB_PROVIDER
+npx vercel env add POSTGRES_PRISMA_URL
+npx vercel env add POSTGRES_URL_NON_POOLING
+npx vercel env add JWT_SECRET
+npx vercel deploy --prod
+```
+
+说明：
+
+- Vercel 构建时会自动执行 `npm run prisma:prepare && prisma generate && nuxt build`
+- 当 `PRISMA_DB_PROVIDER=postgresql` 时，构建脚本会自动切换到 PostgreSQL schema
+- 如果使用 Neon，`POSTGRES_PRISMA_URL` 建议填带连接池的地址，`POSTGRES_URL_NON_POOLING` 填直连地址
+- 如果还需要 Preview 环境，给 Preview 也配置同一组环境变量即可
+
 ## 默认账号
 
 | 角色 | 用户名 | 密码 |
@@ -212,6 +270,14 @@ JWT_SECRET="your-secret-key-here"
 # API 基础路径
 NUXT_PUBLIC_API_BASE="/api"
 ```
+
+Vercel 生产环境至少需要配置这些变量：
+
+- `PRISMA_DB_PROVIDER=postgresql`
+- `POSTGRES_PRISMA_URL`
+- `POSTGRES_URL_NON_POOLING`
+- `JWT_SECRET`
+- `NUXT_PUBLIC_API_BASE=/api`
 
 ## 业务字段说明
 
