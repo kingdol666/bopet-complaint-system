@@ -1,6 +1,6 @@
+import { Prisma } from '@prisma/client'
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
-import { verifyToken } from '~/server/utils/auth'
 
 const createSchema = z.object({
   customerExpression: z.string().max(500),
@@ -16,8 +16,17 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event)
     const data = createSchema.parse(body)
 
+    const createData: Prisma.ComplaintProblemMappingUncheckedCreateInput = {
+      customerExpression: data.customerExpression,
+      keywordPattern: data.keywordPattern,
+      internalComplaintName: data.internalComplaintName,
+      problemCategoryId: data.problemCategoryId,
+      problemSubcategoryId: data.problemSubcategoryId,
+      enabled: data.enabled
+    }
+
     const record = await prisma.complaintProblemMapping.create({
-      data,
+      data: createData,
       include: {
         problemCategory: true,
         problemSubcategory: true
@@ -36,6 +45,7 @@ export default defineEventHandler(async (event) => {
         statusMessage: error.errors[0].message
       })
     }
+
     throw error
   }
 })

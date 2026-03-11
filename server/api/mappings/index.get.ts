@@ -1,12 +1,13 @@
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
+import { booleanQueryParam } from '~/server/utils/query'
 
 // Query schema
 const querySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   pageSize: z.coerce.number().int().positive().max(100).default(20),
   keyword: z.string().optional(),
-  enabled: z.coerce.boolean().optional(),
+  enabled: booleanQueryParam,
   problemCategoryId: z.coerce.number().int().optional()
 })
 

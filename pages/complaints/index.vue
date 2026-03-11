@@ -113,7 +113,7 @@
 <script setup lang="ts">
 import { h } from 'vue'
 import { NTag, NButton, NSpace } from 'naive-ui'
-import type { DataTableColumns } from 'naive-ui'
+import type { DataTableColumn } from 'naive-ui'
 import { useConfigStore } from '~/stores/config'
 import dayjs from 'dayjs'
 
@@ -170,7 +170,7 @@ const statusOptions = [
 ]
 
 // Table columns
-const columns: DataTableColumns<any> = [
+const columns: DataTableColumn<any>[] = [
   {
     title: '客诉编号',
     key: 'complaintNo',

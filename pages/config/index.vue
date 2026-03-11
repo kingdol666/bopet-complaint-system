@@ -108,7 +108,7 @@
 <script setup lang="ts">
 import { h } from 'vue'
 import { NTag, NButton, NSpace } from 'naive-ui'
-import type { DataTableColumns, FormRules } from 'naive-ui'
+import type { DataTableColumn, FormRules } from 'naive-ui'
 import { useAuthStore } from '~/stores/auth'
 
 const authStore = useAuthStore()
@@ -192,8 +192,8 @@ const formRules: FormRules = {
 }
 
 // Get table columns
-function getTableColumns(type: string): DataTableColumns<any> {
-  const baseColumns: DataTableColumns<any> = [
+function getTableColumns(type: string): DataTableColumn<any>[] {
+  const baseColumns: DataTableColumn<any>[] = [
     { title: '编码', key: 'code', width: 100 },
     { title: '名称', key: 'name', width: 200 }
   ]

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
+import { booleanQueryParam } from '~/server/utils/query'
 
 // Query schema for filtering and pagination
 const querySchema = z.object({
@@ -18,7 +19,7 @@ const querySchema = z.object({
   closureStatus: z.enum(['pending', 'processing', 'closed']).optional(),
   responsibleDeptId: z.coerce.number().int().optional(),
   severityLevelId: z.coerce.number().int().optional(),
-  repeatedIssue: z.coerce.boolean().optional()
+  repeatedIssue: booleanQueryParam
 })
 
 export default defineEventHandler(async (event) => {

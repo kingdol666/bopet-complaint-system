@@ -379,7 +379,7 @@ onMounted(async () => {
   }
 
   try {
-    const response = await $fetch(`/api/complaints/${id}`)
+    const response = await $fetch(`/api/complaints/${id}`) as { success: boolean; data: any }
     if (response.success) {
       const data = response.data
       formData.id = data.id

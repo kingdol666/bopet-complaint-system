@@ -24,6 +24,16 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
+    clearPersistedAuth() {
+      this.token = null
+      this.user = null
+
+      if (import.meta.client) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+      }
+    },
+
     async login(username: string, password: string) {
       try {
         const response = await $fetch('/api/auth/login', {
@@ -35,7 +45,6 @@ export const useAuthStore = defineStore('auth', {
           this.token = response.data.token
           this.user = response.data.user
 
-          // Store in localStorage for persistence
           if (import.meta.client) {
             localStorage.setItem('token', response.data.token)
             localStorage.setItem('user', JSON.stringify(response.data.user))
@@ -56,21 +65,14 @@ export const useAuthStore = defineStore('auth', {
           method: 'POST',
           headers: this.getAuthHeaders()
         })
-      } catch (e) {
-        // Ignore logout errors
+      } catch {
+        // Ignore logout errors.
       }
 
-      this.token = null
-      this.user = null
-
-      if (import.meta.client) {
-        localStorage.removeItem('token')
-        localStorage.removeItem('user')
-      }
+      this.clearPersistedAuth()
     },
 
     async checkAuth() {
-      // Load from localStorage
       if (import.meta.client) {
         const token = localStorage.getItem('token')
         const userStr = localStorage.getItem('user')
@@ -79,32 +81,35 @@ export const useAuthStore = defineStore('auth', {
           this.token = token
           try {
             this.user = JSON.parse(userStr)
-          } catch (e) {
-            this.token = null
-            this.user = null
+          } catch {
+            this.clearPersistedAuth()
+            return
           }
         }
       }
 
-      // Verify token with server
       if (this.token) {
         try {
           const response = await $fetch('/api/auth/me', {
             headers: this.getAuthHeaders()
           })
 
-          if (!response.success) {
-            this.token = null
-            this.user = null
+          if (response.success) {
+            this.user = response.data
+
+            if (import.meta.client) {
+              localStorage.setItem('user', JSON.stringify(response.data))
+            }
+          } else {
+            this.clearPersistedAuth()
           }
-        } catch (e) {
-          this.token = null
-          this.user = null
+        } catch {
+          this.clearPersistedAuth()
         }
       }
     },
 
-    getAuthHeaders() {
+    getAuthHeaders(): Record<string, string> {
       return this.token ? { Authorization: `Bearer ${this.token}` } : {}
     }
   }

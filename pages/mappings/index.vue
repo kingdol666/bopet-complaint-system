@@ -120,7 +120,7 @@
 <script setup lang="ts">
 import { h } from 'vue'
 import { NTag, NButton, NSpace, NSwitch } from 'naive-ui'
-import type { DataTableColumns } from 'naive-ui'
+import type { DataTableColumn } from 'naive-ui'
 import { useConfigStore } from '~/stores/config'
 import type { FormInst, FormRules } from 'naive-ui'
 
@@ -184,7 +184,7 @@ const filteredSubcategoryOptions = computed(() => {
 })
 
 // Table columns
-const columns: DataTableColumns<any> = [
+const columns: DataTableColumn<any>[] = [
   {
     title: '客户表述',
     key: 'customerExpression',

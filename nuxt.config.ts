@@ -1,4 +1,11 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+const tailwindModuleConfig = {
+  tailwindcss: {
+    cssPath: '~/assets/css/tailwind.css',
+    configPath: 'tailwind.config.js'
+  }
+}
+
 export default defineNuxtConfig({
   compatibilityDate: '2024-04-03',
   devtools: { enabled: true },
@@ -20,7 +27,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // Server-side only
     databaseUrl: process.env.DATABASE_URL || 'file:./data/bopet.db',
-    jwtSecret: process.env.JWT_SECRET || 'bopet-complaint-secret-key-2024',
+    jwtSecret: process.env.JWT_SECRET || '',
     // Public
     public: {
       apiBase: '/api'
@@ -60,10 +67,7 @@ export default defineNuxtConfig({
   },
 
   // TailwindCSS
-  tailwindcss: {
-    cssPath: '~/assets/css/tailwind.css',
-    configPath: 'tailwind.config.js'
-  },
+  ...tailwindModuleConfig,
 
   // Nitro config
   nitro: {

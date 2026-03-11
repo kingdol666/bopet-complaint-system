@@ -1,12 +1,10 @@
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
-import { verifyToken } from '~/server/utils/auth'
+import { requireSessionUser } from '~/server/utils/auth'
 
-// Update complaint schema
 const updateSchema = z.object({
-  // Basic info
-  feedbackDate: z.string().transform(v => new Date(v)).optional(),
-  productionTime: z.string().transform(v => new Date(v)).nullable().optional(),
+  feedbackDate: z.string().transform((v) => new Date(v)).optional(),
+  productionTime: z.string().transform((v) => new Date(v)).nullable().optional(),
   productModelId: z.number().int().nullable().optional(),
   thickness: z.string().max(50).nullable().optional(),
   rollNo: z.string().max(100).nullable().optional(),
@@ -17,7 +15,6 @@ const updateSchema = z.object({
   shiftTeam: z.string().max(50).nullable().optional(),
   machineNo: z.string().max(50).nullable().optional(),
   batchNo: z.string().max(100).nullable().optional(),
-  // Complaint content
   feedbackContent: z.string().nullable().optional(),
   customerComplaintText: z.string().nullable().optional(),
   internalComplaintName: z.string().max(200).nullable().optional(),
@@ -25,14 +22,12 @@ const updateSchema = z.object({
   problemSubcategoryId: z.number().int().nullable().optional(),
   severityLevelId: z.number().int().nullable().optional(),
   repeatedIssue: z.boolean().optional(),
-  // Disposal
   customerDemandId: z.number().int().nullable().optional(),
   disposalResult: z.string().nullable().optional(),
   compensationTypeId: z.number().int().nullable().optional(),
   closureStatus: z.enum(['pending', 'processing', 'closed']).optional(),
   responsibleDeptId: z.number().int().nullable().optional(),
   responsibleProcessId: z.number().int().nullable().optional(),
-  // Analysis
   rootCauseAnalysis: z.string().nullable().optional(),
   correctiveAction: z.string().nullable().optional(),
   lessonsLearned: z.string().nullable().optional(),
@@ -41,31 +36,34 @@ const updateSchema = z.object({
   remark: z.string().nullable().optional()
 })
 
+const complaintInclude = {
+  customer: true,
+  productModel: true,
+  productionLine: true,
+  problemCategory: true,
+  problemSubcategory: true,
+  severityLevel: true,
+  customerDemand: true,
+  compensationType: true,
+  responsibleDept: true,
+  responsibleProcess: true
+} as const
+
 export default defineEventHandler(async (event) => {
-  const id = parseInt(getRouterParam(event, 'id') || '0')
+  const id = Number.parseInt(getRouterParam(event, 'id') || '0', 10)
 
   if (!id) {
     throw createError({
       statusCode: 400,
-      statusMessage: '无效的ID'
+      statusMessage: '无效的 ID'
     })
   }
 
-  // Handle GET request
   if (event.method === 'GET') {
     const record = await prisma.complaintRecord.findUnique({
       where: { id },
       include: {
-        customer: true,
-        productModel: true,
-        productionLine: true,
-        problemCategory: true,
-        problemSubcategory: true,
-        severityLevel: true,
-        customerDemand: true,
-        compensationType: true,
-        responsibleDept: true,
-        responsibleProcess: true,
+        ...complaintInclude,
         createdBy: { select: { id: true, name: true, username: true } },
         updatedBy: { select: { id: true, name: true, username: true } }
       }
@@ -84,18 +82,12 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // Handle PUT request
   if (event.method === 'PUT') {
     try {
-      // Get current user
-      const authHeader = getHeader(event, 'authorization')
-      const token = authHeader?.replace('Bearer ', '')
-      const payload = token ? verifyToken(token) : null
-
+      const currentUser = await requireSessionUser(event)
       const body = await readBody(event)
       const data = updateSchema.parse(body)
 
-      // Check if record exists
       const existing = await prisma.complaintRecord.findUnique({
         where: { id }
       })
@@ -107,40 +99,25 @@ export default defineEventHandler(async (event) => {
         })
       }
 
-      // Update record
       const record = await prisma.complaintRecord.update({
         where: { id },
         data: {
           ...data,
-          updatedById: payload?.userId || null
+          updatedById: currentUser.id
         },
-        include: {
-          customer: true,
-          productModel: true,
-          productionLine: true,
-          problemCategory: true,
-          problemSubcategory: true,
-          severityLevel: true,
-          customerDemand: true,
-          compensationType: true,
-          responsibleDept: true,
-          responsibleProcess: true
-        }
+        include: complaintInclude
       })
 
-      // Log operation
-      if (payload) {
-        await prisma.operationLog.create({
-          data: {
-            userId: payload.userId,
-            action: 'update',
-            module: 'complaint',
-            targetId: record.id,
-            targetName: record.complaintNo,
-            detail: JSON.stringify({ updatedFields: Object.keys(data) })
-          }
-        })
-      }
+      await prisma.operationLog.create({
+        data: {
+          userId: currentUser.id,
+          action: 'update',
+          module: 'complaint',
+          targetId: record.id,
+          targetName: record.complaintNo,
+          detail: JSON.stringify({ updatedFields: Object.keys(data) })
+        }
+      })
 
       return {
         success: true,
@@ -154,18 +131,14 @@ export default defineEventHandler(async (event) => {
           statusMessage: error.errors[0].message
         })
       }
+
       throw error
     }
   }
 
-  // Handle DELETE request
   if (event.method === 'DELETE') {
-    // Get current user
-    const authHeader = getHeader(event, 'authorization')
-    const token = authHeader?.replace('Bearer ', '')
-    const payload = token ? verifyToken(token) : null
+    const currentUser = await requireSessionUser(event)
 
-    // Check if record exists
     const existing = await prisma.complaintRecord.findUnique({
       where: { id }
     })
@@ -177,24 +150,20 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // Delete record
     await prisma.complaintRecord.delete({
       where: { id }
     })
 
-    // Log operation
-    if (payload) {
-      await prisma.operationLog.create({
-        data: {
-          userId: payload.userId,
-          action: 'delete',
-          module: 'complaint',
-          targetId: existing.id,
-          targetName: existing.complaintNo,
-          detail: JSON.stringify({ complaintNo: existing.complaintNo })
-        }
-      })
-    }
+    await prisma.operationLog.create({
+      data: {
+        userId: currentUser.id,
+        action: 'delete',
+        module: 'complaint',
+        targetId: existing.id,
+        targetName: existing.complaintNo,
+        detail: JSON.stringify({ complaintNo: existing.complaintNo })
+      }
+    })
 
     return {
       success: true,
