@@ -301,8 +301,221 @@ function formatDateTime(date: string | Date) {
   return dayjs(date).format('YYYY-MM-DD HH:mm')
 }
 
+function formatPrintValue(value: unknown) {
+  if (value === null || value === undefined || value === '') {
+    return '-'
+  }
+
+  if (typeof value === 'boolean') {
+    return value ? '是' : '否'
+  }
+
+  return String(value)
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function renderPrintTable(
+  title: string,
+  rows: Array<[string, unknown, string?, unknown?]>
+) {
+  const body = rows.map(([label1, value1, label2, value2]) => `
+    <tr>
+      <th>${escapeHtml(label1)}</th>
+      <td>${escapeHtml(formatPrintValue(value1)).replace(/\n/g, '<br />')}</td>
+      ${label2
+        ? `<th>${escapeHtml(label2)}</th><td>${escapeHtml(formatPrintValue(value2)).replace(/\n/g, '<br />')}</td>`
+        : '<th></th><td></td>'}
+    </tr>
+  `).join('')
+
+  return `
+    <section class="print-section">
+      <h2>${escapeHtml(title)}</h2>
+      <table>
+        <tbody>
+          ${body}
+        </tbody>
+      </table>
+    </section>
+  `
+}
+
 function handlePrint() {
-  window.print()
+  if (!complaint.value) {
+    message.warning('当前没有可打印的客诉信息')
+    return
+  }
+
+  const current = complaint.value
+
+  const sections = [
+    renderPrintTable('基础信息', [
+      ['客诉编号', current.complaintNo, '反馈日期', formatDate(current.feedbackDate)],
+      ['生产时间', formatDate(current.productionTime), '客户', current.customer?.name],
+      ['产品型号', current.productModel?.name, '厚度', current.thickness],
+      ['轴号', current.rollNo, '涉及数量', current.quantityInvolved],
+      ['用途', current.application, '产线', current.productionLine?.name],
+      ['班组', current.shiftTeam, '机台', current.machineNo],
+      ['批次号', current.batchNo]
+    ]),
+    renderPrintTable('客诉内容', [
+      ['反馈内容', current.feedbackContent, '客户投诉描述', current.customerComplaintText],
+      ['内部问题名称', current.internalComplaintName, '问题大类', current.problemCategory?.name],
+      ['问题小类', current.problemSubcategory?.name, '严重等级', current.severityLevel?.name],
+      ['重复问题', current.repeatedIssue]
+    ]),
+    renderPrintTable('诉求与处置', [
+      ['客户诉求', current.customerDemand?.name, '赔偿方式', current.compensationType?.name],
+      ['闭环状态', statusLabel.value, '责任部门', current.responsibleDept?.name],
+      ['责任工序', current.responsibleProcess?.name, '处置结果', current.disposalResult]
+    ]),
+    renderPrintTable('原因与改善', [
+      ['问题分析', current.rootCauseAnalysis, '改善措施', current.correctiveAction],
+      ['启示', current.lessonsLearned, '复盘结论', current.reviewConclusion],
+      ['标准化措施', current.standardizedAction, '备注', current.remark]
+    ]),
+    renderPrintTable('审计信息', [
+      ['创建时间', formatDateTime(current.createdAt), '创建人', current.createdBy?.name],
+      ['更新时间', formatDateTime(current.updatedAt), '更新人', current.updatedBy?.name]
+    ])
+  ].join('')
+
+  const printHtml = `
+    <!DOCTYPE html>
+    <html lang="zh-CN">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>${escapeHtml(current.complaintNo || '客诉详情打印')}</title>
+        <style>
+          @page {
+            size: A4 portrait;
+            margin: 12mm;
+          }
+
+          * {
+            box-sizing: border-box;
+          }
+
+          body {
+            margin: 0;
+            color: #0f172a;
+            font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            font-size: 12px;
+            line-height: 1.5;
+          }
+
+          .print-header {
+            margin-bottom: 16px;
+          }
+
+          .print-header h1 {
+            margin: 0 0 4px;
+            font-size: 24px;
+          }
+
+          .print-meta {
+            color: #475569;
+            font-size: 12px;
+          }
+
+          .print-section {
+            margin-bottom: 16px;
+            break-inside: avoid;
+          }
+
+          .print-section h2 {
+            margin: 0 0 8px;
+            padding-left: 8px;
+            border-left: 4px solid #2563eb;
+            font-size: 16px;
+          }
+
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+          }
+
+          th,
+          td {
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            vertical-align: top;
+            text-align: left;
+            word-break: break-word;
+          }
+
+          th {
+            width: 15%;
+            background: #f8fafc;
+            font-weight: 600;
+            color: #334155;
+          }
+
+          td {
+            width: 35%;
+            white-space: pre-wrap;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="print-header">
+          <h1>${escapeHtml(current.complaintNo || '客诉详情')}</h1>
+          <div class="print-meta">
+            打印时间：${escapeHtml(formatDateTime(new Date()))}
+          </div>
+        </div>
+        ${sections}
+      </body>
+    </html>
+  `
+
+  const iframe = document.createElement('iframe')
+  iframe.style.position = 'fixed'
+  iframe.style.right = '0'
+  iframe.style.bottom = '0'
+  iframe.style.width = '0'
+  iframe.style.height = '0'
+  iframe.style.border = '0'
+  iframe.style.visibility = 'hidden'
+
+  const cleanup = () => {
+    window.setTimeout(() => {
+      iframe.remove()
+    }, 300)
+  }
+
+  iframe.onload = () => {
+    const frameWindow = iframe.contentWindow
+
+    if (!frameWindow) {
+      message.error('打印内容渲染失败')
+      cleanup()
+      return
+    }
+
+    const finish = () => {
+      frameWindow.removeEventListener('afterprint', finish)
+      cleanup()
+    }
+
+    frameWindow.addEventListener('afterprint', finish)
+    frameWindow.focus()
+    frameWindow.print()
+    window.setTimeout(finish, 1000)
+  }
+
+  document.body.appendChild(iframe)
+  iframe.srcdoc = printHtml
 }
 </script>
 
