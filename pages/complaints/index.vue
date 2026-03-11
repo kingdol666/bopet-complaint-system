@@ -263,7 +263,7 @@ const columns: DataTableColumn<any>[] = [
         size: 'small',
         text: true,
         type: 'primary',
-        onClick: () => router.push(`/complaints/${row.id}/edit`)
+        onClick: () => router.push(`/complaints/edit/${row.id}`)
       }, () => '编辑'),
       h(NButton, {
         size: 'small',
