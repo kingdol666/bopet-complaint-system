@@ -1,14 +1,14 @@
 // Prisma schema for BOPET客诉闭环管理系统
-// Database: SQLite
+// Database: __PRISMA_DB_LABEL__
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
-}
+  provider = "__PRISMA_PROVIDER__"
+  url      = env("__PRISMA_URL_ENV__")
+__PRISMA_DIRECT_URL_LINE__}
 
 // ==================== 用户表 ====================
 model User {

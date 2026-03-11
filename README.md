@@ -19,7 +19,7 @@
 - **样式**: TailwindCSS
 - **状态管理**: Pinia
 - **ORM**: Prisma
-- **数据库**: PostgreSQL
+- **数据库**: 本地 SQLite / 云端 PostgreSQL
 - **图表**: ECharts
 - **日期处理**: dayjs
 - **表单验证**: Zod
@@ -198,9 +198,12 @@ npm run db:reset
 
 ```env
 # 数据库连接
+PRISMA_DB_PROVIDER="sqlite"
+DATABASE_URL="file:./data/bopet.db"
+
+# 切换到 PostgreSQL / Neon 时使用
 POSTGRES_PRISMA_URL="postgresql://username:password@host/database?connect_timeout=15&sslmode=require"
 POSTGRES_URL_NON_POOLING="postgresql://username:password@host/database?sslmode=require"
-DATABASE_URL="postgresql://username:password@host/database?sslmode=require"
 DATABASE_URL_UNPOOLED="postgresql://username:password@host/database?sslmode=require"
 
 # JWT 密钥（生产环境请修改）
@@ -253,7 +256,7 @@ NUXT_PUBLIC_API_BASE="/api"
 ## 注意事项
 
 1. 生产环境请修改 `.env` 中的 `JWT_SECRET`
-2. 生产环境请使用远程 PostgreSQL，并通过环境变量注入连接串
+2. 本地默认使用 SQLite，将 `PRISMA_DB_PROVIDER` 设为 `postgresql` 后可切换到远程 PostgreSQL
 3. 管理员才能访问系统配置页面
 4. 建议定期备份远程数据库
 

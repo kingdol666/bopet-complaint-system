@@ -5,17 +5,18 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "prisma generate && nuxt build",
-    "dev": "nuxt dev",
+    "prisma:prepare": "node scripts/prepare-prisma-schema.mjs",
+    "build": "npm run prisma:prepare && prisma generate && nuxt build",
+    "dev": "npm run prisma:prepare && prisma generate && nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare",
-    "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:migrate": "prisma migrate dev --name init",
-    "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio",
-    "db:reset": "prisma migrate reset --force"
+    "postinstall": "npm run prisma:prepare && nuxt prepare",
+    "db:generate": "npm run prisma:prepare && prisma generate",
+    "db:push": "npm run prisma:prepare && prisma db push",
+    "db:migrate": "npm run prisma:prepare && prisma migrate dev --name init",
+    "db:seed": "npm run prisma:prepare && prisma generate && tsx prisma/seed.ts",
+    "db:studio": "npm run prisma:prepare && prisma studio",
+    "db:reset": "npm run prisma:prepare && prisma migrate reset --force"
   },
   "dependencies": {
     "@pinia/nuxt": "^0.5.1",
