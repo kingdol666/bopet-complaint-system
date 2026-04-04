@@ -1,12 +1,18 @@
 import { prisma } from '~/server/utils/prisma'
+import { requireSessionUser, buildDepartmentFilter } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
+  const currentUser = await requireSessionUser(event)
   const query = getQuery(event)
   const year = parseInt(query.year as string) || new Date().getFullYear()
+
+  // Department filter
+  const deptFilter = buildDepartmentFilter(currentUser)
 
   // Get monthly counts for the specified year
   const records = await prisma.complaintRecord.findMany({
     where: {
+      ...deptFilter,
       feedbackDate: {
         gte: new Date(year, 0, 1),
         lt: new Date(year + 1, 0, 1)

@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
 import { booleanQueryParam } from '~/server/utils/query'
+import { requireSessionUser, buildDepartmentFilter } from '~/server/utils/auth'
 
 // Query schema for filtering and pagination
 const querySchema = z.object({
@@ -24,6 +25,7 @@ const querySchema = z.object({
 
 export default defineEventHandler(async (event) => {
   try {
+    const currentUser = await requireSessionUser(event)
     const query = await getQuery(event)
     const params = querySchema.parse(query)
 
@@ -31,6 +33,10 @@ export default defineEventHandler(async (event) => {
 
     // Build where clause
     const where: any = {}
+
+    // Department filter: non-superadmin users can only see their own departments' data
+    const deptFilter = buildDepartmentFilter(currentUser)
+    Object.assign(where, deptFilter)
 
     // Keyword search
     if (params.keyword) {

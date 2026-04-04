@@ -278,7 +278,7 @@ onMounted(async () => {
   }
 
   try {
-    const response = await $fetch(`/api/complaints/${id}`)
+    const response: any = await $fetch(`/api/complaints/${id}`)
     if (response.success) {
       complaint.value = response.data
     }

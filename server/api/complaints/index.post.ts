@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client'
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
-import { requireSessionUser } from '~/server/utils/auth'
+import { requireWritePermission, canAccessDepartment } from '~/server/utils/auth'
 
 const createSchema = z.object({
   feedbackDate: z.string().transform((v) => new Date(v)),
@@ -83,9 +83,17 @@ function isComplaintNoConflict(error: unknown): error is Prisma.PrismaClientKnow
 
 export default defineEventHandler(async (event) => {
   try {
-    const currentUser = await requireSessionUser(event)
+    const currentUser = await requireWritePermission(event)
     const body = await readBody(event)
     const data = createSchema.parse(body)
+
+    // Check department access: admin can only create records for their own departments
+    if (data.responsibleDeptId && !canAccessDepartment(currentUser, data.responsibleDeptId)) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: '您没有该部门的操作权限'
+      })
+    }
 
     for (let attempt = 0; attempt < 5; attempt += 1) {
       const complaintNo = await generateComplaintNo()

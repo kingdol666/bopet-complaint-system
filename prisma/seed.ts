@@ -16,6 +16,7 @@ async function main() {
   await prisma.complaintRecord.deleteMany()
   await prisma.complaintProblemMapping.deleteMany()
   await prisma.responsibleProcess.deleteMany()
+  await prisma.userDepartment.deleteMany()
   await prisma.responsibleDepartment.deleteMany()
   await prisma.severityLevel.deleteMany()
   await prisma.compensationType.deleteMany()
@@ -29,30 +30,44 @@ async function main() {
 
   // ==================== 用户数据 ====================
   console.log('创建用户数据...')
-  await prisma.user.createMany({
-    data: [
-      {
-        username: 'admin',
-        password: hashPassword('admin123'),
-        name: '系统管理员',
-        role: 'admin',
-        enabled: true
-      },
-      {
-        username: 'operator',
-        password: hashPassword('operator123'),
-        name: '操作员张三',
-        role: 'operator',
-        enabled: true
-      },
-      {
-        username: 'quality',
-        password: hashPassword('quality123'),
-        name: '质检员李四',
-        role: 'operator',
-        enabled: true
-      }
-    ]
+  const superadminUser = await prisma.user.create({
+    data: {
+      username: 'admin',
+      password: hashPassword('admin123'),
+      name: '超级管理员',
+      role: 'superadmin',
+      enabled: true
+    }
+  })
+
+  const adminUser = await prisma.user.create({
+    data: {
+      username: 'deptadmin',
+      password: hashPassword('deptadmin123'),
+      name: '部门管理员-王五',
+      role: 'admin',
+      enabled: true
+    }
+  })
+
+  const normalUser1 = await prisma.user.create({
+    data: {
+      username: 'operator',
+      password: hashPassword('operator123'),
+      name: '操作员-张三',
+      role: 'normal',
+      enabled: true
+    }
+  })
+
+  const normalUser2 = await prisma.user.create({
+    data: {
+      username: 'quality',
+      password: hashPassword('quality123'),
+      name: '质检员-李四',
+      role: 'normal',
+      enabled: true
+    }
   })
 
   // ==================== 产线数据 ====================
@@ -207,11 +222,26 @@ async function main() {
     ]
   })
 
-  // ==================== 责任工序数据 ====================
-  console.log('创建责任工序数据...')
   const deptMap: Record<string, number> = {}
   departments.forEach(d => { deptMap[d.code] = d.id })
 
+  // ==================== 用户-部门关联 ====================
+  console.log('创建用户-部门关联...')
+  await prisma.userDepartment.createMany({
+    data: [
+      // 超级管理员不需要部门关联，可以看所有部门数据
+      // 部门管理员：分配到生产部和质量部
+      { userId: adminUser.id, departmentId: deptMap['RD-01'] },
+      { userId: adminUser.id, departmentId: deptMap['RD-02'] },
+      // 普通用户-张三：分配到生产部
+      { userId: normalUser1.id, departmentId: deptMap['RD-01'] },
+      // 普通用户-李四：分配到质量部
+      { userId: normalUser2.id, departmentId: deptMap['RD-02'] }
+    ]
+  })
+
+  // ==================== 责任工序数据 ====================
+  console.log('创建责任工序数据...')
   await prisma.responsibleProcess.createMany({
     data: [
       // 生产部工序
@@ -398,9 +428,10 @@ async function main() {
   console.log('种子数据初始化完成!')
   console.log('----------------------------------------')
   console.log('默认账号:')
-  console.log('  管理员: admin / admin123')
-  console.log('  操作员: operator / operator123')
-  console.log('  质检员: quality / quality123')
+  console.log('  超级管理员: admin / admin123 (可看所有部门)')
+  console.log('  部门管理员: deptadmin / deptadmin123 (生产部+质量部)')
+  console.log('  普通用户:   operator / operator123 (生产部,只读)')
+  console.log('  普通用户:   quality / quality123 (质量部,只读)')
   console.log('----------------------------------------')
 }
 

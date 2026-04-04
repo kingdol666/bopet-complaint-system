@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
-import { requireAdminUser } from '~/server/utils/auth'
+import { requireSuperAdminUser } from '~/server/utils/auth'
 
 const configModels: Record<string, string> = {
   'production-lines': 'productionLine',
@@ -62,7 +62,7 @@ function getSchema(type: string) {
 }
 
 export default defineEventHandler(async (event) => {
-  await requireAdminUser(event)
+  await requireSuperAdminUser(event)
 
   const type = getRouterParam(event, 'type') || ''
   if (!configModels[type]) {

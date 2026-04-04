@@ -1,12 +1,17 @@
 import { prisma } from '~/server/utils/prisma'
+import { requireSessionUser, buildDepartmentFilter } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
+  const currentUser = await requireSessionUser(event)
   const query = getQuery(event)
   const startDate = query.startDate ? new Date(query.startDate as string) : undefined
   const endDate = query.endDate ? new Date(query.endDate as string) : undefined
 
+  // Department filter
+  const deptFilter = buildDepartmentFilter(currentUser)
+
   // Build date filter
-  const dateFilter: any = {}
+  const dateFilter: any = { ...deptFilter }
   if (startDate || endDate) {
     dateFilter.feedbackDate = {}
     if (startDate) dateFilter.feedbackDate.gte = startDate
@@ -58,7 +63,7 @@ export default defineEventHandler(async (event) => {
       count: item._count
     }))
     .sort((a, b) => b.count - a.count)
-    .slice(0, 10) // Top 10
+    .slice(0, 10)
 
   // By production line
   const byProductionLine = await prisma.complaintRecord.groupBy({
@@ -70,7 +75,6 @@ export default defineEventHandler(async (event) => {
     _count: true
   })
 
-  // Get production line names
   const productionLines = await prisma.productionLine.findMany()
   const productionLineMap = new Map(productionLines.map(p => [p.id, p.name]))
 
@@ -93,7 +97,6 @@ export default defineEventHandler(async (event) => {
     _count: true
   })
 
-  // Get product model names
   const productModels = await prisma.productModel.findMany()
   const productModelMap = new Map(productModels.map(p => [p.id, p.name]))
 
@@ -105,7 +108,7 @@ export default defineEventHandler(async (event) => {
       count: item._count
     }))
     .sort((a, b) => b.count - a.count)
-    .slice(0, 10) // Top 10
+    .slice(0, 10)
 
   return {
     success: true,

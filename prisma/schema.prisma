@@ -16,7 +16,7 @@ model User {
   username  String   @unique
   password  String
   name      String
-  role      String   @default("operator") // admin, operator
+  role      String   @default("normal") // superadmin, admin, normal
   enabled   Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -25,8 +25,24 @@ model User {
   complaints        ComplaintRecord[]      @relation("CreatedBy")
   updatedComplaints ComplaintRecord[]      @relation("UpdatedBy")
   operationLogs     OperationLog[]
+  departments       UserDepartment[]
 
   @@map("users")
+}
+
+// ==================== 用户部门关联表 ====================
+model UserDepartment {
+  id           Int                  @id @default(autoincrement())
+  userId       Int
+  departmentId Int
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department   ResponsibleDepartment @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  createdAt    DateTime             @default(now())
+
+  @@unique([userId, departmentId])
+  @@index([userId])
+  @@index([departmentId])
+  @@map("user_departments")
 }
 
 // ==================== 产线表 ====================
@@ -186,8 +202,9 @@ model ResponsibleDepartment {
   updatedAt DateTime @updatedAt
 
   // Relations
-  complaints ComplaintRecord[]
-  processes  ResponsibleProcess[]
+  complaints     ComplaintRecord[]
+  processes      ResponsibleProcess[]
+  userDepartments UserDepartment[]
 
   @@index([enabled, sortOrder])
   @@map("responsible_departments")

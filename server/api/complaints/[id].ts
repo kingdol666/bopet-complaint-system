@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
-import { requireSessionUser } from '~/server/utils/auth'
+import { requireSessionUser, requireWritePermission, canAccessDepartment } from '~/server/utils/auth'
 
 const updateSchema = z.object({
   feedbackDate: z.string().transform((v) => new Date(v)).optional(),
@@ -60,6 +60,8 @@ export default defineEventHandler(async (event) => {
   }
 
   if (event.method === 'GET') {
+    const currentUser = await requireSessionUser(event)
+
     const record = await prisma.complaintRecord.findUnique({
       where: { id },
       include: {
@@ -76,6 +78,14 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    // Check department access
+    if (!canAccessDepartment(currentUser, record.responsibleDeptId)) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: '您没有查看该记录的权限'
+      })
+    }
+
     return {
       success: true,
       data: record
@@ -84,7 +94,7 @@ export default defineEventHandler(async (event) => {
 
   if (event.method === 'PUT') {
     try {
-      const currentUser = await requireSessionUser(event)
+      const currentUser = await requireWritePermission(event)
       const body = await readBody(event)
       const data = updateSchema.parse(body)
 
@@ -96,6 +106,22 @@ export default defineEventHandler(async (event) => {
         throw createError({
           statusCode: 404,
           statusMessage: '客诉记录不存在'
+        })
+      }
+
+      // Check department access for existing record
+      if (!canAccessDepartment(currentUser, existing.responsibleDeptId)) {
+        throw createError({
+          statusCode: 403,
+          statusMessage: '您没有修改该记录的权限'
+        })
+      }
+
+      // If changing department, check access to new department
+      if (data.responsibleDeptId !== undefined && !canAccessDepartment(currentUser, data.responsibleDeptId)) {
+        throw createError({
+          statusCode: 403,
+          statusMessage: '您没有将该记录分配到该部门的权限'
         })
       }
 
@@ -137,7 +163,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (event.method === 'DELETE') {
-    const currentUser = await requireSessionUser(event)
+    const currentUser = await requireWritePermission(event)
 
     const existing = await prisma.complaintRecord.findUnique({
       where: { id }
@@ -147,6 +173,14 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 404,
         statusMessage: '客诉记录不存在'
+      })
+    }
+
+    // Check department access
+    if (!canAccessDepartment(currentUser, existing.responsibleDeptId)) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: '您没有删除该记录的权限'
       })
     }
 

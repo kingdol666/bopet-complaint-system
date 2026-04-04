@@ -1,10 +1,16 @@
 import { defineStore } from 'pinia'
 
+interface Department {
+  id: number
+  name: string
+}
+
 interface User {
   id: number
   username: string
   name: string
   role: string
+  departments: Department[]
 }
 
 interface AuthState {
@@ -20,7 +26,21 @@ export const useAuthStore = defineStore('auth', {
 
   getters: {
     isLoggedIn: (state) => !!state.token && !!state.user,
-    isAdmin: (state) => state.user?.role === 'admin'
+    isSuperAdmin: (state) => state.user?.role === 'superadmin',
+    isAdmin: (state) => state.user?.role === 'admin',
+    isNormal: (state) => state.user?.role === 'normal',
+    /** 是否拥有写权限（superadmin 或 admin） */
+    canWrite: (state) => state.user?.role === 'superadmin' || state.user?.role === 'admin',
+    /** 获取用户所属部门ID列表 */
+    departmentIds: (state) => state.user?.departments?.map(d => d.id) || [],
+    roleLabel: (state) => {
+      const map: Record<string, string> = {
+        superadmin: '超级管理员',
+        admin: '部门管理员',
+        normal: '普通用户'
+      }
+      return map[state.user?.role || ''] || '未知'
+    }
   },
 
   actions: {
@@ -31,6 +51,7 @@ export const useAuthStore = defineStore('auth', {
       if (import.meta.client) {
         localStorage.removeItem('token')
         localStorage.removeItem('user')
+        document.cookie = 'auth_token=; path=/; max-age=0'
       }
     },
 
@@ -48,6 +69,8 @@ export const useAuthStore = defineStore('auth', {
           if (import.meta.client) {
             localStorage.setItem('token', response.data.token)
             localStorage.setItem('user', JSON.stringify(response.data.user))
+            // 同步写入 cookie，让浏览器自动携带
+            document.cookie = `auth_token=${response.data.token}; path=/; max-age=86400; SameSite=Lax`
           }
 
           return { success: true }
@@ -79,6 +102,8 @@ export const useAuthStore = defineStore('auth', {
 
         if (token && userStr) {
           this.token = token
+          // 确保 cookie 同步（兼容老 session 未写 cookie 的情况）
+          document.cookie = `auth_token=${token}; path=/; max-age=86400; SameSite=Lax`
           try {
             this.user = JSON.parse(userStr)
           } catch {

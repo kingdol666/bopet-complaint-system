@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
+import { requireSessionUser, buildDepartmentFilter } from '~/server/utils/auth'
 import { booleanQueryParam } from '~/server/utils/query'
 
 // Query schema for filtering (same as list)
@@ -29,11 +30,16 @@ function escapeCSV(field: any): string {
 
 export default defineEventHandler(async (event) => {
   try {
+    const currentUser = await requireSessionUser(event)
     const query = await getQuery(event)
     const params = querySchema.parse(query)
 
     // Build where clause (same as list)
     const where: any = {}
+
+    // Department filter
+    const deptFilter = buildDepartmentFilter(currentUser)
+    Object.assign(where, deptFilter)
 
     if (params.keyword) {
       const keyword = params.keyword

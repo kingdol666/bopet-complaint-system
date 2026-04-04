@@ -11,7 +11,7 @@
           </template>
           导出CSV
         </n-button>
-        <n-button type="primary" @click="navigateTo('/complaints/new')">
+        <n-button v-if="authStore.canWrite" type="primary" @click="navigateTo('/complaints/new')">
           <template #icon>
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -118,6 +118,7 @@ import { useConfigStore } from '~/stores/config'
 import dayjs from 'dayjs'
 
 const configStore = useConfigStore()
+const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 const message = useMessage()
@@ -252,26 +253,33 @@ const columns: DataTableColumn<any>[] = [
     key: 'actions',
     width: 160,
     fixed: 'right',
-    render: (row) => h(NSpace, { size: 'small' }, () => [
-      h(NButton, {
-        size: 'small',
-        text: true,
-        type: 'primary',
-        onClick: () => router.push(`/complaints/${row.id}`)
-      }, () => '查看'),
-      h(NButton, {
-        size: 'small',
-        text: true,
-        type: 'primary',
-        onClick: () => router.push(`/complaints/edit/${row.id}`)
-      }, () => '编辑'),
-      h(NButton, {
-        size: 'small',
-        text: true,
-        type: 'error',
-        onClick: () => handleDelete(row)
-      }, () => '删除')
-    ])
+    render: (row) => h(NSpace, { size: 'small' }, () => {
+      const buttons = [
+        h(NButton, {
+          size: 'small',
+          text: true,
+          type: 'primary',
+          onClick: () => router.push(`/complaints/${row.id}`)
+        }, () => '查看')
+      ]
+      if (authStore.canWrite) {
+        buttons.push(
+          h(NButton, {
+            size: 'small',
+            text: true,
+            type: 'primary',
+            onClick: () => router.push(`/complaints/edit/${row.id}`)
+          }, () => '编辑'),
+          h(NButton, {
+            size: 'small',
+            text: true,
+            type: 'error',
+            onClick: () => handleDelete(row)
+          }, () => '删除')
+        )
+      }
+      return buttons
+    })
   }
 ]
 
@@ -397,6 +405,8 @@ async function handleExport() {
       }
     })
 
+    // Add token to query string for window.open (can't set headers)
+    params.token = authStore.token
     const queryString = new URLSearchParams(params).toString()
     window.open(`/api/complaints/export?${queryString}`, '_blank')
   } catch (e) {

@@ -9,9 +9,14 @@ export default defineEventHandler(async (event) => {
     // Validate input
     const validated = loginSchema.parse(body)
 
-    // Find user
+    // Find user with departments
     const user = await prisma.user.findUnique({
-      where: { username: validated.username }
+      where: { username: validated.username },
+      include: {
+        departments: {
+          select: { departmentId: true, department: { select: { id: true, name: true } } }
+        }
+      }
     })
 
     if (!user || !user.enabled) {
@@ -41,7 +46,11 @@ export default defineEventHandler(async (event) => {
           id: user.id,
           username: user.username,
           name: user.name,
-          role: user.role
+          role: user.role,
+          departments: user.departments.map(d => ({
+            id: d.department.id,
+            name: d.department.name
+          }))
         }
       }
     }

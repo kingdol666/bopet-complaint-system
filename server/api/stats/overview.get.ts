@@ -1,6 +1,13 @@
 import { prisma } from '~/server/utils/prisma'
+import { requireSessionUser, buildDepartmentFilter } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
+  const currentUser = await requireSessionUser(event)
+
+  // Department filter
+  const deptFilter = buildDepartmentFilter(currentUser)
+  const baseWhere = { ...deptFilter }
+
   // Get current date info
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -8,11 +15,12 @@ export default defineEventHandler(async (event) => {
   const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0)
 
   // Total complaints
-  const total = await prisma.complaintRecord.count()
+  const total = await prisma.complaintRecord.count({ where: baseWhere })
 
   // This month's complaints
   const thisMonth = await prisma.complaintRecord.count({
     where: {
+      ...baseWhere,
       feedbackDate: { gte: startOfMonth }
     }
   })
@@ -20,6 +28,7 @@ export default defineEventHandler(async (event) => {
   // Last month's complaints
   const lastMonth = await prisma.complaintRecord.count({
     where: {
+      ...baseWhere,
       feedbackDate: {
         gte: startOfLastMonth,
         lte: endOfLastMonth
@@ -29,20 +38,20 @@ export default defineEventHandler(async (event) => {
 
   // By status
   const pending = await prisma.complaintRecord.count({
-    where: { closureStatus: 'pending' }
+    where: { ...baseWhere, closureStatus: 'pending' }
   })
 
   const processing = await prisma.complaintRecord.count({
-    where: { closureStatus: 'processing' }
+    where: { ...baseWhere, closureStatus: 'processing' }
   })
 
   const closed = await prisma.complaintRecord.count({
-    where: { closureStatus: 'closed' }
+    where: { ...baseWhere, closureStatus: 'closed' }
   })
 
   // Repeated issues
   const repeatedIssues = await prisma.complaintRecord.count({
-    where: { repeatedIssue: true }
+    where: { ...baseWhere, repeatedIssue: true }
   })
 
   // Calculate month-over-month change

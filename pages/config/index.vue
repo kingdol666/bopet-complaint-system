@@ -116,10 +116,10 @@ const message = useMessage()
 const dialog = useDialog()
 
 // Check admin access
-if (!authStore.isAdmin) {
+if (!authStore.isSuperAdmin) {
   throw createError({
     statusCode: 403,
-    statusMessage: '需要管理员权限'
+    statusMessage: '需要超级管理员权限'
   })
 }
 

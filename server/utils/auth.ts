@@ -19,6 +19,7 @@ export interface SessionUser {
   username: string
   name: string
   role: string
+  departmentIds: number[]
 }
 
 let devJwtSecret: string | null = null
@@ -69,13 +70,21 @@ function signaturesMatch(expected: string, actual: string): boolean {
 }
 
 function extractBearerToken(event: H3Event): string | null {
+  // 1. Try Authorization header first
   const authHeader = getHeader(event, 'authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return null
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.slice(7).trim()
+    if (token) return token
   }
 
-  const token = authHeader.slice(7).trim()
-  return token || null
+  // 2. Fallback to cookie (for browser-initiated requests like $fetch, window.open)
+  const cookieHeader = getHeader(event, 'cookie') || ''
+  const match = cookieHeader.match(/(?:^|;\s*)auth_token=([^;]*)/)
+  if (match?.[1]) {
+    return match[1]
+  }
+
+  return null
 }
 
 export function hashPassword(password: string): string {
@@ -129,9 +138,26 @@ export const loginSchema = z.object({
   password: z.string().min(1, '密码不能为空')
 })
 
+// ==================== 权限判断工具 ====================
+
+export function isSuperAdmin(user: SessionUser | null): boolean {
+  return user?.role === 'superadmin'
+}
+
 export function isAdmin(user: SessionUser | null): boolean {
   return user?.role === 'admin'
 }
+
+export function isNormalUser(user: SessionUser | null): boolean {
+  return user?.role === 'normal'
+}
+
+/** 是否拥有写权限（superadmin 或 admin） */
+export function canWrite(user: SessionUser | null): boolean {
+  return user?.role === 'superadmin' || user?.role === 'admin'
+}
+
+// ==================== 获取用户（含部门） ====================
 
 export async function getOptionalSessionUser(event: H3Event): Promise<SessionUser | null> {
   const token = extractBearerToken(event)
@@ -151,7 +177,10 @@ export async function getOptionalSessionUser(event: H3Event): Promise<SessionUse
       username: true,
       name: true,
       role: true,
-      enabled: true
+      enabled: true,
+      departments: {
+        select: { departmentId: true }
+      }
     }
   })
 
@@ -163,7 +192,8 @@ export async function getOptionalSessionUser(event: H3Event): Promise<SessionUse
     id: user.id,
     username: user.username,
     name: user.name,
-    role: user.role
+    role: user.role,
+    departmentIds: user.departments.map(d => d.departmentId)
   }
 }
 
@@ -180,15 +210,74 @@ export async function requireSessionUser(event: H3Event): Promise<SessionUser> {
   return user
 }
 
-export async function requireAdminUser(event: H3Event): Promise<SessionUser> {
+/** 要求 superadmin 权限 */
+export async function requireSuperAdminUser(event: H3Event): Promise<SessionUser> {
   const user = await requireSessionUser(event)
 
-  if (!isAdmin(user)) {
+  if (!isSuperAdmin(user)) {
     throw createError({
       statusCode: 403,
-      statusMessage: '需要管理员权限'
+      statusMessage: '需要超级管理员权限'
     })
   }
 
   return user
+}
+
+/** 要求写权限（superadmin 或 admin） */
+export async function requireWritePermission(event: H3Event): Promise<SessionUser> {
+  const user = await requireSessionUser(event)
+
+  if (!canWrite(user)) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: '您没有操作权限，仅可查看'
+    })
+  }
+
+  return user
+}
+
+// ==================== 部门过滤工具 ====================
+
+/**
+ * 获取用户的可见部门 ID 列表。
+ * superadmin 返回 null 表示不做部门过滤（可看全部）。
+ */
+export function getVisibleDepartmentIds(user: SessionUser): number[] | null {
+  if (isSuperAdmin(user)) {
+    return null // 不过滤，可看全部
+  }
+  return user.departmentIds
+}
+
+/**
+ * 构建部门过滤的 where 条件。
+ * superadmin 不加过滤条件，admin/normal 只能看自己部门的数据。
+ * 字段名默认为 responsibleDeptId（客诉记录的责任部门）。
+ */
+export function buildDepartmentFilter(user: SessionUser, fieldName = 'responsibleDeptId'): Record<string, any> {
+  const deptIds = getVisibleDepartmentIds(user)
+  if (deptIds === null) {
+    return {}
+  }
+  if (deptIds.length === 0) {
+    // 没有分配部门的用户看不到任何数据
+    return { [fieldName]: { in: [-1] } }
+  }
+  return { [fieldName]: { in: deptIds } }
+}
+
+/**
+ * 检查用户是否有权操作指定部门的数据。
+ * superadmin 有全部权限。
+ */
+export function canAccessDepartment(user: SessionUser, departmentId: number | null): boolean {
+  if (isSuperAdmin(user)) {
+    return true
+  }
+  if (!departmentId) {
+    return false
+  }
+  return user.departmentIds.includes(departmentId)
 }
