@@ -119,11 +119,11 @@ npx vercel deploy --prod
 
 ## 默认账号
 
-| 角色 | 用户名 | 密码 |
-|------|--------|------|
-| 管理员 | admin | admin123 |
+| 角色   | 用户名   | 密码        |
+| ------ | -------- | ----------- |
+| 管理员 | admin    | admin123    |
 | 操作员 | operator | operator123 |
-| 质检员 | quality | quality123 |
+| 质检员 | quality  | quality123  |
 
 ## 项目结构
 
@@ -241,6 +241,9 @@ npm run dev
 # 构建
 npm run build
 
+# 生产环境运行（构建后使用）
+npm start
+
 # 生产预览
 npm run preview
 
@@ -300,14 +303,14 @@ npm run deploy:vercel
 
 #### 环境变量说明
 
-| 变量名 | 必填 | 说明 |
-|--------|------|------|
-| `PRISMA_DB_PROVIDER` | 是 | 数据库类型，`sqlite` 或 `postgresql` |
-| `DATABASE_URL` | SQLite时必填 | SQLite 数据库路径 |
-| `POSTGRES_PRISMA_URL` | PostgreSQL时必填 | PostgreSQL 连接地址（带连接池） |
-| `POSTGRES_URL_NON_POOLING` | PostgreSQL时必填 | PostgreSQL 直连地址 |
-| `JWT_SECRET` | 是 | JWT 密钥，建议使用随机字符串 |
-| `NUXT_PUBLIC_API_BASE` | 否 | API 基础路径，Vercel 部署时设为 `/api` |
+| 变量名                     | 必填             | 说明                                   |
+| -------------------------- | ---------------- | -------------------------------------- |
+| `PRISMA_DB_PROVIDER`       | 是               | 数据库类型，`sqlite` 或 `postgresql`   |
+| `DATABASE_URL`             | SQLite时必填     | SQLite 数据库路径                      |
+| `POSTGRES_PRISMA_URL`      | PostgreSQL时必填 | PostgreSQL 连接地址（带连接池）        |
+| `POSTGRES_URL_NON_POOLING` | PostgreSQL时必填 | PostgreSQL 直连地址                    |
+| `JWT_SECRET`               | 是               | JWT 密钥，建议使用随机字符串           |
+| `NUXT_PUBLIC_API_BASE`     | 否               | API 基础路径，Vercel 部署时设为 `/api` |
 
 ### Docker 部署
 
@@ -358,10 +361,13 @@ cd bopet-complaint-system
 npm install
 npm run build
 
-# 4. 使用 PM2 启动
-pm2 start npm --name "bopet" -- run preview
+# 4. 使用 PM2 启动生产服务
+pm2 start npm --name "bopet" -- start
 
-# 5. 配置 Nginx 反向代理
+# 5. 保存 PM2 进程列表（开机自启）
+pm2 save
+
+# 6. 配置 Nginx 反向代理
 ```
 
 Nginx 配置示例：
@@ -455,35 +461,35 @@ Vercel 生产环境至少需要配置这些变量：
 
 ### 客诉记录字段
 
-| 字段 | 说明 |
-|------|------|
-| feedbackDate | 反馈日期 |
-| productionTime | 生产时间 |
-| customerId | 客户 |
-| productModelId | 产品型号 |
-| thickness | 厚度 |
-| rollNo | 轴号 |
-| quantityInvolved | 涉及数量 |
-| productionLineId | 产线 |
-| shiftTeam | 班组 |
-| batchNo | 批次号 |
-| customerComplaintText | 客户投诉描述 |
-| internalComplaintName | 内部问题名称 |
-| problemCategoryId | 问题大类 |
-| problemSubcategoryId | 问题小类 |
-| severityLevelId | 严重等级 |
-| repeatedIssue | 是否重复发生 |
-| customerDemandId | 客户诉求 |
-| disposalResult | 处置结果 |
-| compensationTypeId | 赔偿方式 |
-| closureStatus | 闭环状态 |
-| responsibleDeptId | 责任部门 |
-| responsibleProcessId | 责任工序 |
-| rootCauseAnalysis | 原因分析 |
-| correctiveAction | 改善措施 |
-| lessonsLearned | 启示 |
-| reviewConclusion | 复盘结论 |
-| standardizedAction | 是否形成标准化措施 |
+| 字段                  | 说明               |
+| --------------------- | ------------------ |
+| feedbackDate          | 反馈日期           |
+| productionTime        | 生产时间           |
+| customerId            | 客户               |
+| productModelId        | 产品型号           |
+| thickness             | 厚度               |
+| rollNo                | 轴号               |
+| quantityInvolved      | 涉及数量           |
+| productionLineId      | 产线               |
+| shiftTeam             | 班组               |
+| batchNo               | 批次号             |
+| customerComplaintText | 客户投诉描述       |
+| internalComplaintName | 内部问题名称       |
+| problemCategoryId     | 问题大类           |
+| problemSubcategoryId  | 问题小类           |
+| severityLevelId       | 严重等级           |
+| repeatedIssue         | 是否重复发生       |
+| customerDemandId      | 客户诉求           |
+| disposalResult        | 处置结果           |
+| compensationTypeId    | 赔偿方式           |
+| closureStatus         | 闭环状态           |
+| responsibleDeptId     | 责任部门           |
+| responsibleProcessId  | 责任工序           |
+| rootCauseAnalysis     | 原因分析           |
+| correctiveAction      | 改善措施           |
+| lessonsLearned        | 启示               |
+| reviewConclusion      | 复盘结论           |
+| standardizedAction    | 是否形成标准化措施 |
 
 ### 闭环状态
 
