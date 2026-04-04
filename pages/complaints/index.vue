@@ -1,20 +1,24 @@
 <template>
-  <div>
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="page-title mb-0">客诉列表</h1>
-      <div class="flex space-x-3">
+  <div class="animate-fade-in">
+    <!-- Page header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div>
+        <h1 class="page-title">客诉列表</h1>
+        <p class="page-subtitle">管理和追踪所有客诉记录</p>
+      </div>
+      <div class="flex items-center gap-3">
         <n-button @click="handleExport" :loading="exporting">
           <template #icon>
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
           </template>
           导出CSV
         </n-button>
         <n-button v-if="authStore.canWrite" type="primary" @click="navigateTo('/complaints/new')">
           <template #icon>
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v16m8-8H4" />
             </svg>
           </template>
           新增客诉
@@ -24,7 +28,13 @@
 
     <!-- Filters -->
     <div class="card mb-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+      <div class="flex items-center gap-2 mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-corporate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+        </svg>
+        <span class="text-sm font-medium text-corporate-700">筛选条件</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <n-input
           v-model:value="filters.keyword"
           placeholder="搜索客诉编号/内容..."
@@ -33,8 +43,8 @@
           @keyup.enter="handleSearch"
         >
           <template #prefix>
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-industrial-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-corporate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </template>
         </n-input>
@@ -43,6 +53,7 @@
           v-model:value="dateRange"
           type="daterange"
           clearable
+          placeholder="选择日期范围"
           @update:value="handleDateChange"
         />
 
@@ -79,13 +90,20 @@
         />
       </div>
 
-      <div class="flex justify-end mt-4">
-        <n-button @click="handleReset">重置筛选</n-button>
+      <div class="flex justify-end mt-4 pt-4 border-t border-corporate-100">
+        <n-button quaternary @click="handleReset">
+          <template #icon>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </template>
+          重置筛选
+        </n-button>
       </div>
     </div>
 
     <!-- Table -->
-    <div class="card">
+    <div class="card overflow-hidden">
       <n-data-table
         :columns="columns"
         :data="tableData"
@@ -95,7 +113,10 @@
         @update:sorter="handleSort"
       />
 
-      <div class="flex justify-end mt-4">
+      <div class="flex items-center justify-between mt-4 pt-4 border-t border-corporate-100">
+        <p class="text-sm text-corporate-500">
+          共 <span class="font-medium text-corporate-900">{{ pagination.total }}</span> 条记录
+        </p>
         <n-pagination
           v-model:page="pagination.page"
           :page-count="pagination.totalPages"
@@ -115,7 +136,12 @@ import { h } from 'vue'
 import { NTag, NButton, NSpace } from 'naive-ui'
 import type { DataTableColumn } from 'naive-ui'
 import { useConfigStore } from '~/stores/config'
+import { useAuthStore } from '~/stores/auth'
 import dayjs from 'dayjs'
+
+definePageMeta({
+  title: '客诉列表'
+})
 
 const configStore = useConfigStore()
 const authStore = useAuthStore()
@@ -130,6 +156,15 @@ const exporting = ref(false)
 
 // Table data
 const tableData = ref<any[]>([])
+
+// Templates for display
+const templates = ref<any[]>([])
+const templateFilterOptions = computed(() =>
+  templates.value.map(t => ({
+    label: t.isDefault ? `${t.name}（默认）` : t.name,
+    value: t.id
+  }))
+)
 
 // Pagination
 const pagination = reactive({
@@ -154,7 +189,8 @@ const filters = reactive({
   productionLineId: null as number | null,
   productModelId: null as number | null,
   problemCategoryId: null as number | null,
-  closureStatus: null as string | null
+  closureStatus: null as string | null,
+  templateId: null as number | null
 })
 
 const dateRange = ref<[number, number] | null>(null)
@@ -170,15 +206,30 @@ const statusOptions = [
   { label: '已结案', value: 'closed' }
 ]
 
+// Resolve template names from templateIds JSON string
+function resolveTemplateNames(templateIds: string | null): string {
+  if (!templateIds) return '-'
+  try {
+    const ids: number[] = typeof templateIds === 'string' ? JSON.parse(templateIds) : templateIds
+    if (!ids || ids.length === 0) return '-'
+    const names = ids
+      .map(id => templates.value.find(t => t.id === id)?.name)
+      .filter(Boolean)
+    return names.length > 0 ? names.join('、') : '-'
+  } catch {
+    return '-'
+  }
+}
+
 // Table columns
 const columns: DataTableColumn<any>[] = [
   {
     title: '客诉编号',
     key: 'complaintNo',
-    width: 130,
+    width: 140,
     fixed: 'left',
     render: (row) => h('a', {
-      class: 'text-primary-600 hover:text-primary-800 cursor-pointer',
+      class: 'text-primary-600 hover:text-primary-800 cursor-pointer font-medium',
       onClick: () => router.push(`/complaints/${row.id}`)
     }, row.complaintNo)
   },
@@ -204,23 +255,17 @@ const columns: DataTableColumn<any>[] = [
     render: (row) => row.productModel?.name || '-'
   },
   {
-    title: '产线',
-    key: 'productionLine',
-    width: 80,
-    render: (row) => row.productionLine?.name || '-'
+    title: '表单模板',
+    key: 'template',
+    width: 120,
+    ellipsis: { tooltip: true },
+    render: (row) => resolveTemplateNames(row.templateIds)
   },
   {
     title: '问题大类',
     key: 'problemCategory',
     width: 100,
     render: (row) => row.problemCategory?.name || '-'
-  },
-  {
-    title: '内部问题名称',
-    key: 'internalComplaintName',
-    width: 160,
-    ellipsis: { tooltip: true },
-    render: (row) => row.internalComplaintName || '-'
   },
   {
     title: '严重等级',
@@ -244,7 +289,7 @@ const columns: DataTableColumn<any>[] = [
         processing: { label: '处理中', type: 'info' },
         closed: { label: '已结案', type: 'success' }
       }
-      const status = statusMap[row.closureStatus] || { label: row.closureStatus, type: 'default' }
+      const status = statusMap[row.closureStatus] || { label: row.closureStatus, type: 'default' as const }
       return h(NTag, { type: status.type, size: 'small' }, () => status.label)
     }
   },
@@ -286,6 +331,16 @@ const columns: DataTableColumn<any>[] = [
 // Load data
 onMounted(async () => {
   await configStore.loadConfig()
+
+  // Load templates for filter options and display
+  try {
+    const tplResp = await $fetch('/api/templates')
+    if (tplResp.success) {
+      templates.value = tplResp.data
+    }
+  } catch (e) {
+    console.error('Failed to load templates:', e)
+  }
 
   // Parse query params
   if (route.query.closureStatus) {
@@ -354,6 +409,7 @@ function handleReset() {
   filters.productModelId = null
   filters.problemCategoryId = null
   filters.closureStatus = null
+  filters.templateId = null
   dateRange.value = null
   handleSearch()
 }

@@ -1,16 +1,20 @@
 <template>
-  <div>
-    <h1 class="page-title">系统配置</h1>
+  <div class="animate-fade-in">
+    <!-- Page header -->
+    <div class="mb-6">
+      <h1 class="page-title">系统配置</h1>
+      <p class="page-subtitle">管理基础数据配置项</p>
+    </div>
 
-    <n-tabs v-model:value="activeTab" type="line" animated>
+    <n-tabs v-model:value="activeTab" type="line" animated class="card-tabs">
       <n-tab-pane v-for="item in configTabs" :key="item.key" :name="item.key" :tab="item.label">
-        <div class="mt-4">
+        <div class="pt-4">
           <!-- Toolbar -->
           <div class="flex justify-end mb-4">
             <n-button type="primary" @click="handleAdd(item.key)">
               <template #icon>
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v16m8-8H4" />
                 </svg>
               </template>
               新增
@@ -18,12 +22,14 @@
           </div>
 
           <!-- Table -->
-          <n-data-table
-            :columns="getTableColumns(item.key)"
-            :data="getTableData(item.key)"
-            :loading="loading"
-            :row-key="(row: any) => row.id"
-          />
+          <div class="card p-0">
+            <n-data-table
+              :columns="getTableColumns(item.key)"
+              :data="getTableData(item.key)"
+              :loading="loading"
+              :row-key="(row: any) => row.id"
+            />
+          </div>
         </div>
       </n-tab-pane>
     </n-tabs>
@@ -94,7 +100,7 @@
       </n-form>
 
       <template #footer>
-        <div class="flex justify-end space-x-3">
+        <div class="flex justify-end gap-3">
           <n-button @click="modalVisible = false">取消</n-button>
           <n-button type="primary" :loading="submitting" @click="handleSubmit">
             保存
@@ -240,7 +246,8 @@ function getTableColumns(type: string): DataTableColumn<any>[] {
       width: 80,
       render: (row) => h(NTag, {
         type: row.enabled ? 'success' : 'default',
-        size: 'small'
+        size: 'small',
+        round: true
       }, () => row.enabled ? '启用' : '禁用')
     },
     {

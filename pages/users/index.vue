@@ -1,11 +1,15 @@
 <template>
-  <div>
+  <div class="animate-fade-in">
+    <!-- Page header -->
     <div class="flex items-center justify-between mb-6">
-      <h1 class="page-title mb-0">用户管理</h1>
+      <div>
+        <h1 class="page-title">用户管理</h1>
+        <p class="page-subtitle">管理系统用户和权限</p>
+      </div>
       <n-button type="primary" @click="openCreateModal">
         <template #icon>
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v16m8-8H4" />
           </svg>
         </template>
         新增用户
@@ -21,7 +25,10 @@
         :row-key="(row: any) => row.id"
       />
 
-      <div class="flex justify-end mt-4">
+      <div class="flex items-center justify-between mt-4 pt-4 border-t border-corporate-100">
+        <p class="text-sm text-corporate-500">
+          共 <span class="font-medium text-corporate-900">{{ pagination.total }}</span> 条记录
+        </p>
         <n-pagination
           v-model:page="pagination.page"
           :page-count="pagination.totalPages"
@@ -38,8 +45,7 @@
     <n-modal
       v-model:show="showModal"
       :title="editingUser ? '编辑用户' : '新增用户'"
-      preset="dialog"
-      :show-icon="false"
+      preset="card"
       style="width: 560px"
     >
       <n-form ref="formRef" :model="formData" :rules="formRules" label-placement="left" label-width="80" class="mt-4">
@@ -68,11 +74,13 @@
         </n-form-item>
       </n-form>
 
-      <template #action>
-        <n-button @click="showModal = false">取消</n-button>
-        <n-button type="primary" :loading="submitting" @click="handleSubmit">
-          {{ editingUser ? '保存' : '创建' }}
-        </n-button>
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <n-button @click="showModal = false">取消</n-button>
+          <n-button type="primary" :loading="submitting" @click="handleSubmit">
+            {{ editingUser ? '保存' : '创建' }}
+          </n-button>
+        </div>
       </template>
     </n-modal>
   </div>
@@ -157,16 +165,16 @@ const columns: DataTableColumn<any>[] = [
         normal: { label: '普通用户', type: 'info' }
       }
       const role = map[row.role] || { label: row.role, type: 'default' }
-      return h(NTag, { type: role.type, size: 'small' }, () => role.label)
+      return h(NTag, { type: role.type, size: 'small', round: true }, () => role.label)
     }
   },
   {
     title: '所属部门',
     key: 'departments',
     render: (row) => {
-      if (!row.departments?.length) return h('span', { class: 'text-gray-400' }, '未分配')
+      if (!row.departments?.length) return h('span', { class: 'text-corporate-400' }, '未分配')
       return h(NSpace, { size: 'small' }, () =>
-        row.departments.map((d: any) => h(NTag, { size: 'small', type: 'success' }, () => d.name))
+        row.departments.map((d: any) => h(NTag, { size: 'small', type: 'success', round: true }, () => d.name))
       )
     }
   },
@@ -176,7 +184,8 @@ const columns: DataTableColumn<any>[] = [
     width: 80,
     render: (row) => h(NTag, {
       type: row.enabled ? 'success' : 'default',
-      size: 'small'
+      size: 'small',
+      round: true
     }, () => row.enabled ? '启用' : '禁用')
   },
   {
@@ -201,9 +210,8 @@ const columns: DataTableColumn<any>[] = [
   }
 ]
 
-onMounted(async () => {
-  await configStore.loadConfig()
-  await loadData()
+onMounted(() => {
+  loadData()
 })
 
 async function loadData() {
@@ -216,74 +224,69 @@ async function loadData() {
       },
       headers: authStore.getAuthHeaders()
     })
-
     if (response.success) {
       tableData.value = response.data.records
       pagination.total = response.data.pagination.total
       pagination.totalPages = response.data.pagination.totalPages
     }
-  } catch {
+  } catch (e) {
     message.error('加载用户列表失败')
   } finally {
     loading.value = false
   }
 }
 
-function handlePageSizeChange(pageSize: number) {
-  pagination.pageSize = pageSize
+function handlePageSizeChange(size: number) {
+  pagination.pageSize = size
   pagination.page = 1
   loadData()
 }
 
-function resetForm() {
+function openCreateModal() {
+  editingUser.value = null
   formData.username = ''
   formData.name = ''
   formData.password = ''
   formData.role = 'normal'
   formData.enabled = true
   formData.departmentIds = []
-}
-
-function openCreateModal() {
-  editingUser.value = null
-  resetForm()
   showModal.value = true
 }
 
-function openEditModal(row: any) {
-  editingUser.value = row
-  formData.username = row.username
-  formData.name = row.name
+function openEditModal(user: any) {
+  editingUser.value = user
+  formData.username = user.username
+  formData.name = user.name
   formData.password = ''
-  formData.role = row.role
-  formData.enabled = row.enabled
-  formData.departmentIds = row.departments?.map((d: any) => d.id) || []
+  formData.role = user.role
+  formData.enabled = user.enabled
+  formData.departmentIds = user.departments?.map((d: any) => d.id) || []
   showModal.value = true
 }
 
 async function handleSubmit() {
+  try {
+    await formRef.value?.validate()
+  } catch {
+    return
+  }
+
   submitting.value = true
   try {
     if (editingUser.value) {
-      // Update
-      const updateData: any = {
-        name: formData.name,
-        role: formData.role,
-        departmentIds: formData.departmentIds,
-        enabled: formData.enabled
-      }
-      if (formData.password) {
-        updateData.password = formData.password
-      }
-
       await $fetch(`/api/users/${editingUser.value.id}`, {
         method: 'PUT',
-        body: updateData,
+        body: {
+          name: formData.name,
+          password: formData.password || undefined,
+          role: formData.role,
+          enabled: formData.enabled,
+          departmentIds: formData.departmentIds
+        },
         headers: authStore.getAuthHeaders()
       })
       message.success('用户更新成功')
     } else {
-      // Create
       await $fetch('/api/users', {
         method: 'POST',
         body: {
@@ -297,32 +300,31 @@ async function handleSubmit() {
       })
       message.success('用户创建成功')
     }
-
     showModal.value = false
-    await loadData()
-  } catch (e: any) {
-    message.error(e.data?.statusMessage || '操作失败')
+    loadData()
+  } catch (error: any) {
+    message.error(error.data?.statusMessage || '操作失败')
   } finally {
     submitting.value = false
   }
 }
 
-function handleDelete(row: any) {
+function handleDelete(user: any) {
   dialog.warning({
     title: '确认删除',
-    content: `确定要删除用户 "${row.name}" 吗？此操作不可撤销。`,
-    positiveText: '删除',
+    content: `确定要删除用户"${user.name}"吗？`,
+    positiveText: '确定',
     negativeText: '取消',
     onPositiveClick: async () => {
       try {
-        await $fetch(`/api/users/${row.id}`, {
+        await $fetch(`/api/users/${user.id}`, {
           method: 'DELETE',
           headers: authStore.getAuthHeaders()
         })
         message.success('删除成功')
-        await loadData()
-      } catch {
-        message.error('删除失败')
+        loadData()
+      } catch (error: any) {
+        message.error(error.data?.statusMessage || '删除失败')
       }
     }
   })

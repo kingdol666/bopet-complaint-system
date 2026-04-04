@@ -1,11 +1,15 @@
 <template>
-  <div>
+  <div class="animate-fade-in">
+    <!-- Page header -->
     <div class="flex items-center justify-between mb-6">
-      <h1 class="page-title mb-0">问题映射字典</h1>
+      <div>
+        <h1 class="page-title">问题映射字典</h1>
+        <p class="page-subtitle">管理客户表述与内部问题的映射关系</p>
+      </div>
       <n-button type="primary" @click="handleAdd">
         <template #icon>
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v16m8-8H4" />
           </svg>
         </template>
         新增映射
@@ -14,35 +18,50 @@
 
     <!-- Filters -->
     <div class="card mb-6">
-      <div class="flex flex-wrap gap-4">
-        <n-input
-          v-model:value="filters.keyword"
-          placeholder="搜索客户表述/关键词/内部名称..."
-          clearable
-          class="w-64"
-          @keyup.enter="handleSearch"
-        />
+      <div class="flex flex-wrap gap-4 items-end">
+        <div class="flex-1 min-w-[200px]">
+          <label class="block text-xs font-medium text-corporate-500 mb-1.5">搜索</label>
+          <n-input
+            v-model:value="filters.keyword"
+            placeholder="搜索客户表述/关键词/内部名称..."
+            clearable
+            @keyup.enter="handleSearch"
+          />
+        </div>
 
-        <n-select
-          v-model:value="filters.problemCategoryId"
-          :options="problemCategoryOptionsWithAll"
-          placeholder="问题大类"
-          clearable
-          class="w-48"
-          @update:value="handleSearch"
-        />
+        <div class="w-48">
+          <label class="block text-xs font-medium text-corporate-500 mb-1.5">问题大类</label>
+          <n-select
+            v-model:value="filters.problemCategoryId"
+            :options="problemCategoryOptionsWithAll"
+            placeholder="问题大类"
+            clearable
+            @update:value="handleSearch"
+          />
+        </div>
 
-        <n-select
-          v-model:value="filters.enabled"
-          :options="enabledOptions"
-          placeholder="状态"
-          clearable
-          class="w-32"
-          @update:value="handleSearch"
-        />
+        <div class="w-32">
+          <label class="block text-xs font-medium text-corporate-500 mb-1.5">状态</label>
+          <n-select
+            v-model:value="filters.enabled"
+            :options="enabledOptions"
+            placeholder="状态"
+            clearable
+            @update:value="handleSearch"
+          />
+        </div>
 
-        <n-button @click="handleSearch">搜索</n-button>
-        <n-button @click="handleReset">重置</n-button>
+        <div class="flex gap-2">
+          <n-button type="primary" @click="handleSearch">
+            <template #icon>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </template>
+            搜索
+          </n-button>
+          <n-button @click="handleReset">重置</n-button>
+        </div>
       </div>
     </div>
 
@@ -56,12 +75,18 @@
         :row-key="(row: any) => row.id"
       />
 
-      <div class="flex justify-end mt-4">
+      <div class="flex items-center justify-between mt-4 pt-4 border-t border-corporate-100">
+        <p class="text-sm text-corporate-500">
+          共 <span class="font-medium text-corporate-900">{{ pagination.total }}</span> 条记录
+        </p>
         <n-pagination
           v-model:page="pagination.page"
           :page-count="pagination.totalPages"
           :page-size="pagination.pageSize"
+          show-size-picker
+          :page-sizes="[10, 20, 50]"
           @update:page="loadData"
+          @update:page-size="handlePageSizeChange"
         />
       </div>
     </div>
@@ -106,7 +131,7 @@
       </n-form>
 
       <template #footer>
-        <div class="flex justify-end space-x-3">
+        <div class="flex justify-end gap-3">
           <n-button @click="modalVisible = false">取消</n-button>
           <n-button type="primary" :loading="submitting" @click="handleSubmit">
             保存
@@ -206,13 +231,17 @@ const columns: DataTableColumn<any>[] = [
     title: '问题大类',
     key: 'problemCategory',
     width: 120,
-    render: (row) => row.problemCategory?.name || '-'
+    render: (row) => row.problemCategory?.name
+      ? h(NTag, { type: 'info', size: 'small', round: true }, () => row.problemCategory.name)
+      : h('span', { class: 'text-corporate-400' }, '-')
   },
   {
     title: '问题小类',
     key: 'problemSubcategory',
     width: 120,
-    render: (row) => row.problemSubcategory?.name || '-'
+    render: (row) => row.problemSubcategory?.name
+      ? h(NTag, { type: 'success', size: 'small', round: true }, () => row.problemSubcategory.name)
+      : h('span', { class: 'text-corporate-400' }, '-')
   },
   {
     title: '状态',
@@ -280,6 +309,12 @@ async function loadData() {
   } finally {
     loading.value = false
   }
+}
+
+function handlePageSizeChange(size: number) {
+  pagination.pageSize = size
+  pagination.page = 1
+  loadData()
 }
 
 function handleSearch() {

@@ -34,7 +34,9 @@ const createSchema = z.object({
   lessonsLearned: z.string().optional().nullable(),
   reviewConclusion: z.string().optional().nullable(),
   standardizedAction: z.boolean().default(false),
-  remark: z.string().optional().nullable()
+  remark: z.string().optional().nullable(),
+  templateIds: z.array(z.number().int()).optional().nullable(),
+  templateData: z.record(z.any()).optional().nullable()
 })
 
 const complaintInclude = {
@@ -130,6 +132,8 @@ export default defineEventHandler(async (event) => {
         reviewConclusion: data.reviewConclusion,
         standardizedAction: data.standardizedAction,
         remark: data.remark,
+        templateIds: data.templateIds ? JSON.stringify(data.templateIds) : null,
+        templateData: data.templateData ? JSON.stringify(data.templateData) : null,
         createdById: currentUser.id,
         updatedById: currentUser.id
       }

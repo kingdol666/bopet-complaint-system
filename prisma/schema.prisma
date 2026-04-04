@@ -26,6 +26,7 @@ model User {
   updatedComplaints ComplaintRecord[]      @relation("UpdatedBy")
   operationLogs     OperationLog[]
   departments       UserDepartment[]
+  templates         FormTemplate[]
 
   @@map("users")
 }
@@ -205,6 +206,7 @@ model ResponsibleDepartment {
   complaints     ComplaintRecord[]
   processes      ResponsibleProcess[]
   userDepartments UserDepartment[]
+  formTemplates  FormTemplate[]
 
   @@index([enabled, sortOrder])
   @@map("responsible_departments")
@@ -310,6 +312,10 @@ model ComplaintRecord {
   updatedBy               User?    @relation("UpdatedBy", fields: [updatedById], references: [id])
   remark                  String? // 备注
 
+  // 表单模板（支持多个）
+  templateIds             String?  // JSON 数组: "[1,2,3]" 关联的模板ID列表
+  templateData            String?  // 自定义字段值 JSON
+
   @@index([feedbackDate])
   @@index([customerId])
   @@index([productModelId])
@@ -337,4 +343,46 @@ model OperationLog {
   @@index([module, action])
   @@index([createdAt])
   @@map("operation_logs")
+}
+
+// ==================== 表单模板表 ====================
+model FormTemplate {
+  id           Int       @id @default(autoincrement())
+  name         String
+  description  String?
+  departmentId Int?      // null = 全局模板，所有部门可用
+  createdById  Int
+  enabled      Boolean   @default(true)
+  isDefault    Boolean   @default(false) // 是否为系统默认模板
+  sortOrder    Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  department   ResponsibleDepartment? @relation(fields: [departmentId], references: [id])
+  createdBy    User                   @relation(fields: [createdById], references: [id])
+  fields       FormTemplateField[]
+
+  @@index([departmentId, enabled, sortOrder])
+  @@map("form_templates")
+}
+
+// ==================== 表单模板字段表 ====================
+model FormTemplateField {
+  id           Int    @id @default(autoincrement())
+  templateId   Int
+  fieldKey     String   // 映射到 ComplaintRecord 列名或自定义键名
+  fieldLabel   String   // 显示标签
+  fieldType    String   // text, textarea, number, select, date, switch, select-config
+  required     Boolean  @default(false)
+  sortOrder    Int      @default(0)
+  options      String?  // select 类型选项 JSON: '["选项1","选项2"]'
+  configType   String?  // select-config 时指定配置源
+  defaultValue String?
+  placeholder  String?
+
+  template     FormTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, fieldKey])
+  @@index([templateId, sortOrder])
+  @@map("form_template_fields")
 }

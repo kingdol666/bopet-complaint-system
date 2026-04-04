@@ -1,105 +1,60 @@
 <template>
-  <div class="relative min-h-screen overflow-hidden">
-    <div class="pointer-events-none absolute inset-0 overflow-hidden">
-      <div class="absolute -left-16 top-0 h-72 w-72 rounded-full bg-sky-300/35 blur-3xl" />
-      <div class="absolute right-[-6rem] top-20 h-80 w-80 rounded-full bg-cyan-200/30 blur-3xl" />
-      <div class="absolute bottom-[-8rem] left-1/3 h-96 w-96 rounded-full bg-indigo-200/25 blur-3xl" />
-    </div>
-
+  <div class="min-h-screen bg-corporate-50">
+    <!-- Mobile overlay -->
     <div
       v-if="isMobile && mobileSidebarOpen"
-      class="fixed inset-0 z-40 bg-slate-950/36 backdrop-blur-sm lg:hidden"
+      class="fixed inset-0 z-40 bg-corporate-900/50 backdrop-blur-sm lg:hidden"
       @click="closeMobileSidebar"
     />
 
     <div
-      class="relative min-h-screen transition-[grid-template-columns] duration-300 ease-out lg:grid"
-      :style="layoutStyle"
+      class="flex min-h-screen transition-all duration-300"
+      :class="isMobile ? 'flex-col' : ''"
     >
+      <!-- Sidebar -->
       <aside
-        class="fixed inset-y-0 left-0 z-50 w-[18rem] px-3 py-3 transition-[padding,transform] duration-300 ease-out lg:static lg:w-auto lg:py-4"
+        class="fixed inset-y-0 left-0 z-50 bg-white border-r border-corporate-200 transition-all duration-300 lg:static"
         :class="[
-          mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full',
-          'lg:translate-x-0',
-          isDesktopCollapsed ? 'lg:px-2' : 'lg:px-4'
+          isMobile ? (mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0',
+          isMobile ? 'w-64' : (sidebarCollapsed ? 'w-20' : 'w-64')
         ]"
       >
-        <div
-          class="glass-panel flex h-full flex-col rounded-[28px] pb-4 pt-3 transition-[padding] duration-300"
-          :class="isDesktopCollapsed ? 'px-2' : 'px-3'"
-        >
-          <div
-            class="flex items-center gap-3"
-            :class="isDesktopCollapsed ? 'justify-center' : 'justify-between'"
-          >
-            <div
-              class="flex min-w-0 items-center transition-[gap] duration-200"
-              :class="isDesktopCollapsed ? 'gap-0' : 'gap-3'"
-            >
-              <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 via-sky-400 to-cyan-300 text-base font-bold text-white shadow-lg shadow-primary-500/25">
-                BP
-              </div>
-              <div
-                class="min-w-0 overflow-hidden transition-all duration-200"
-                :class="isDesktopCollapsed ? 'max-w-0 opacity-0' : 'max-w-[10rem] opacity-100'"
-              >
-                <p class="text-[11px] uppercase tracking-[0.32em] text-industrial-500">
-                  Complaint Hub
-                </p>
-                <p class="truncate text-base font-semibold text-industrial-900">
-                  BOPET 客诉系统
-                </p>
-              </div>
+        <div class="flex h-full flex-col">
+          <!-- Logo -->
+          <div class="flex items-center gap-3 px-6 py-5 border-b border-corporate-100">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-white font-bold shadow-lg shadow-primary-500/25">
+              BP
             </div>
-
-            <button
-              v-if="!isMobile && !isDesktopCollapsed"
-              class="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/60 bg-white/60 text-industrial-500 transition-all hover:-translate-y-0.5 hover:bg-white/85 hover:text-industrial-900"
-              :aria-label="sidebarCollapsed ? '展开侧边栏' : '折叠侧边栏'"
-              @click="toggleSidebar"
+            <div
+              class="overflow-hidden transition-all duration-300"
+              :class="sidebarCollapsed && !isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="1.8"
-                  :d="sidebarCollapsed ? 'M9 5l7 7-7 7' : 'M15 19l-7-7 7-7'"
-                />
-              </svg>
-            </button>
+              <p class="text-xs text-corporate-400 uppercase tracking-wider">Complaint Hub</p>
+              <p class="text-sm font-semibold text-corporate-900">BOPET客诉系统</p>
+            </div>
           </div>
 
-          <div
-            class="mt-6 overflow-hidden rounded-[26px] text-white transition-all duration-200"
-            :class="isDesktopCollapsed ? 'max-h-0 opacity-0 mt-0' : 'max-h-48 opacity-100 glass-panel-strong p-5'"
-          >
-            <p class="text-xs uppercase tracking-[0.3em] text-slate-300">
-              一个客诉系统app
-            </p>
-          </div>
-
-          <nav
-            class="mt-6 flex-1 space-y-2 overflow-y-auto transition-[padding] duration-200"
-            :class="isDesktopCollapsed ? 'pr-0' : 'pr-1'"
-          >
+          <!-- Navigation -->
+          <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1">
             <NuxtLink
               v-for="item in menuItems"
               :key="item.path"
               :to="item.path"
-              :title="isDesktopCollapsed ? item.label : undefined"
-              class="group flex items-center rounded-2xl py-3 transition-all duration-200"
+              :title="sidebarCollapsed && !isMobile ? item.label : undefined"
+              class="group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200"
               :class="[
-                isDesktopCollapsed ? 'justify-center gap-0 px-0' : 'gap-3 px-3',
                 isMenuItemActive(item)
-                  ? 'bg-white/78 text-industrial-900 shadow-[0_14px_30px_rgba(148,163,184,0.22)] ring-1 ring-white/70'
-                  : 'text-industrial-600 hover:bg-white/55 hover:text-industrial-900'
+                  ? 'bg-primary-50 text-primary-700'
+                  : 'text-corporate-600 hover:bg-corporate-100 hover:text-corporate-900',
+                sidebarCollapsed && !isMobile ? 'justify-center' : ''
               ]"
             >
               <span
-                class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition-all duration-200"
+                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-all duration-200"
                 :class="isMenuItemActive(item)
-                  ? 'bg-gradient-to-br from-primary-500 via-sky-400 to-cyan-300 text-white shadow-lg shadow-primary-500/20'
-                  : 'bg-white/50 text-industrial-500 group-hover:bg-white/75 group-hover:text-primary-600'"
+                  ? 'bg-primary-500 text-white shadow-md shadow-primary-500/25'
+                  : 'bg-corporate-100 text-corporate-500 group-hover:bg-white group-hover:text-primary-600'
+                "
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
@@ -112,51 +67,34 @@
                   />
                 </svg>
               </span>
-
               <span
-                class="min-w-0 overflow-hidden text-sm font-medium transition-all duration-200"
-                :class="isDesktopCollapsed ? 'max-w-0 opacity-0' : 'max-w-[11rem] opacity-100'"
+                class="overflow-hidden whitespace-nowrap transition-all duration-300"
+                :class="sidebarCollapsed && !isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'"
               >
-                <span class="block truncate">{{ item.label }}</span>
-              </span>
-
-              <span
-                class="overflow-hidden text-industrial-300 transition-all duration-200"
-                :class="isDesktopCollapsed ? 'max-w-0 opacity-0' : 'ml-auto max-w-4 opacity-100'"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5l7 7-7 7" />
-                </svg>
+                {{ item.label }}
               </span>
             </NuxtLink>
           </nav>
 
-          <div
-            class="mt-4 rounded-[24px] border border-white/55 bg-white/58 shadow-[0_10px_30px_rgba(148,163,184,0.12)] transition-[padding] duration-200"
-            :class="isDesktopCollapsed ? 'p-2' : 'p-3'"
-          >
+          <!-- User section -->
+          <div class="p-3 border-t border-corporate-100">
             <div
-              class="flex items-center transition-[gap] duration-200"
-              :class="isDesktopCollapsed ? 'flex-col justify-center gap-2' : 'gap-3'"
+              class="flex items-center gap-3 p-3 rounded-xl bg-corporate-50"
+              :class="sidebarCollapsed && !isMobile ? 'justify-center' : ''"
             >
-              <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-white to-sky-50 text-sm font-semibold text-primary-700 shadow-inner shadow-white/90">
+              <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary-100 to-primary-50 text-primary-700 font-semibold border border-primary-200">
                 {{ userInitial }}
               </div>
-
               <div
-                class="min-w-0 flex-1 overflow-hidden transition-all duration-200"
-                :class="isDesktopCollapsed ? 'max-w-0 opacity-0' : 'max-w-[10rem] opacity-100'"
+                class="overflow-hidden transition-all duration-300"
+                :class="sidebarCollapsed && !isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'"
               >
-                <p class="truncate text-sm font-semibold text-industrial-900">
-                  {{ authStore.user?.name || '当前用户' }}
-                </p>
-                <p class="truncate text-xs text-industrial-500">
-                  {{ roleLabel }}
-                </p>
+                <p class="text-sm font-medium text-corporate-900 truncate">{{ authStore.user?.name || '当前用户' }}</p>
+                <p class="text-xs text-corporate-500">{{ roleLabel }}</p>
               </div>
-
               <button
-                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/60 bg-white/60 text-industrial-500 transition-all hover:-translate-y-0.5 hover:bg-white/85 hover:text-rose-500"
+                v-if="!sidebarCollapsed || isMobile"
+                class="ml-auto p-2 rounded-lg text-corporate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
                 title="退出登录"
                 @click="handleLogout"
               >
@@ -170,52 +108,58 @@
         </div>
       </aside>
 
-      <div class="relative min-w-0">
-        <div class="flex min-h-screen flex-col px-4 pb-6 pt-4 sm:px-5 lg:px-6 lg:pb-8 lg:pt-5">
-          <header class="glass-panel sticky top-4 z-30 mb-6 flex items-center justify-between rounded-[28px] px-4 py-3 sm:px-5">
-            <div class="flex min-w-0 items-center gap-3">
+      <!-- Main content -->
+      <div class="flex-1 flex flex-col min-w-0">
+        <!-- Header -->
+        <header class="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-corporate-200 px-4 sm:px-6 lg:px-8">
+          <div class="flex items-center justify-between h-16">
+            <div class="flex items-center gap-4">
               <button
-                class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/60 bg-white/68 text-industrial-600 transition-all hover:-translate-y-0.5 hover:bg-white/90 hover:text-industrial-900"
-                :aria-label="isMobile
-                  ? (mobileSidebarOpen ? '关闭导航' : '打开导航')
-                  : (sidebarCollapsed ? '展开侧边栏' : '折叠侧边栏')"
+                class="flex h-10 w-10 items-center justify-center rounded-lg text-corporate-500 hover:text-corporate-900 hover:bg-corporate-100 transition-colors lg:hidden"
                 @click="toggleSidebar"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7h16M4 12h16M4 17h16" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
 
-              <div class="min-w-0">
-                <p class="text-[11px] uppercase tracking-[0.3em] text-industrial-400">
-                  Operations Console
-                </p>
-                <h1 class="truncate text-lg font-semibold text-industrial-900">
-                  {{ currentPageTitle }}
-                </h1>
+              <button
+                v-if="!isMobile"
+                class="hidden lg:flex h-10 w-10 items-center justify-center rounded-lg text-corporate-500 hover:text-corporate-900 hover:bg-corporate-100 transition-colors"
+                @click="toggleSidebar"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+
+              <div>
+                <p class="text-xs text-corporate-400 uppercase tracking-wider">Operations Console</p>
+                <h1 class="text-lg font-semibold text-corporate-900">{{ currentPageTitle }}</h1>
               </div>
             </div>
 
-            <div class="flex items-center gap-3">
-              <div class="hidden rounded-2xl border border-white/55 bg-white/60 px-4 py-2 text-right shadow-inner shadow-white/80 sm:block">
-                <p class="text-[11px] uppercase tracking-[0.24em] text-industrial-400">
-                  Today
-                </p>
-                <p class="mt-0.5 text-sm font-medium text-industrial-700">
-                  {{ currentDate }}
-                </p>
+            <div class="flex items-center gap-4">
+              <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-corporate-50 text-sm text-corporate-600">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span>{{ currentDate }}</span>
               </div>
 
-              <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-white to-sky-50 text-sm font-semibold text-primary-700 shadow-inner shadow-white/90">
+              <div class="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary-100 to-primary-50 text-primary-700 font-semibold border border-primary-200">
                 {{ userInitial }}
               </div>
             </div>
-          </header>
+          </div>
+        </header>
 
-          <main class="page-shell flex-1">
+        <!-- Page content -->
+        <main class="flex-1 p-4 sm:p-6 lg:p-8">
+          <div class="page-shell">
             <slot />
-          </main>
-        </div>
+          </div>
+        </main>
       </div>
     </div>
   </div>
@@ -224,7 +168,7 @@
 <script setup lang="ts">
 import { useAuthStore } from '~/stores/auth'
 
-type MenuIcon = 'dashboard' | 'list' | 'add' | 'mapping' | 'chart' | 'config' | 'users'
+type MenuIcon = 'dashboard' | 'list' | 'add' | 'mapping' | 'chart' | 'config' | 'users' | 'template'
 
 interface MenuItem {
   path: string
@@ -276,6 +220,9 @@ const iconPaths: Record<MenuIcon, string[]> = {
   config: [
     'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z',
     'M15 12a3 3 0 11-6 0 3 3 0 016 0z'
+  ],
+  template: [
+    'M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z'
   ]
 }
 
@@ -291,6 +238,10 @@ const menuItems = computed<MenuItem[]>(() => {
   if (authStore.isSuperAdmin) {
     items.push({ path: '/users', label: '用户管理', icon: 'users' })
     items.push({ path: '/config', label: '系统配置', icon: 'config' })
+  }
+
+  if (authStore.canWrite) {
+    items.push({ path: '/templates', label: '表单模板', icon: 'template' })
   }
 
   return items
@@ -324,6 +275,7 @@ const roleLabel = computed(() => {
   }
   return map[authStore.user?.role || ''] || '未知'
 })
+
 const userInitial = computed(() => authStore.user?.name?.charAt(0)?.toUpperCase() || 'U')
 
 const currentDate = computed(() =>
@@ -333,14 +285,6 @@ const currentDate = computed(() =>
     weekday: 'long'
   }).format(new Date())
 )
-
-const isDesktopCollapsed = computed(() => !isMobile.value && sidebarCollapsed.value)
-
-const layoutStyle = computed(() => ({
-  gridTemplateColumns: isMobile.value
-    ? 'minmax(0, 1fr)'
-    : `${sidebarCollapsed.value ? '6rem' : '18rem'} minmax(0, 1fr)`
-}))
 
 const updateViewport = () => {
   isMobile.value = window.innerWidth < 1024

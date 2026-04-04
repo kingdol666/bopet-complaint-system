@@ -1,288 +1,81 @@
 <template>
-  <div>
-    <div class="flex items-center mb-6">
-      <n-button text @click="navigateTo('/complaints')" class="mr-4">
+  <div class="animate-fade-in">
+    <!-- Page header -->
+    <div class="flex items-center gap-4 mb-6">
+      <n-button text @click="navigateTo('/complaints')" class="hover:bg-corporate-100 rounded-lg p-2 transition-colors">
         <template #icon>
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-corporate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
         </template>
       </n-button>
-      <h1 class="page-title mb-0">新增客诉</h1>
+      <div>
+        <h1 class="page-title">新增客诉</h1>
+        <p class="page-subtitle">创建新的客诉记录</p>
+      </div>
     </div>
 
-    <n-form ref="formRef" :model="formData" :rules="rules" label-placement="left" label-width="120">
-      <!-- Basic info -->
+    <n-form ref="formRef" :model="templateData" label-placement="left" label-width="120">
+      <!-- Template selection -->
       <div class="card mb-6">
-        <h2 class="section-title">基础信息</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <n-form-item label="反馈日期" path="feedbackDate">
-            <n-date-picker v-model:value="formData.feedbackDate" type="date" class="w-full" />
-          </n-form-item>
-
-          <n-form-item label="生产时间" path="productionTime">
-            <n-date-picker v-model:value="formData.productionTime" type="date" class="w-full" clearable />
-          </n-form-item>
-
-          <n-form-item label="客户" path="customerId">
-            <n-select
-              v-model:value="formData.customerId"
-              :options="customerOptions"
-              placeholder="选择客户"
-              filterable
-              clearable
-            />
-          </n-form-item>
-
-          <n-form-item label="产品型号" path="productModelId">
-            <n-select
-              v-model:value="formData.productModelId"
-              :options="productModelOptions"
-              placeholder="选择产品型号"
-              filterable
-              clearable
-            />
-          </n-form-item>
-
-          <n-form-item label="厚度" path="thickness">
-            <n-input v-model:value="formData.thickness" placeholder="如：12μm" />
-          </n-form-item>
-
-          <n-form-item label="轴号" path="rollNo">
-            <n-input v-model:value="formData.rollNo" placeholder="轴号" />
-          </n-form-item>
-
-          <n-form-item label="涉及数量" path="quantityInvolved">
-            <n-input-number v-model:value="formData.quantityInvolved" placeholder="数量" class="w-full" :min="0" />
-          </n-form-item>
-
-          <n-form-item label="用途" path="application">
-            <n-input v-model:value="formData.application" placeholder="用途" />
-          </n-form-item>
-
-          <n-form-item label="产线" path="productionLineId">
-            <n-select
-              v-model:value="formData.productionLineId"
-              :options="productionLineOptions"
-              placeholder="选择产线"
-              clearable
-            />
-          </n-form-item>
-
-          <n-form-item label="班组" path="shiftTeam">
-            <n-input v-model:value="formData.shiftTeam" placeholder="班组" />
-          </n-form-item>
-
-          <n-form-item label="机台" path="machineNo">
-            <n-input v-model:value="formData.machineNo" placeholder="机台" />
-          </n-form-item>
-
-          <n-form-item label="批次号" path="batchNo">
-            <n-input v-model:value="formData.batchNo" placeholder="批次号" />
-          </n-form-item>
-        </div>
-      </div>
-
-      <!-- Complaint content -->
-      <div class="card mb-6">
-        <h2 class="section-title">客诉内容</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <n-form-item label="反馈内容" path="feedbackContent" class="lg:col-span-3">
-            <n-input
-              v-model:value="formData.feedbackContent"
-              type="textarea"
-              placeholder="客户反馈内容"
-              :rows="3"
-            />
-          </n-form-item>
-
-          <n-form-item label="客户投诉描述" path="customerComplaintText" class="lg:col-span-3">
-            <n-input
-              v-model:value="formData.customerComplaintText"
-              type="textarea"
-              placeholder="客户原始投诉描述"
-              :rows="2"
-              @blur="handleComplaintTextBlur"
-            />
-          </n-form-item>
-
-          <!-- Mapping suggestions -->
-          <div v-if="mappingSuggestions.length > 0" class="lg:col-span-3 mb-4">
-            <p class="text-sm text-industrial-600 mb-2">系统建议映射：</p>
-            <div class="flex flex-wrap gap-2">
-              <n-tag
-                v-for="suggestion in mappingSuggestions"
-                :key="suggestion.id"
-                :type="suggestion === selectedMapping ? 'primary' : 'default'"
-                style="cursor: pointer"
-                @click="applyMapping(suggestion)"
-              >
-                {{ suggestion.internalComplaintName }}
-                <span class="text-industrial-400 ml-1">({{ suggestion.problemCategory?.name }})</span>
-              </n-tag>
-            </div>
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+            </svg>
           </div>
-
-          <n-form-item label="内部问题名称" path="internalComplaintName">
-            <n-input v-model:value="formData.internalComplaintName" placeholder="内部标准问题名称" />
-          </n-form-item>
-
-          <n-form-item label="问题大类" path="problemCategoryId">
-            <n-select
-              v-model:value="formData.problemCategoryId"
-              :options="problemCategoryOptions"
-              placeholder="选择问题大类"
-              clearable
-              @update:value="handleCategoryChange"
-            />
-          </n-form-item>
-
-          <n-form-item label="问题小类" path="problemSubcategoryId">
-            <n-select
-              v-model:value="formData.problemSubcategoryId"
-              :options="filteredSubcategoryOptions"
-              placeholder="选择问题小类"
-              clearable
-              :disabled="!formData.problemCategoryId"
-            />
-          </n-form-item>
-
-          <n-form-item label="严重等级" path="severityLevelId">
-            <n-select
-              v-model:value="formData.severityLevelId"
-              :options="severityLevelOptions"
-              placeholder="选择严重等级"
-              clearable
-            />
-          </n-form-item>
-
-          <n-form-item label="是否重复" path="repeatedIssue">
-            <n-switch v-model:value="formData.repeatedIssue" />
-          </n-form-item>
+          <h2 class="section-title mb-0">表单模板</h2>
         </div>
+        <n-form-item label="选择模板" class="mb-0">
+          <n-select
+            v-model:value="selectedTemplateIds"
+            :options="templateOptions"
+            placeholder="选择一个或多个表单模板"
+            multiple
+            filterable
+          />
+        </n-form-item>
       </div>
 
-      <!-- Disposal -->
-      <div class="card mb-6">
-        <h2 class="section-title">诉求与处置</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <n-form-item label="客户诉求" path="customerDemandId">
-            <n-select
-              v-model:value="formData.customerDemandId"
-              :options="customerDemandOptions"
-              placeholder="选择客户诉求"
-              clearable
-            />
-          </n-form-item>
-
-          <n-form-item label="赔偿方式" path="compensationTypeId">
-            <n-select
-              v-model:value="formData.compensationTypeId"
-              :options="compensationTypeOptions"
-              placeholder="选择赔偿方式"
-              clearable
-            />
-          </n-form-item>
-
-          <n-form-item label="闭环状态" path="closureStatus">
-            <n-select
-              v-model:value="formData.closureStatus"
-              :options="statusOptions"
-              placeholder="选择状态"
-            />
-          </n-form-item>
-
-          <n-form-item label="责任部门" path="responsibleDeptId">
-            <n-select
-              v-model:value="formData.responsibleDeptId"
-              :options="responsibleDepartmentOptions"
-              placeholder="选择责任部门"
-              clearable
-              @update:value="handleDeptChange"
-            />
-          </n-form-item>
-
-          <n-form-item label="责任工序" path="responsibleProcessId">
-            <n-select
-              v-model:value="formData.responsibleProcessId"
-              :options="filteredProcessOptions"
-              placeholder="选择责任工序"
-              clearable
-              :disabled="!formData.responsibleDeptId"
-            />
-          </n-form-item>
-
-          <n-form-item label="处置结果" path="disposalResult" class="lg:col-span-3">
-            <n-input
-              v-model:value="formData.disposalResult"
-              type="textarea"
-              placeholder="本例客诉处置结果"
-              :rows="2"
-            />
-          </n-form-item>
+      <!-- Dynamic fields from templates -->
+      <div v-if="selectedTemplateIds.length > 0" class="card mb-6">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <h2 class="section-title mb-0">客诉表单</h2>
         </div>
+        <DynamicFormFields
+          v-model="templateData"
+          :template-ids="selectedTemplateIds"
+        />
       </div>
 
-      <!-- Analysis -->
-      <div class="card mb-6">
-        <h2 class="section-title">原因与改善</h2>
-        <div class="grid grid-cols-1 gap-4">
-          <n-form-item label="问题分析" path="rootCauseAnalysis">
-            <n-input
-              v-model:value="formData.rootCauseAnalysis"
-              type="textarea"
-              placeholder="问题原因分析"
-              :rows="3"
-            />
-          </n-form-item>
-
-          <n-form-item label="改善措施" path="correctiveAction">
-            <n-input
-              v-model:value="formData.correctiveAction"
-              type="textarea"
-              placeholder="改善或纠正措施"
-              :rows="3"
-            />
-          </n-form-item>
-
-          <n-form-item label="启示" path="lessonsLearned">
-            <n-input
-              v-model:value="formData.lessonsLearned"
-              type="textarea"
-              placeholder="经验教训/启示"
-              :rows="2"
-            />
-          </n-form-item>
-
-          <n-form-item label="复盘结论" path="reviewConclusion">
-            <n-input
-              v-model:value="formData.reviewConclusion"
-              type="textarea"
-              placeholder="复盘结论"
-              :rows="2"
-            />
-          </n-form-item>
-
-          <n-form-item label="标准化措施" path="standardizedAction">
-            <n-switch v-model:value="formData.standardizedAction" />
-            <span class="ml-2 text-sm text-industrial-500">是否形成标准化措施</span>
-          </n-form-item>
-
-          <n-form-item label="备注" path="remark">
-            <n-input
-              v-model:value="formData.remark"
-              type="textarea"
-              placeholder="备注信息"
-              :rows="2"
-            />
-          </n-form-item>
+      <!-- No template hint -->
+      <div v-else class="card mb-6">
+        <div class="text-center py-12">
+          <div class="w-16 h-16 rounded-2xl bg-corporate-50 flex items-center justify-center mx-auto mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-corporate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <p class="text-corporate-500">请先选择表单模板</p>
         </div>
       </div>
 
       <!-- Actions -->
-      <div class="flex justify-end space-x-4">
-        <n-button @click="navigateTo('/complaints')">取消</n-button>
-        <n-button type="primary" :loading="submitting" @click="handleSubmit">
+      <div class="flex justify-end gap-3">
+        <n-button size="large" @click="navigateTo('/complaints')">
+          取消
+        </n-button>
+        <n-button type="primary" size="large" :loading="submitting" @click="handleSubmit">
+          <template #icon>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5 13l4 4L19 7" />
+            </svg>
+          </template>
           提交
         </n-button>
       </div>
@@ -291,140 +84,84 @@
 </template>
 
 <script setup lang="ts">
-import { useConfigStore } from '~/stores/config'
 import { useAuthStore } from '~/stores/auth'
-import type { FormInst, FormRules } from 'naive-ui'
+import type { FormInst } from 'naive-ui'
 import dayjs from 'dayjs'
 
-const configStore = useConfigStore()
 const authStore = useAuthStore()
 const router = useRouter()
 const message = useMessage()
 
 const formRef = ref<FormInst | null>(null)
 const submitting = ref(false)
-const mappingSuggestions = ref<any[]>([])
-const selectedMapping = ref<any>(null)
+const selectedTemplateIds = ref<number[]>([])
+const templateData = ref<Record<string, any>>({})
+const templates = ref<any[]>([])
+const templateOptions = computed(() =>
+  templates.value.map(t => ({
+    label: t.isDefault ? `${t.name}（默认）` : t.name,
+    value: t.id
+  }))
+)
 
-// Form data
-const formData = reactive({
-  feedbackDate: Date.now(),
-  productionTime: null as number | null,
-  customerId: null as number | null,
-  productModelId: null as number | null,
-  thickness: '',
-  rollNo: '',
-  quantityInvolved: null as number | null,
-  application: '',
-  productionLineId: null as number | null,
-  shiftTeam: '',
-  machineNo: '',
-  batchNo: '',
-  feedbackContent: '',
-  customerComplaintText: '',
-  internalComplaintName: '',
-  problemCategoryId: null as number | null,
-  problemSubcategoryId: null as number | null,
-  severityLevelId: null as number | null,
-  repeatedIssue: false,
-  customerDemandId: null as number | null,
-  disposalResult: '',
-  compensationTypeId: null as number | null,
-  closureStatus: 'pending',
-  responsibleDeptId: null as number | null,
-  responsibleProcessId: null as number | null,
-  rootCauseAnalysis: '',
-  correctiveAction: '',
-  lessonsLearned: '',
-  reviewConclusion: '',
-  standardizedAction: false,
-  remark: ''
-})
+// Standard field keys that map directly to ComplaintRecord columns
+const STANDARD_FIELD_KEYS = new Set([
+  'feedbackDate', 'productionTime', 'customerId', 'productModelId', 'thickness',
+  'rollNo', 'quantityInvolved', 'application', 'productionLineId', 'shiftTeam',
+  'machineNo', 'batchNo', 'feedbackContent', 'customerComplaintText',
+  'internalComplaintName', 'problemCategoryId', 'problemSubcategoryId',
+  'severityLevelId', 'repeatedIssue', 'customerDemandId', 'disposalResult',
+  'compensationTypeId', 'closureStatus', 'responsibleDeptId',
+  'responsibleProcessId', 'rootCauseAnalysis', 'correctiveAction',
+  'lessonsLearned', 'reviewConclusion', 'standardizedAction', 'remark'
+])
 
-// Validation rules
-const rules: FormRules = {
-  feedbackDate: [
-    { type: 'number', required: true, message: '请选择反馈日期', trigger: 'blur' }
-  ]
+const DATE_FIELDS = new Set(['feedbackDate', 'productionTime'])
+
+function buildPayload(data: Record<string, any>) {
+  const standardPayload: Record<string, any> = {}
+  const customData: Record<string, any> = {}
+
+  for (const [key, value] of Object.entries(data)) {
+    if (STANDARD_FIELD_KEYS.has(key)) {
+      if (DATE_FIELDS.has(key)) {
+        standardPayload[key] = value ? dayjs(value).format('YYYY-MM-DD') : null
+      } else {
+        standardPayload[key] = value ?? null
+      }
+    } else {
+      customData[key] = value
+    }
+  }
+
+  return {
+    ...standardPayload,
+    templateIds: selectedTemplateIds.value.length > 0 ? selectedTemplateIds.value : null,
+    templateData: Object.keys(customData).length > 0 ? customData : null
+  }
 }
 
-// Options
-const customerOptions = computed(() => configStore.customerOptions)
-const productModelOptions = computed(() => configStore.productModelOptions)
-const productionLineOptions = computed(() => configStore.productionLineOptions)
-const problemCategoryOptions = computed(() => configStore.problemCategoryOptions)
-const severityLevelOptions = computed(() => configStore.severityLevelOptions)
-const customerDemandOptions = computed(() => configStore.customerDemandOptions)
-const compensationTypeOptions = computed(() => configStore.compensationTypeOptions)
-const responsibleDepartmentOptions = computed(() => configStore.responsibleDepartmentOptions)
-
-const statusOptions = [
-  { label: '待分析', value: 'pending' },
-  { label: '处理中', value: 'processing' },
-  { label: '已结案', value: 'closed' }
-]
-
-// Filtered options based on selections
-const filteredSubcategoryOptions = computed(() => {
-  if (!formData.problemCategoryId) return []
-  return configStore.problemSubcategoryOptions.filter(
-    (s: any) => s.categoryId === formData.problemCategoryId
-  )
-})
-
-const filteredProcessOptions = computed(() => {
-  if (!formData.responsibleDeptId) return []
-  return configStore.responsibleProcessOptions.filter(
-    (p: any) => p.departmentId === formData.responsibleDeptId
-  )
-})
-
-// Load config
 onMounted(async () => {
-  await configStore.loadConfig()
+  try {
+    const response = await $fetch('/api/templates')
+    if (response.success) {
+      templates.value = response.data
+      const defaultTemplate = response.data.find((t: any) => t.isDefault)
+      if (defaultTemplate) {
+        selectedTemplateIds.value = [defaultTemplate.id]
+      }
+    }
+  } catch (e) {
+    console.error('Failed to load templates:', e)
+  }
 })
 
-// Handle complaint text blur - get mapping suggestions
-async function handleComplaintTextBlur() {
-  if (!formData.customerComplaintText) {
-    mappingSuggestions.value = []
+async function handleSubmit() {
+  if (selectedTemplateIds.value.length === 0) {
+    message.error('请选择至少一个表单模板')
     return
   }
 
-  try {
-    const response = await $fetch('/api/mappings/suggest', {
-      method: 'POST',
-      body: { text: formData.customerComplaintText }
-    })
-
-    if (response.success) {
-      mappingSuggestions.value = response.data
-    }
-  } catch (e) {
-    console.error('Failed to get suggestions:', e)
-  }
-}
-
-// Apply mapping suggestion
-function applyMapping(suggestion: any) {
-  selectedMapping.value = suggestion
-  formData.internalComplaintName = suggestion.internalComplaintName
-  formData.problemCategoryId = suggestion.problemCategoryId
-  formData.problemSubcategoryId = suggestion.problemSubcategoryId
-}
-
-// Handle category change
-function handleCategoryChange() {
-  formData.problemSubcategoryId = null
-}
-
-// Handle department change
-function handleDeptChange() {
-  formData.responsibleProcessId = null
-}
-
-// Handle submit
-async function handleSubmit() {
   try {
     await formRef.value?.validate()
   } catch {
@@ -435,11 +172,7 @@ async function handleSubmit() {
   submitting.value = true
 
   try {
-    const payload = {
-      ...formData,
-      feedbackDate: dayjs(formData.feedbackDate).format('YYYY-MM-DD'),
-      productionTime: formData.productionTime ? dayjs(formData.productionTime).format('YYYY-MM-DD') : null
-    }
+    const payload = buildPayload(templateData.value)
 
     const response = await $fetch('/api/complaints', {
       method: 'POST',

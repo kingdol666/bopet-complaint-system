@@ -1,42 +1,91 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    './components/**/*.{js,vue,ts}',
-    './layouts/**/*.vue',
-    './pages/**/*.vue',
-    './plugins/**/*.{js,ts}',
-    './app.vue',
-    './error.vue'
+    "./components/**/*.{js,vue,ts}",
+    "./layouts/**/*.vue",
+    "./pages/**/*.vue",
+    "./plugins/**/*.{js,ts}",
+    "./app.vue",
+    "./error.vue",
   ],
   theme: {
     extend: {
       colors: {
         primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a'
+          50: "#f0f9ff",
+          100: "#e0f2fe",
+          200: "#bae6fd",
+          300: "#7dd3fc",
+          400: "#38bdf8",
+          500: "#0ea5e9",
+          600: "#0284c7",
+          700: "#0369a1",
+          800: "#075985",
+          900: "#0c4a6e",
         },
         industrial: {
-          50: '#f8fafc',
-          100: '#f1f5f9',
-          200: '#e2e8f0',
-          300: '#cbd5e1',
-          400: '#94a3b8',
-          500: '#64748b',
-          600: '#475569',
-          700: '#334155',
-          800: '#1e293b',
-          900: '#0f172a'
-        }
-      }
-    }
+          50: "#f8fafc",
+          100: "#f1f5f9",
+          200: "#e2e8f0",
+          300: "#cbd5e1",
+          400: "#94a3b8",
+          500: "#64748b",
+          600: "#475569",
+          700: "#334155",
+          800: "#1e293b",
+          900: "#0f172a",
+        },
+        corporate: {
+          50: "#f5f7fa",
+          100: "#e4e7ec",
+          200: "#d0d5dd",
+          300: "#98a2b3",
+          400: "#667085",
+          500: "#475467",
+          600: "#344054",
+          700: "#1d2939",
+          800: "#101828",
+          900: "#0d1117",
+        },
+        accent: {
+          blue: "#2563eb",
+          indigo: "#4f46e5",
+          purple: "#7c3aed",
+          teal: "#0d9488",
+          emerald: "#059669",
+          amber: "#d97706",
+          rose: "#e11d48",
+        },
+      },
+      fontFamily: {
+        sans: [
+          "Inter",
+          "system-ui",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "Roboto",
+          "PingFang SC",
+          "Microsoft YaHei",
+          "sans-serif",
+        ],
+        mono: ["JetBrains Mono", "Fira Code", "Consolas", "monospace"],
+      },
+      boxShadow: {
+        card: "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)",
+        "card-hover":
+          "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)",
+        elevated:
+          "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+        soft: "0 2px 8px rgba(0, 0, 0, 0.04)",
+        glow: "0 0 20px rgba(14, 165, 233, 0.15)",
+      },
+      borderRadius: {
+        xl: "12px",
+        "2xl": "16px",
+        "3xl": "20px",
+      },
+    },
   },
-  plugins: []
-}
+  plugins: [],
+};

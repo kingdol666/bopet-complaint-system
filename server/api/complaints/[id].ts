@@ -33,8 +33,12 @@ const updateSchema = z.object({
   lessonsLearned: z.string().nullable().optional(),
   reviewConclusion: z.string().nullable().optional(),
   standardizedAction: z.boolean().optional(),
-  remark: z.string().nullable().optional()
+  remark: z.string().nullable().optional(),
+  templateIds: z.array(z.number().int()).optional().nullable(),
+  templateData: z.record(z.any()).nullable().optional()
 })
+
+
 
 const complaintInclude = {
   customer: true,
@@ -129,6 +133,12 @@ export default defineEventHandler(async (event) => {
         where: { id },
         data: {
           ...data,
+          templateIds: data.templateIds !== undefined
+            ? JSON.stringify(data.templateIds)
+            : undefined,
+          templateData: data.templateData !== undefined
+            ? (data.templateData ? JSON.stringify(data.templateData) : null)
+            : undefined,
           updatedById: currentUser.id
         },
         include: complaintInclude

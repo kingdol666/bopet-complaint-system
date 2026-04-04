@@ -20,7 +20,8 @@ const querySchema = z.object({
   closureStatus: z.enum(['pending', 'processing', 'closed']).optional(),
   responsibleDeptId: z.coerce.number().int().optional(),
   severityLevelId: z.coerce.number().int().optional(),
-  repeatedIssue: booleanQueryParam
+  repeatedIssue: booleanQueryParam,
+  templateId: z.coerce.number().int().optional()
 })
 
 export default defineEventHandler(async (event) => {
@@ -73,6 +74,12 @@ export default defineEventHandler(async (event) => {
     if (params.responsibleDeptId) where.responsibleDeptId = params.responsibleDeptId
     if (params.severityLevelId) where.severityLevelId = params.severityLevelId
     if (params.repeatedIssue !== undefined) where.repeatedIssue = params.repeatedIssue
+
+    // Template filter: search templateIds JSON string for the given templateId
+    if (params.templateId) {
+      // SQLite: use LIKE to match the templateId in the JSON array
+      where.templateIds = { contains: String(params.templateId) }
+    }
 
     // Get total count
     const total = await prisma.complaintRecord.count({ where })
