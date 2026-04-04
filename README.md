@@ -242,6 +242,7 @@ npm run dev
 npm run build
 
 # 生产环境运行（构建后使用，会自动加载 .env 文件）
+# 注意：必须从项目根目录运行
 npm start
 
 # 生产预览
