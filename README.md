@@ -232,6 +232,9 @@ bopet-complaint-system/
 ## 常用命令
 
 ```bash
+# 一键初始化（首次部署推荐）
+npm run setup
+
 # 开发
 npm run dev
 
@@ -247,6 +250,175 @@ npm run db:studio    # 打开 Prisma Studio
 # 数据库重置（危险操作）
 npm run db:reset
 ```
+
+## 部署指南
+
+### 本地部署
+
+```bash
+# 1. 克隆代码
+git clone https://github.com/kingdol666/bopet-complaint-system.git
+cd bopet-complaint-system
+
+# 2. 一键部署（安装依赖 + 初始化数据库 + 填充数据）
+npm run setup
+
+# 3. 启动开发服务器
+npm run dev
+
+# 或构建后预览
+npm run deploy:local
+```
+
+### Vercel 部署（推荐）
+
+#### 前置准备
+
+1. 注册 [Vercel](https://vercel.com) 账号
+2. 推荐使用 [Neon](https://neon.tech) 免费 PostgreSQL 数据库
+3. 安装 Vercel CLI：`npm i -g vercel`
+
+#### 部署步骤
+
+```bash
+# 1. 克隆代码
+git clone https://github.com/kingdol666/bopet-complaint-system.git
+cd bopet-complaint-system
+
+# 2. 链接 Vercel 项目
+npx vercel link
+
+# 3. 添加环境变量（在 Vercel Dashboard 或 CLI 中添加）
+# PRISMA_DB_PROVIDER=postgresql
+# POSTGRES_PRISMA_URL=postgresql://user:password@host/db?sslmode=require
+# POSTGRES_URL_NON_POOLING=postgresql://user:password@host/db?sslmode=require
+# JWT_SECRET=your-random-secret-key
+
+# 4. 一键部署
+npm run deploy:vercel
+```
+
+#### 环境变量说明
+
+| 变量名 | 必填 | 说明 |
+|--------|------|------|
+| `PRISMA_DB_PROVIDER` | 是 | 数据库类型，`sqlite` 或 `postgresql` |
+| `DATABASE_URL` | SQLite时必填 | SQLite 数据库路径 |
+| `POSTGRES_PRISMA_URL` | PostgreSQL时必填 | PostgreSQL 连接地址（带连接池） |
+| `POSTGRES_URL_NON_POOLING` | PostgreSQL时必填 | PostgreSQL 直连地址 |
+| `JWT_SECRET` | 是 | JWT 密钥，建议使用随机字符串 |
+| `NUXT_PUBLIC_API_BASE` | 否 | API 基础路径，Vercel 部署时设为 `/api` |
+
+### Docker 部署
+
+```dockerfile
+# Dockerfile
+FROM node:18-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY prisma ./prisma
+RUN npx prisma generate && npx prisma db push
+
+COPY . .
+RUN npm run build
+
+EXPOSE 3000
+CMD ["npm", "run", "preview"]
+```
+
+```bash
+# 构建镜像
+docker build -t bopet-complaint-system .
+
+# 运行容器
+docker run -p 3000:3000 \
+  -e PRISMA_DB_PROVIDER=sqlite \
+  -e DATABASE_URL=file:/app/data/bopet.db \
+  -v $(pwd)/data:/app/data \
+  bopet-complaint-system
+```
+
+### 独立服务器部署
+
+```bash
+# 1. 安装 Node.js 18+
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# 2. 安装 PM2
+sudo npm install -g pm2
+
+# 3. 克隆并部署
+git clone https://github.com/kingdol666/bopet-complaint-system.git
+cd bopet-complaint-system
+npm install
+npm run build
+
+# 4. 使用 PM2 启动
+pm2 start npm --name "bopet" -- run preview
+
+# 5. 配置 Nginx 反向代理
+```
+
+Nginx 配置示例：
+
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+## 故障排查
+
+### 数据库连接失败
+
+```bash
+# 检查数据库文件是否存在
+ls -la prisma/data/
+
+# 重新生成 Prisma Client
+npm run db:generate
+
+# 重新推送 schema
+npm run db:push
+```
+
+### 端口被占用
+
+```bash
+# 修改 .env 添加
+PORT=3001
+
+# 或启动时指定端口
+PORT=3001 npm run dev
+```
+
+### 构建失败
+
+```bash
+# 清理缓存
+rm -rf .nuxt node_modules/.prisma
+npm install
+npm run build
+```
+
+## License
+
+MIT
 
 ## 配置说明
 

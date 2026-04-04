@@ -16,7 +16,10 @@
     "db:migrate": "npm run prisma:prepare && prisma migrate dev --name init",
     "db:seed": "npm run prisma:prepare && prisma generate && tsx prisma/seed.ts",
     "db:studio": "npm run prisma:prepare && prisma studio",
-    "db:reset": "npm run prisma:prepare && prisma migrate reset --force"
+    "db:reset": "npm run prisma:prepare && prisma migrate reset --force",
+    "setup": "npm install && npm run db:generate && npm run db:push && npm run db:seed",
+    "deploy:vercel": "npm install && npx vercel --prod",
+    "deploy:local": "npm install && npm run build && npm run preview"
   },
   "dependencies": {
     "@pinia/nuxt": "^0.5.1",
