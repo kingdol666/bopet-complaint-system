@@ -241,7 +241,7 @@ npm run dev
 # 构建
 npm run build
 
-# 生产环境运行（构建后使用）
+# 生产环境运行（构建后使用，会自动加载 .env 文件）
 npm start
 
 # 生产预览
