@@ -6,7 +6,7 @@
         <h1 class="page-title">表单模板管理</h1>
         <p class="page-subtitle">配置客诉表单模板和字段</p>
       </div>
-      <n-button v-if="authStore.isSuperAdmin || authStore.isAdmin" type="primary" @click="handleAdd">
+      <n-button v-if="authStore.canWrite" type="primary" @click="handleAdd">
         <template #icon>
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v16m8-8H4" />

@@ -45,8 +45,8 @@
         />
       </div>
 
-      <div class="flex justify-end space-x-4">
-        <n-button @click="navigateTo(`/complaints/${complaintId}`)">取消</n-button>
+      <div class="flex justify-end gap-2">
+        <n-button type="default" @click="navigateTo(`/complaints/${complaintId}`)">取消</n-button>
         <n-button type="primary" :loading="submitting" @click="handleSubmit">
           保存
         </n-button>
@@ -57,10 +57,12 @@
 
 <script setup lang="ts">
 import { useAuthStore } from '~/stores/auth'
+import { useConfigStore } from '~/stores/config'
 import type { FormInst } from 'naive-ui'
 import dayjs from 'dayjs'
 
 const authStore = useAuthStore()
+const configStore = useConfigStore()
 const route = useRoute()
 const message = useMessage()
 
@@ -138,6 +140,12 @@ function buildPayload(data: Record<string, any>) {
     }
   }
 
+  for (const dateField of DATE_FIELDS) {
+    if (!standardPayload[dateField]) {
+      standardPayload[dateField] = dayjs().format('YYYY-MM-DD')
+    }
+  }
+
   return {
     ...standardPayload,
     templateData: Object.keys(customData).length > 0 ? customData : null
@@ -160,6 +168,7 @@ onMounted(async () => {
 
     // Load available templates
     try {
+      await configStore.loadConfig()
       const tplResp = await $fetch('/api/templates')
       if (tplResp.success) {
         templates.value = tplResp.data

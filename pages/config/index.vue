@@ -1,9 +1,11 @@
 <template>
   <div class="animate-fade-in">
     <!-- Page header -->
-    <div class="mb-6">
-      <h1 class="page-title">系统配置</h1>
-      <p class="page-subtitle">管理基础数据配置项</p>
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="page-title">系统配置</h1>
+        <p class="page-subtitle">管理基础数据配置项</p>
+      </div>
     </div>
 
     <n-tabs v-model:value="activeTab" type="line" animated class="card-tabs">
@@ -22,7 +24,7 @@
           </div>
 
           <!-- Table -->
-          <div class="card p-0">
+          <div class="card overflow-hidden">
             <n-data-table
               :columns="getTableColumns(item.key)"
               :data="getTableData(item.key)"
@@ -100,8 +102,8 @@
       </n-form>
 
       <template #footer>
-        <div class="flex justify-end gap-3">
-          <n-button @click="modalVisible = false">取消</n-button>
+        <div class="flex justify-end gap-2">
+          <n-button type="default" @click="modalVisible = false">取消</n-button>
           <n-button type="primary" :loading="submitting" @click="handleSubmit">
             保存
           </n-button>
@@ -253,18 +255,17 @@ function getTableColumns(type: string): DataTableColumn<any>[] {
     {
       title: '操作',
       key: 'actions',
-      width: 120,
+      width: 140,
       render: (row) => h(NSpace, { size: 'small' }, () => [
         h(NButton, {
           size: 'small',
-          text: true,
-          type: 'primary',
+          type: 'link',
           onClick: () => handleEdit(type, row)
         }, () => '编辑'),
         h(NButton, {
           size: 'small',
-          text: true,
-          type: 'error',
+          type: 'link',
+          danger: true,
           onClick: () => handleDelete(type, row)
         }, () => '删除')
       ])

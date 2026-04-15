@@ -6,8 +6,8 @@
         <h1 class="page-title">客诉列表</h1>
         <p class="page-subtitle">管理和追踪所有客诉记录</p>
       </div>
-      <div class="flex items-center gap-3">
-        <n-button @click="handleExport" :loading="exporting">
+      <div class="flex items-center gap-2">
+        <n-button type="default" @click="handleExport" :loading="exporting">
           <template #icon>
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -15,7 +15,7 @@
           </template>
           导出CSV
         </n-button>
-        <n-button v-if="authStore.canWrite" type="primary" @click="navigateTo('/complaints/new')">
+        <n-button type="primary" @click="navigateTo('/complaints/new')">
           <template #icon>
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v16m8-8H4" />
@@ -91,7 +91,7 @@
       </div>
 
       <div class="flex justify-end mt-4 pt-4 border-t border-corporate-100">
-        <n-button quaternary @click="handleReset">
+        <n-button type="default" @click="handleReset">
           <template #icon>
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -104,14 +104,17 @@
 
     <!-- Table -->
     <div class="card overflow-hidden">
-      <n-data-table
-        :columns="columns"
-        :data="tableData"
-        :loading="loading"
-        :pagination="false"
-        :row-key="(row: any) => row.id"
-        @update:sorter="handleSort"
-      />
+      <div class="overflow-x-auto">
+        <n-data-table
+          :columns="columns"
+          :data="tableData"
+          :loading="loading"
+          :pagination="false"
+          :row-key="(row: any) => row.id"
+          :scroll-x="1500"
+          @update:sorter="handleSort"
+        />
+      </div>
 
       <div class="flex items-center justify-between mt-4 pt-4 border-t border-corporate-100">
         <p class="text-sm text-corporate-500">
@@ -296,14 +299,13 @@ const columns: DataTableColumn<any>[] = [
   {
     title: '操作',
     key: 'actions',
-    width: 160,
+    width: 180,
     fixed: 'right',
     render: (row) => h(NSpace, { size: 'small' }, () => {
       const buttons = [
         h(NButton, {
           size: 'small',
-          text: true,
-          type: 'primary',
+          type: 'link',
           onClick: () => router.push(`/complaints/${row.id}`)
         }, () => '查看')
       ]
@@ -311,14 +313,13 @@ const columns: DataTableColumn<any>[] = [
         buttons.push(
           h(NButton, {
             size: 'small',
-            text: true,
-            type: 'primary',
+            type: 'link',
             onClick: () => router.push(`/complaints/edit/${row.id}`)
           }, () => '编辑'),
           h(NButton, {
             size: 'small',
-            text: true,
-            type: 'error',
+            type: 'link',
+            danger: true,
             onClick: () => handleDelete(row)
           }, () => '删除')
         )
