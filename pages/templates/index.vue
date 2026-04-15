@@ -6,7 +6,7 @@
         <h1 class="page-title">表单模板管理</h1>
         <p class="page-subtitle">配置客诉表单模板和字段</p>
       </div>
-      <n-button type="primary" @click="handleAdd">
+      <n-button v-if="authStore.isSuperAdmin || authStore.isAdmin" type="primary" @click="handleAdd">
         <template #icon>
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v16m8-8H4" />
@@ -232,65 +232,82 @@ const configTypeOptions = [
 const departmentOptions = computed(() => configStore.responsibleDepartmentOptions)
 
 // Table columns
-const columns = [
-  {
-    title: '模板名称',
-    key: 'name',
-    width: 200,
-    render: (row: any) => {
-      const nameSpan = h('span', { class: 'font-medium text-corporate-900' }, row.name)
-      if (row.isDefault) {
-        return h('div', { class: 'flex items-center gap-2' }, [
-          nameSpan,
-          h(NTag, { type: 'primary', size: 'small', round: true }, () => '默认')
+const columns = computed(() => {
+  const baseColumns: any[] = [
+    {
+      title: '模板名称',
+      key: 'name',
+      width: 200,
+      render: (row: any) => {
+        const nameSpan = h('span', { class: 'font-medium text-corporate-900' }, row.name)
+        if (row.isDefault) {
+          return h('div', { class: 'flex items-center gap-2' }, [
+            nameSpan,
+            h(NTag, { type: 'primary', size: 'small', round: true }, () => '默认')
+          ])
+        }
+        return nameSpan
+      }
+    },
+    {
+      title: '所属部门',
+      key: 'department',
+      width: 120,
+      render: (row: any) => row.department?.name
+        ? h(NTag, { type: 'info', size: 'small', round: true }, () => row.department.name)
+        : h('span', { class: 'text-corporate-500' }, '全局')
+    },
+    {
+      title: '字段数',
+      key: 'fields',
+      width: 80,
+      render: (row: any) => h('span', { class: 'text-corporate-600 font-medium' }, row.fields?.length || 0)
+    },
+    {
+      title: '使用次数',
+      key: 'complaints',
+      width: 90,
+      render: (row: any) => h('span', { class: 'text-corporate-600 font-medium' }, row._count?.complaints || 0)
+    },
+    {
+      title: '状态',
+      key: 'enabled',
+      width: 80,
+      render: (row: any) => h(NTag, { type: row.enabled ? 'success' : 'default', size: 'small', round: true }, () => row.enabled ? '启用' : '禁用')
+    },
+    {
+      title: '创建人',
+      key: 'createdBy',
+      width: 100,
+      render: (row: any) => h('span', { class: 'text-corporate-600' }, row.createdBy?.name || '-')
+    }
+  ]
+
+  if (authStore.canWrite) {
+    baseColumns.push({
+      title: '操作',
+      key: 'actions',
+      width: 160,
+      render: (row: any) => {
+        const userDeptIds = authStore.departmentIds
+        const isGlobalTemplate = !row.departmentId
+        const isInUserDept = row.departmentId && userDeptIds.includes(row.departmentId)
+        const canOperate = authStore.isSuperAdmin || (authStore.isAdmin && isInUserDept)
+
+        if (!canOperate) {
+          return h('span', { class: 'text-warning', style: { fontSize: '12px' } }, '-')
+        }
+
+        return h(NSpace, { size: 'small' }, () => [
+          h(NButton, { size: 'small', onClick: () => handleEdit(row) }, () => '编辑'),
+          h(NButton, { size: 'small', type: 'error', onClick: () => handleDelete(row) }, () => '删除')
         ])
       }
-      return nameSpan
-    }
-  },
-  {
-    title: '所属部门',
-    key: 'department',
-    width: 120,
-    render: (row: any) => row.department?.name
-      ? h(NTag, { type: 'info', size: 'small', round: true }, () => row.department.name)
-      : h('span', { class: 'text-corporate-500' }, '全局')
-  },
-  {
-    title: '字段数',
-    key: 'fields',
-    width: 80,
-    render: (row: any) => h('span', { class: 'text-corporate-600 font-medium' }, row.fields?.length || 0)
-  },
-  {
-    title: '使用次数',
-    key: 'complaints',
-    width: 90,
-    render: (row: any) => h('span', { class: 'text-corporate-600 font-medium' }, row._count?.complaints || 0)
-  },
-  {
-    title: '状态',
-    key: 'enabled',
-    width: 80,
-    render: (row: any) => h(NTag, { type: row.enabled ? 'success' : 'default', size: 'small', round: true }, () => row.enabled ? '启用' : '禁用')
-  },
-  {
-    title: '创建人',
-    key: 'createdBy',
-    width: 100,
-    render: (row: any) => h('span', { class: 'text-corporate-600' }, row.createdBy?.name || '-')
-  },
-  {
-    title: '操作',
-    key: 'actions',
-    width: 160,
-    render: (row: any) =>
-      h(NSpace, { size: 'small' }, () => [
-        h(NButton, { size: 'small', onClick: () => handleEdit(row) }, () => '编辑'),
-        h(NButton, { size: 'small', type: 'error', onClick: () => handleDelete(row) }, () => '删除')
-      ])
+    })
   }
-]
+
+  return baseColumns
+})
 
 // Load data
 onMounted(async () => {

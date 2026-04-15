@@ -29,8 +29,10 @@ export default defineEventHandler(async (event) => {
   const data = createTemplateSchema.parse(body)
 
   // Validate department access
+  // superadmin can create templates for any department
+  // admin can only create templates for their own departments
   if (data.departmentId && !isSuperAdmin(user) && !canAccessDepartment(user, data.departmentId)) {
-    throw createError({ statusCode: 403, statusMessage: '无权操作该部门模板' })
+    throw createError({ statusCode: 403, statusMessage: '无权为该部门创建模板' })
   }
 
   // Validate select-config fields have configType

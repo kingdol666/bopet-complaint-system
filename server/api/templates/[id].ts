@@ -68,9 +68,21 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 404, statusMessage: '模板不存在' })
     }
 
-    // Validate department access
+    // superadmin can modify any template
+    // admin can only modify templates in their own departments
+    if (!isSuperAdmin(user)) {
+      if (existing.departmentId && !canAccessDepartment(user, existing.departmentId)) {
+        throw createError({ statusCode: 403, statusMessage: '无权修改该模板' })
+      }
+      // If template is global (departmentId=null), only superadmin can modify
+      if (!existing.departmentId) {
+        throw createError({ statusCode: 403, statusMessage: '无权修改全局模板' })
+      }
+    }
+
+    // Validate new departmentId access
     if (data.departmentId !== undefined && data.departmentId && !isSuperAdmin(user) && !canAccessDepartment(user, data.departmentId)) {
-      throw createError({ statusCode: 403, statusMessage: '无权操作该部门模板' })
+      throw createError({ statusCode: 403, statusMessage: '无权将模板分配到该部门' })
     }
 
     // Validate fields
@@ -158,6 +170,17 @@ export default defineEventHandler(async (event) => {
 
     if (existing.isDefault) {
       throw createError({ statusCode: 400, statusMessage: '系统默认模板不可删除' })
+    }
+
+    // superadmin can delete any template
+    // admin can only delete templates in their own departments
+    if (!isSuperAdmin(user)) {
+      if (existing.departmentId && !canAccessDepartment(user, existing.departmentId)) {
+        throw createError({ statusCode: 403, statusMessage: '无权删除该模板' })
+      }
+      if (!existing.departmentId) {
+        throw createError({ statusCode: 403, statusMessage: '无权删除全局模板' })
+      }
     }
 
     await prisma.formTemplate.update({
