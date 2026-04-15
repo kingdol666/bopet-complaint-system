@@ -52,7 +52,7 @@
         </div>
 
         <div class="flex gap-2">
-          <n-button type="primary" @click="handleSearch">
+          <n-button type="default" @click="handleSearch">
             <template #icon>
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -60,13 +60,13 @@
             </template>
             搜索
           </n-button>
-          <n-button @click="handleReset">重置</n-button>
+          <n-button type="default" @click="handleReset">重置</n-button>
         </div>
       </div>
     </div>
 
     <!-- Table -->
-    <div class="card">
+    <div class="card overflow-hidden">
       <n-data-table
         :columns="columns"
         :data="tableData"
@@ -131,8 +131,8 @@
       </n-form>
 
       <template #footer>
-        <div class="flex justify-end gap-3">
-          <n-button @click="modalVisible = false">取消</n-button>
+        <div class="flex justify-end gap-2">
+          <n-button type="default" @click="modalVisible = false">取消</n-button>
           <n-button type="primary" :loading="submitting" @click="handleSubmit">
             保存
           </n-button>
@@ -255,18 +255,17 @@ const columns: DataTableColumn<any>[] = [
   {
     title: '操作',
     key: 'actions',
-    width: 120,
+    width: 140,
     render: (row) => h(NSpace, { size: 'small' }, () => [
       h(NButton, {
         size: 'small',
-        text: true,
-        type: 'primary',
+        type: 'link',
         onClick: () => handleEdit(row)
       }, () => '编辑'),
       h(NButton, {
         size: 'small',
-        text: true,
-        type: 'error',
+        type: 'link',
+        danger: true,
         onClick: () => handleDelete(row)
       }, () => '删除')
     ])
