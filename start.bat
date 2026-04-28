@@ -1,59 +1,58 @@
 @echo off
-chcp 65001 >nul
 echo ============================================================
-echo BOPET客诉系统 - 一键启动脚本（生产模式）
+echo BOPET Complaint System - Production Mode
 echo ============================================================
 echo.
 
-echo [1/2] 检查环境...
+echo [1/2] Checking environment...
 if not exist node_modules (
-    echo [错误] 未检测到依赖，请先运行 init.bat 进行初始化
+    echo [ERROR] Dependencies not found. Please run init.bat first.
     pause
     exit /b 1
 ) else (
-    echo [OK] 依赖已存在
+    echo [OK] Dependencies found
 )
 
 if not exist .env.production (
-    echo [错误] .env.production 文件不存在，请先运行 init.bat 进行初始化
+    echo [ERROR] .env.production not found. Please run init.bat first.
     pause
     exit /b 1
 ) else (
-    echo [OK] .env.production 文件已存在
+    echo [OK] .env.production found
 )
 
 if not exist .output\server\index.mjs (
-    echo [提示] 未检测到生产构建，正在构建...
+    echo [INFO] Production build not found. Building now...
     call npm run build
     if %errorlevel% neq 0 (
-        echo [错误] 构建失败，请运行 init.bat 进行完整初始化
+        echo [ERROR] Build failed. Please run init.bat for full initialization.
         pause
         exit /b 1
     )
-    echo [OK] 构建完成
+    echo [OK] Build complete
 ) else (
-    echo [OK] 生产构建已存在
+    echo [OK] Production build found
 )
 
 if not exist data\bopet.db (
-    echo [错误] 生产数据库不存在，请先运行 init.bat 进行初始化
+    echo [ERROR] Production database not found. Please run init.bat first.
     pause
     exit /b 1
 ) else (
-    echo [OK] 生产数据库已存在
+    echo [OK] Production database found
 )
 echo.
 
-echo [2/2] 启动生产服务器...
+echo [2/2] Starting production server...
 echo ============================================================
-echo 服务器地址: http://localhost:3000
-echo 模式: 生产模式 (Production)
-echo 数据库: %CD%\data\bopet.db
-echo 按 Ctrl+C 可停止服务器
+echo Server URL: http://localhost:3000
+echo Mode: Production
+echo Database: %CD%\data\bopet.db
+echo Press Ctrl+C to stop the server
 echo ============================================================
 echo.
 
-REM 设置生产数据库绝对路径环境变量
+REM Set production database absolute path
 set DATABASE_URL=file:%CD%\data\bopet.db
 
 call npm run start
