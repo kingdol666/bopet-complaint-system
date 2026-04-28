@@ -14,12 +14,12 @@ if not exist node_modules (
     echo [OK] 依赖已存在
 )
 
-if not exist .env (
-    echo [错误] .env 文件不存在，请先运行 init.bat 进行初始化
+if not exist .env.production (
+    echo [错误] .env.production 文件不存在，请先运行 init.bat 进行初始化
     pause
     exit /b 1
 ) else (
-    echo [OK] .env 文件已存在
+    echo [OK] .env.production 文件已存在
 )
 
 if not exist .output\server\index.mjs (
@@ -34,14 +34,26 @@ if not exist .output\server\index.mjs (
 ) else (
     echo [OK] 生产构建已存在
 )
+
+if not exist data\bopet.db (
+    echo [错误] 生产数据库不存在，请先运行 init.bat 进行初始化
+    pause
+    exit /b 1
+) else (
+    echo [OK] 生产数据库已存在
+)
 echo.
 
 echo [2/2] 启动生产服务器...
 echo ============================================================
 echo 服务器地址: http://localhost:3000
 echo 模式: 生产模式 (Production)
+echo 数据库: %CD%\data\bopet.db
 echo 按 Ctrl+C 可停止服务器
 echo ============================================================
 echo.
+
+REM 设置生产数据库绝对路径环境变量
+set DATABASE_URL=file:%CD%\data\bopet.db
 
 call npm run start

@@ -22,7 +22,7 @@
     "dev:fresh": "npm run db:reset && npm run db:generate && npm run db:push && npm run db:seed && npm run dev",
     "deploy:vercel": "npm install && npx vercel --prod",
     "deploy:local": "npm install && npm run build && npm run preview",
-    "start": "node --env-file=.env .output/server/index.mjs"
+    "start": "node --env-file=.env.production .output/server/index.mjs"
   },
   "dependencies": {
     "@pinia/nuxt": "^0.5.1",
