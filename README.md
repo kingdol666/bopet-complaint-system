@@ -36,13 +36,22 @@ BOPET（双向拉伸聚酯薄膜）客诉闭环管理系统，用于高效处理
 .\init.bat
 ```
 
-#### 日常启动
+#### 日常启动（生产模式）
 
-双击运行 `start.bat`，脚本将自动检查环境并启动开发服务器。
+双击运行 `start.bat`，脚本将自动检查环境并启动生产服务器。
 
 ```bash
 # 或者在命令行中运行
 .\start.bat
+```
+
+#### 开发模式启动
+
+如需开发模式（支持热更新），双击运行 `dev.bat`。
+
+```bash
+# 或者在命令行中运行
+.\dev.bat
 ```
 
 ### 方式二：手动运行
@@ -83,25 +92,25 @@ npm run dev
 
 ## 默认账号
 
-| 角色 | 用户名 | 密码 |
-|------|--------|------|
-| 超级管理员 | admin | admin123 |
-| 普通用户 | user1 | user123 |
+| 角色       | 用户名 | 密码     |
+| ---------- | ------ | -------- |
+| 超级管理员 | admin  | admin123 |
+| 普通用户   | user1  | user123  |
 
 ## 可用脚本
 
-| 命令 | 说明 |
-|------|------|
-| `npm run dev` | 启动开发服务器 |
-| `npm run dev:init` | 初始化数据库并启动开发服务器 |
-| `npm run dev:fresh` | 重置数据库并启动开发服务器 |
-| `npm run build` | 构建生产版本 |
-| `npm run start` | 启动生产服务器 |
-| `npm run db:generate` | 生成 Prisma Client |
-| `npm run db:push` | 同步数据库结构 |
-| `npm run db:seed` | 导入初始数据 |
-| `npm run db:studio` | 打开 Prisma Studio 数据库管理界面 |
-| `npm run db:reset` | 重置数据库（删除所有数据） |
+| 命令                  | 说明                              |
+| --------------------- | --------------------------------- |
+| `npm run dev`         | 启动开发服务器                    |
+| `npm run dev:init`    | 初始化数据库并启动开发服务器      |
+| `npm run dev:fresh`   | 重置数据库并启动开发服务器        |
+| `npm run build`       | 构建生产版本                      |
+| `npm run start`       | 启动生产服务器                    |
+| `npm run db:generate` | 生成 Prisma Client                |
+| `npm run db:push`     | 同步数据库结构                    |
+| `npm run db:seed`     | 导入初始数据                      |
+| `npm run db:studio`   | 打开 Prisma Studio 数据库管理界面 |
+| `npm run db:reset`    | 重置数据库（删除所有数据）        |
 
 ## 项目结构
 
@@ -122,7 +131,8 @@ bopet-complaint-system/
 ├── layouts/            # 布局组件
 ├── stores/             # Pinia 状态管理
 ├── init.bat            # 一键初始化脚本
-└── start.bat           # 一键启动脚本
+├── start.bat           # 一键启动脚本（生产模式）
+└── dev.bat             # 一键启动脚本（开发模式）
 ```
 
 ## 功能模块
