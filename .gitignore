@@ -38,6 +38,11 @@ Thumbs.db
 # prisma/data/*.db-journal
 # data/*.db
 # data/*.db-journal
+prisma/prisma/
+
+# Test scripts
+test-*.js
+test-*.ps1
 
 # TypeScript
 *.tsbuildinfo

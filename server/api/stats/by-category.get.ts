@@ -111,13 +111,158 @@ export default defineEventHandler(async (event) => {
       .sort((a, b) => b.count - a.count)
       .slice(0, 10)
 
+    // By problem subcategory
+    const bySubcategory = await prisma.complaintRecord.groupBy({
+      by: ['problemSubcategoryId'],
+      where: {
+        ...dateFilter,
+        problemSubcategoryId: { not: null }
+      },
+      _count: true
+    })
+
+    const subcategories = await prisma.problemSubcategory.findMany()
+    const subcategoryMap = new Map(subcategories.map(s => [s.id, s.name]))
+
+    const subcategoryStats = bySubcategory
+      .filter(item => item.problemSubcategoryId !== null)
+      .map(item => ({
+        subcategoryId: item.problemSubcategoryId,
+        subcategoryName: subcategoryMap.get(item.problemSubcategoryId!) || '未知',
+        count: item._count
+      }))
+      .sort((a, b) => b.count - a.count)
+
+    // By customer demand
+    const byCustomerDemand = await prisma.complaintRecord.groupBy({
+      by: ['customerDemandId'],
+      where: {
+        ...dateFilter,
+        customerDemandId: { not: null }
+      },
+      _count: true
+    })
+
+    const customerDemands = await prisma.customerDemand.findMany()
+    const customerDemandMap = new Map(customerDemands.map(d => [d.id, d.name]))
+
+    const customerDemandStats = byCustomerDemand
+      .filter(item => item.customerDemandId !== null)
+      .map(item => ({
+        customerDemandId: item.customerDemandId,
+        customerDemandName: customerDemandMap.get(item.customerDemandId!) || '未知',
+        count: item._count
+      }))
+      .sort((a, b) => b.count - a.count)
+
+    // By compensation type
+    const byCompensationType = await prisma.complaintRecord.groupBy({
+      by: ['compensationTypeId'],
+      where: {
+        ...dateFilter,
+        compensationTypeId: { not: null }
+      },
+      _count: true
+    })
+
+    const compensationTypes = await prisma.compensationType.findMany()
+    const compensationTypeMap = new Map(compensationTypes.map(c => [c.id, c.name]))
+
+    const compensationTypeStats = byCompensationType
+      .filter(item => item.compensationTypeId !== null)
+      .map(item => ({
+        compensationTypeId: item.compensationTypeId,
+        compensationTypeName: compensationTypeMap.get(item.compensationTypeId!) || '未知',
+        count: item._count
+      }))
+      .sort((a, b) => b.count - a.count)
+
+    // By severity level
+    const bySeverityLevel = await prisma.complaintRecord.groupBy({
+      by: ['severityLevelId'],
+      where: {
+        ...dateFilter,
+        severityLevelId: { not: null }
+      },
+      _count: true
+    })
+
+    const severityLevels = await prisma.severityLevel.findMany({
+      orderBy: { level: 'asc' }
+    })
+    const severityLevelMap = new Map(severityLevels.map(s => [s.id, { name: s.name, level: s.level, color: s.color }]))
+
+    const severityLevelStats = bySeverityLevel
+      .filter(item => item.severityLevelId !== null)
+      .map(item => {
+        const info = severityLevelMap.get(item.severityLevelId!) || { name: '未知', level: 0, color: null }
+        return {
+          severityLevelId: item.severityLevelId,
+          severityLevelName: info.name,
+          level: info.level,
+          color: info.color,
+          count: item._count
+        }
+      })
+      .sort((a, b) => a.level - b.level)
+
+    // By responsible department
+    const byDepartment = await prisma.complaintRecord.groupBy({
+      by: ['responsibleDeptId'],
+      where: {
+        ...dateFilter,
+        responsibleDeptId: { not: null }
+      },
+      _count: true
+    })
+
+    const departments = await prisma.responsibleDepartment.findMany()
+    const departmentMap = new Map(departments.map(d => [d.id, d.name]))
+
+    const departmentStats = byDepartment
+      .filter(item => item.responsibleDeptId !== null)
+      .map(item => ({
+        departmentId: item.responsibleDeptId,
+        departmentName: departmentMap.get(item.responsibleDeptId!) || '未知',
+        count: item._count
+      }))
+      .sort((a, b) => b.count - a.count)
+
+    // By responsible process
+    const byProcess = await prisma.complaintRecord.groupBy({
+      by: ['responsibleProcessId'],
+      where: {
+        ...dateFilter,
+        responsibleProcessId: { not: null }
+      },
+      _count: true
+    })
+
+    const processes = await prisma.responsibleProcess.findMany()
+    const processMap = new Map(processes.map(p => [p.id, p.name]))
+
+    const processStats = byProcess
+      .filter(item => item.responsibleProcessId !== null)
+      .map(item => ({
+        processId: item.responsibleProcessId,
+        processName: processMap.get(item.responsibleProcessId!) || '未知',
+        count: item._count
+      }))
+      .sort((a, b) => b.count - a.count)
+
     return {
       success: true,
       data: {
         byCategory: categoryStats,
         byCustomer: customerStats,
         byProductionLine: productionLineStats,
-        byProductModel: productModelStats
+        byProductModel: productModelStats,
+        bySubcategory: subcategoryStats,
+        byCustomerDemand: customerDemandStats,
+        byCompensationType: compensationTypeStats,
+        bySeverityLevel: severityLevelStats,
+        byDepartment: departmentStats,
+        byProcess: processStats
       }
     }
   } catch (error: any) {

@@ -28,6 +28,29 @@ function escapeCSV(field: any): string {
   return str
 }
 
+// Format date safely without locale dependency
+function formatDateSafe(date: Date | string): string {
+  const d = new Date(date)
+  if (isNaN(d.getTime())) return ''
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+// Format datetime safely without locale dependency
+function formatDateTimeSafe(date: Date | string): string {
+  const d = new Date(date)
+  if (isNaN(d.getTime())) return ''
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const hours = String(d.getHours()).padStart(2, '0')
+  const minutes = String(d.getMinutes()).padStart(2, '0')
+  const seconds = String(d.getSeconds()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+}
+
 export default defineEventHandler(async (event) => {
   try {
     const currentUser = await requireSessionUser(event)
@@ -141,8 +164,8 @@ export default defineEventHandler(async (event) => {
 
     const rows = records.map(r => [
       escapeCSV(r.complaintNo),
-      escapeCSV(r.feedbackDate ? new Date(r.feedbackDate).toLocaleDateString('zh-CN') : ''),
-      escapeCSV(r.productionTime ? new Date(r.productionTime).toLocaleDateString('zh-CN') : ''),
+      escapeCSV(r.feedbackDate ? formatDateSafe(r.feedbackDate) : ''),
+      escapeCSV(r.productionTime ? formatDateSafe(r.productionTime) : ''),
       escapeCSV(r.customer?.code),
       escapeCSV(r.customer?.name),
       escapeCSV(r.productModel?.name),
@@ -173,8 +196,8 @@ export default defineEventHandler(async (event) => {
       escapeCSV(r.reviewConclusion),
       escapeCSV(r.standardizedAction ? '是' : '否'),
       escapeCSV(r.remark),
-      escapeCSV(r.createdAt ? new Date(r.createdAt).toLocaleString('zh-CN') : ''),
-      escapeCSV(r.updatedAt ? new Date(r.updatedAt).toLocaleString('zh-CN') : '')
+      escapeCSV(r.createdAt ? formatDateTimeSafe(r.createdAt) : ''),
+      escapeCSV(r.updatedAt ? formatDateTimeSafe(r.updatedAt) : '')
     ])
 
     const csvContent = '\uFEFF' + headers.join(',') + '\n' + rows.map(r => r.join(',')).join('\n')

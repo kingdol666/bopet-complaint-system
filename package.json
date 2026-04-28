@@ -18,6 +18,8 @@
     "db:studio": "npm run prisma:prepare && prisma studio",
     "db:reset": "npm run prisma:prepare && prisma migrate reset --force",
     "setup": "npm install && npm run db:generate && npm run db:push && npm run db:seed",
+    "dev:init": "npm run db:generate && npm run db:push && npm run db:seed && npm run dev",
+    "dev:fresh": "npm run db:reset && npm run db:generate && npm run db:push && npm run db:seed && npm run dev",
     "deploy:vercel": "npm install && npx vercel --prod",
     "deploy:local": "npm install && npm run build && npm run preview",
     "start": "node --env-file=.env .output/server/index.mjs"

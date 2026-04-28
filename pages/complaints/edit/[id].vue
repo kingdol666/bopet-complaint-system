@@ -148,6 +148,7 @@ function buildPayload(data: Record<string, any>) {
 
   return {
     ...standardPayload,
+    templateIds: selectedTemplateIds.value.length > 0 ? selectedTemplateIds.value : null,
     templateData: Object.keys(customData).length > 0 ? customData : null
   }
 }

@@ -77,18 +77,25 @@ function extractBearerToken(event: H3Event): string | null {
     if (token) return token
   }
 
-  // 2. Fallback to cookie (for browser-initiated requests like $fetch, window.open)
+  // 2. Try cookie (for browser-initiated requests like $fetch, window.open)
   const cookieHeader = getHeader(event, 'cookie') || ''
   const match = cookieHeader.match(/(?:^|;\s*)auth_token=([^;]*)/)
   if (match?.[1]) {
     return match[1]
   }
 
+  // 3. Try query parameter (for window.open / direct URL access)
+  const query = getQuery(event)
+  if (typeof query.token === 'string' && query.token) {
+    return query.token
+  }
+
   return null
 }
 
 export function hashPassword(password: string): string {
-  return Buffer.from(password).toString('base64')
+  const salt = 'bopet-complaint-system-salt-2024'
+  return createHmac('sha256', salt).update(password).digest('hex')
 }
 
 export function verifyPassword(password: string, hash: string): boolean {

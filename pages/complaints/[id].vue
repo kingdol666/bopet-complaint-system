@@ -474,7 +474,7 @@ function handlePrint() {
   }).join('')
 
   // Audit section
-  sections + renderPrintTable('审计信息', [
+  const auditSection = renderPrintTable('审计信息', [
     ['创建时间', formatDateTime(current.createdAt), '创建人', current.createdBy?.name],
     ['更新时间', formatDateTime(current.updatedAt), '更新人', current.updatedBy?.name]
   ])
@@ -506,7 +506,7 @@ function handlePrint() {
           <h1>${escapeHtml(current.complaintNo || '客诉详情')}</h1>
           <div class="print-meta">打印时间：${escapeHtml(formatDateTime(new Date()))}</div>
         </div>
-        ${sections}
+        ${sections}${auditSection}
       </body>
     </html>
   `

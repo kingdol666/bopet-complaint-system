@@ -1,10 +1,11 @@
 import { PrismaClient } from '@prisma/client'
+import { createHmac } from 'node:crypto'
 
 const prisma = new PrismaClient()
 
-// Simple hash function for demo (in production use bcrypt)
 function hashPassword(password: string): string {
-  return Buffer.from(password).toString('base64')
+  const salt = 'bopet-complaint-system-salt-2024'
+  return createHmac('sha256', salt).update(password).digest('hex')
 }
 
 async function main() {
