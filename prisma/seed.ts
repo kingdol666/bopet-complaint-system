@@ -16,6 +16,8 @@ async function main() {
   await prisma.operationLog.deleteMany()
   await prisma.complaintRecord.deleteMany()
   await prisma.complaintProblemMapping.deleteMany()
+  await prisma.formTemplateField.deleteMany()
+  await prisma.formTemplate.deleteMany()
   await prisma.responsibleProcess.deleteMany()
   await prisma.userDepartment.deleteMany()
   await prisma.responsibleDepartment.deleteMany()
