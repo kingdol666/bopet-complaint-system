@@ -68,7 +68,7 @@ export default defineEventHandler(async (event) => {
   if (!configModels[type]) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Invalid config type'
+      message: 'Invalid config type'
     })
   }
 
@@ -112,7 +112,7 @@ export default defineEventHandler(async (event) => {
     if (!id) {
       throw createError({
         statusCode: 400,
-        statusMessage: '无效的 ID'
+        message: '无效的 ID'
       })
     }
 
@@ -129,6 +129,6 @@ export default defineEventHandler(async (event) => {
 
   throw createError({
     statusCode: 405,
-    statusMessage: 'Method Not Allowed'
+    message: 'Method Not Allowed'
   })
 })

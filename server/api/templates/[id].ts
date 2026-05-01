@@ -30,7 +30,7 @@ const updateTemplateSchema = z.object({
 export default defineEventHandler(async (event) => {
   const id = Number.parseInt(getRouterParam(event, 'id') || '0')
   if (!id) {
-    throw createError({ statusCode: 400, statusMessage: '无效的模板ID' })
+    throw createError({ statusCode: 400, message: '无效的模板ID' })
   }
 
   // GET
@@ -47,11 +47,11 @@ export default defineEventHandler(async (event) => {
     })
 
     if (!template || !template.enabled) {
-      throw createError({ statusCode: 404, statusMessage: '模板不存在' })
+      throw createError({ statusCode: 404, message: '模板不存在' })
     }
 
     if (template.departmentId && !canAccessDepartment(user, template.departmentId)) {
-      throw createError({ statusCode: 403, statusMessage: '无权访问该模板' })
+      throw createError({ statusCode: 403, message: '无权访问该模板' })
     }
 
     return { success: true, data: template }
@@ -65,34 +65,34 @@ export default defineEventHandler(async (event) => {
 
     const existing = await prisma.formTemplate.findUnique({ where: { id } })
     if (!existing) {
-      throw createError({ statusCode: 404, statusMessage: '模板不存在' })
+      throw createError({ statusCode: 404, message: '模板不存在' })
     }
 
     // superadmin can modify any template
     // admin can only modify templates in their own departments
     if (!isSuperAdmin(user)) {
       if (existing.departmentId && !canAccessDepartment(user, existing.departmentId)) {
-        throw createError({ statusCode: 403, statusMessage: '无权修改该模板' })
+        throw createError({ statusCode: 403, message: '无权修改该模板' })
       }
       // If template is global (departmentId=null), only superadmin can modify
       if (!existing.departmentId) {
-        throw createError({ statusCode: 403, statusMessage: '无权修改全局模板' })
+        throw createError({ statusCode: 403, message: '无权修改全局模板' })
       }
     }
 
     // Validate new departmentId access
     if (data.departmentId !== undefined && data.departmentId && !isSuperAdmin(user) && !canAccessDepartment(user, data.departmentId)) {
-      throw createError({ statusCode: 403, statusMessage: '无权将模板分配到该部门' })
+      throw createError({ statusCode: 403, message: '无权将模板分配到该部门' })
     }
 
     // Validate fields
     if (data.fields) {
       for (const field of data.fields) {
         if (field.fieldType === 'select-config' && !field.configType) {
-          throw createError({ statusCode: 400, statusMessage: `字段"${field.fieldLabel}"类型为配置选择，必须指定配置源` })
+          throw createError({ statusCode: 400, message: `字段"${field.fieldLabel}"类型为配置选择，必须指定配置源` })
         }
         if (field.fieldType === 'select' && !field.options) {
-          throw createError({ statusCode: 400, statusMessage: `字段"${field.fieldLabel}"类型为下拉选择，必须提供选项` })
+          throw createError({ statusCode: 400, message: `字段"${field.fieldLabel}"类型为下拉选择，必须提供选项` })
         }
       }
     }
@@ -165,21 +165,21 @@ export default defineEventHandler(async (event) => {
 
     const existing = await prisma.formTemplate.findUnique({ where: { id } })
     if (!existing) {
-      throw createError({ statusCode: 404, statusMessage: '模板不存在' })
+      throw createError({ statusCode: 404, message: '模板不存在' })
     }
 
     if (existing.isDefault) {
-      throw createError({ statusCode: 400, statusMessage: '系统默认模板不可删除' })
+      throw createError({ statusCode: 400, message: '系统默认模板不可删除' })
     }
 
     // superadmin can delete any template
     // admin can only delete templates in their own departments
     if (!isSuperAdmin(user)) {
       if (existing.departmentId && !canAccessDepartment(user, existing.departmentId)) {
-        throw createError({ statusCode: 403, statusMessage: '无权删除该模板' })
+        throw createError({ statusCode: 403, message: '无权删除该模板' })
       }
       if (!existing.departmentId) {
-        throw createError({ statusCode: 403, statusMessage: '无权删除全局模板' })
+        throw createError({ statusCode: 403, message: '无权删除全局模板' })
       }
     }
 
@@ -191,5 +191,5 @@ export default defineEventHandler(async (event) => {
     return { success: true, data: existing, message: '模板已删除' }
   }
 
-  throw createError({ statusCode: 405, statusMessage: 'Method not allowed' })
+  throw createError({ statusCode: 405, message: 'Method not allowed' })
 })

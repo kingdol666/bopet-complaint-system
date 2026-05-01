@@ -210,7 +210,7 @@ export async function requireSessionUser(event: H3Event): Promise<SessionUser> {
   if (!user) {
     throw createError({
       statusCode: 401,
-      statusMessage: '未登录或登录已失效'
+      message: '未登录或登录已失效'
     })
   }
 
@@ -224,7 +224,7 @@ export async function requireSuperAdminUser(event: H3Event): Promise<SessionUser
   if (!isSuperAdmin(user)) {
     throw createError({
       statusCode: 403,
-      statusMessage: '需要超级管理员权限'
+      message: '需要超级管理员权限'
     })
   }
 
@@ -238,7 +238,7 @@ export async function requireWritePermission(event: H3Event): Promise<SessionUse
   if (!canWrite(user)) {
     throw createError({
       statusCode: 403,
-      statusMessage: '您没有操作权限，仅可查看'
+      message: '您没有操作权限，仅可查看'
     })
   }
 

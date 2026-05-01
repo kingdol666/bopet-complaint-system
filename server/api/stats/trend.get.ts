@@ -59,7 +59,7 @@ export default defineEventHandler(async (event) => {
   } catch (error: any) {
     throw createError({
       statusCode: error.statusCode || 500,
-      statusMessage: error.message || '获取趋势数据失败'
+      message: error.message || '获取趋势数据失败'
     })
   }
 })

@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
   if (!model) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Invalid config type'
+      message: 'Invalid config type'
     })
   }
 

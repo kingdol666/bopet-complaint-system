@@ -93,7 +93,7 @@ export default defineEventHandler(async (event) => {
     if (data.responsibleDeptId && !canAccessDepartment(currentUser, data.responsibleDeptId)) {
       throw createError({
         statusCode: 403,
-        statusMessage: '您没有该部门的操作权限'
+        message: '您没有该部门的操作权限'
       })
     }
 
@@ -171,13 +171,13 @@ export default defineEventHandler(async (event) => {
 
     throw createError({
       statusCode: 500,
-      statusMessage: '客诉编号生成失败，请重试'
+      message: '客诉编号生成失败，请重试'
     })
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw createError({
         statusCode: 400,
-        statusMessage: error.errors[0].message
+        message: error.errors[0].message
       })
     }
 

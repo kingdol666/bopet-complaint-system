@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
 
   const id = Number.parseInt(getRouterParam(event, 'id') || '0', 10)
   if (!id) {
-    throw createError({ statusCode: 400, statusMessage: '无效的 ID' })
+    throw createError({ statusCode: 400, message: '无效的 ID' })
   }
 
   if (event.method === 'GET') {
@@ -39,7 +39,7 @@ export default defineEventHandler(async (event) => {
     })
 
     if (!user) {
-      throw createError({ statusCode: 404, statusMessage: '用户不存在' })
+      throw createError({ statusCode: 404, message: '用户不存在' })
     }
 
     return {
@@ -61,7 +61,7 @@ export default defineEventHandler(async (event) => {
 
       const existing = await prisma.user.findUnique({ where: { id } })
       if (!existing) {
-        throw createError({ statusCode: 404, statusMessage: '用户不存在' })
+        throw createError({ statusCode: 404, message: '用户不存在' })
       }
 
       // Build update data
@@ -79,7 +79,7 @@ export default defineEventHandler(async (event) => {
             where: { id: { in: data.departmentIds }, enabled: true }
           })
           if (depts.length !== data.departmentIds.length) {
-            throw createError({ statusCode: 400, statusMessage: '包含无效的部门ID' })
+            throw createError({ statusCode: 400, message: '包含无效的部门ID' })
           }
         }
 
@@ -118,7 +118,7 @@ export default defineEventHandler(async (event) => {
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
-        throw createError({ statusCode: 400, statusMessage: error.errors[0].message })
+        throw createError({ statusCode: 400, message: error.errors[0].message })
       }
       throw error
     }
@@ -127,7 +127,7 @@ export default defineEventHandler(async (event) => {
   if (event.method === 'DELETE') {
     const existing = await prisma.user.findUnique({ where: { id } })
     if (!existing) {
-      throw createError({ statusCode: 404, statusMessage: '用户不存在' })
+      throw createError({ statusCode: 404, message: '用户不存在' })
     }
 
     // Delete user departments first, then user
@@ -140,5 +140,5 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  throw createError({ statusCode: 405, statusMessage: 'Method Not Allowed' })
+  throw createError({ statusCode: 405, message: 'Method Not Allowed' })
 })

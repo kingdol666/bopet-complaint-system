@@ -59,7 +59,7 @@ export default defineEventHandler(async (event) => {
   if (!id) {
     throw createError({
       statusCode: 400,
-      statusMessage: '无效的 ID'
+      message: '无效的 ID'
     })
   }
 
@@ -78,7 +78,7 @@ export default defineEventHandler(async (event) => {
     if (!record) {
       throw createError({
         statusCode: 404,
-        statusMessage: '客诉记录不存在'
+        message: '客诉记录不存在'
       })
     }
 
@@ -86,7 +86,7 @@ export default defineEventHandler(async (event) => {
     if (!canAccessDepartment(currentUser, record.responsibleDeptId)) {
       throw createError({
         statusCode: 403,
-        statusMessage: '您没有查看该记录的权限'
+        message: '您没有查看该记录的权限'
       })
     }
 
@@ -109,7 +109,7 @@ export default defineEventHandler(async (event) => {
       if (!existing) {
         throw createError({
           statusCode: 404,
-          statusMessage: '客诉记录不存在'
+          message: '客诉记录不存在'
         })
       }
 
@@ -117,7 +117,7 @@ export default defineEventHandler(async (event) => {
       if (!canAccessDepartment(currentUser, existing.responsibleDeptId)) {
         throw createError({
           statusCode: 403,
-          statusMessage: '您没有修改该记录的权限'
+          message: '您没有修改该记录的权限'
         })
       }
 
@@ -125,7 +125,7 @@ export default defineEventHandler(async (event) => {
       if (data.responsibleDeptId !== undefined && !canAccessDepartment(currentUser, data.responsibleDeptId)) {
         throw createError({
           statusCode: 403,
-          statusMessage: '您没有将该记录分配到该部门的权限'
+          message: '您没有将该记录分配到该部门的权限'
         })
       }
 
@@ -164,7 +164,7 @@ export default defineEventHandler(async (event) => {
       if (error instanceof z.ZodError) {
         throw createError({
           statusCode: 400,
-          statusMessage: error.errors[0].message
+          message: error.errors[0].message
         })
       }
 
@@ -182,7 +182,7 @@ export default defineEventHandler(async (event) => {
     if (!existing) {
       throw createError({
         statusCode: 404,
-        statusMessage: '客诉记录不存在'
+        message: '客诉记录不存在'
       })
     }
 
@@ -190,7 +190,7 @@ export default defineEventHandler(async (event) => {
     if (!canAccessDepartment(currentUser, existing.responsibleDeptId)) {
       throw createError({
         statusCode: 403,
-        statusMessage: '您没有删除该记录的权限'
+        message: '您没有删除该记录的权限'
       })
     }
 
@@ -217,6 +217,6 @@ export default defineEventHandler(async (event) => {
 
   throw createError({
     statusCode: 405,
-    statusMessage: 'Method Not Allowed'
+    message: 'Method Not Allowed'
   })
 })

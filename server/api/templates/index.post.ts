@@ -32,16 +32,16 @@ export default defineEventHandler(async (event) => {
   // superadmin can create templates for any department
   // admin can only create templates for their own departments
   if (data.departmentId && !isSuperAdmin(user) && !canAccessDepartment(user, data.departmentId)) {
-    throw createError({ statusCode: 403, statusMessage: '无权为该部门创建模板' })
+    throw createError({ statusCode: 403, message: '无权为该部门创建模板' })
   }
 
   // Validate select-config fields have configType
   for (const field of data.fields) {
     if (field.fieldType === 'select-config' && !field.configType) {
-      throw createError({ statusCode: 400, statusMessage: `字段"${field.fieldLabel}"类型为配置选择，必须指定配置源` })
+      throw createError({ statusCode: 400, message: `字段"${field.fieldLabel}"类型为配置选择，必须指定配置源` })
     }
     if (field.fieldType === 'select' && !field.options) {
-      throw createError({ statusCode: 400, statusMessage: `字段"${field.fieldLabel}"类型为下拉选择，必须提供选项` })
+      throw createError({ statusCode: 400, message: `字段"${field.fieldLabel}"类型为下拉选择，必须提供选项` })
     }
   }
 

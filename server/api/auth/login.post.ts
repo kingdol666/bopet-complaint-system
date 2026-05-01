@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
     if (!user || !user.enabled) {
       throw createError({
         statusCode: 401,
-        statusMessage: '用户名或密码错误'
+        message: '用户名或密码错误'
       })
     }
 
@@ -30,7 +30,7 @@ export default defineEventHandler(async (event) => {
     if (!verifyPassword(validated.password, user.password)) {
       throw createError({
         statusCode: 401,
-        statusMessage: '用户名或密码错误'
+        message: '用户名或密码错误'
       })
     }
 
@@ -58,7 +58,7 @@ export default defineEventHandler(async (event) => {
     if (error instanceof z.ZodError) {
       throw createError({
         statusCode: 400,
-        statusMessage: error.errors[0].message
+        message: error.errors[0].message
       })
     }
     throw error

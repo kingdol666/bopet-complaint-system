@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
     if (existing) {
       throw createError({
         statusCode: 400,
-        statusMessage: '用户名已存在'
+        message: '用户名已存在'
       })
     }
 
@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
       if (depts.length !== data.departmentIds.length) {
         throw createError({
           statusCode: 400,
-          statusMessage: '包含无效的部门ID'
+          message: '包含无效的部门ID'
         })
       }
     }
@@ -81,7 +81,7 @@ export default defineEventHandler(async (event) => {
     if (error instanceof z.ZodError) {
       throw createError({
         statusCode: 400,
-        statusMessage: error.errors[0].message
+        message: error.errors[0].message
       })
     }
     throw error

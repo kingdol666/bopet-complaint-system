@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
   if (!id) {
     throw createError({
       statusCode: 400,
-      statusMessage: '无效的ID'
+      message: '无效的ID'
     })
   }
 
@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
     if (!record) {
       throw createError({
         statusCode: 404,
-        statusMessage: '记录不存在'
+        message: '记录不存在'
       })
     }
 
@@ -67,7 +67,7 @@ export default defineEventHandler(async (event) => {
       if (error instanceof z.ZodError) {
         throw createError({
           statusCode: 400,
-          statusMessage: error.errors[0].message
+          message: error.errors[0].message
         })
       }
       throw error
@@ -88,6 +88,6 @@ export default defineEventHandler(async (event) => {
 
   throw createError({
     statusCode: 405,
-    statusMessage: 'Method Not Allowed'
+    message: 'Method Not Allowed'
   })
 })
