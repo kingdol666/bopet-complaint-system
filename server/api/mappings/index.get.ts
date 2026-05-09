@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
+import { requireSessionUser } from '~/server/utils/auth'
 import { booleanQueryParam } from '~/server/utils/query'
 
 // Query schema
@@ -13,6 +14,7 @@ const querySchema = z.object({
 
 export default defineEventHandler(async (event) => {
   try {
+    await requireSessionUser(event)
     const query = await getQuery(event)
     const params = querySchema.parse(query)
     const { page, pageSize, keyword, enabled, problemCategoryId } = params

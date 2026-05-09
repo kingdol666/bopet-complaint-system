@@ -50,6 +50,8 @@
             v-model:value="modelData[field.fieldKey]"
             class="w-full"
             :placeholder="field.placeholder || ''"
+            :min="0"
+            :decimal-places="0"
           />
         </n-form-item>
 
@@ -84,6 +86,21 @@
           />
         </n-form-item>
 
+        <!-- Auto-complete (manual input + dropdown) -->
+        <n-form-item
+          v-else-if="field.fieldType === 'auto-complete'"
+          :label="field.fieldLabel"
+          :path="field.fieldKey"
+          :rule="field.required ? { required: true, message: `请输入${field.fieldLabel}`, trigger: 'blur' } : undefined"
+        >
+          <n-auto-complete
+            v-model:value="modelData[field.fieldKey]"
+            :options="getAutoCompleteOptions(field.configType)"
+            :placeholder="field.placeholder || '输入或选择'"
+            :clearable="true"
+          />
+        </n-form-item>
+
         <!-- Date -->
         <n-form-item
           v-else-if="field.fieldType === 'date'"
@@ -106,6 +123,34 @@
         >
           <n-switch v-model:value="modelData[field.fieldKey]" />
         </n-form-item>
+
+        <!-- Upload -->
+        <n-form-item
+          v-else-if="field.fieldType === 'upload'"
+          :label="field.fieldLabel"
+          :path="field.fieldKey"
+        >
+          <div class="w-full">
+            <n-upload
+              :multiple="true"
+              :max="10"
+              accept="image/*,application/pdf,.doc,.docx"
+              :custom-request="(opts: any) => handleUpload(opts, field.fieldKey)"
+              @remove="(opts: any) => handleRemove(opts, field.fieldKey)"
+              @before-upload="handleBeforeUpload"
+            >
+              <n-button>
+                <template #icon>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  </svg>
+                </template>
+                上传文件
+              </n-button>
+            </n-upload>
+            <p class="text-xs text-gray-400 mt-1">支持图片、PDF格式，单文件不超过5MB</p>
+          </div>
+        </n-form-item>
       </template>
     </div>
   </div>
@@ -113,6 +158,8 @@
 
 <script setup lang="ts">
 import { useConfigStore } from '~/stores/config'
+import { nextTick } from 'vue'
+import type { UploadCustomRequestOptions, UploadFileInfo } from 'naive-ui'
 
 const configStore = useConfigStore()
 
@@ -131,10 +178,28 @@ const fields = ref<any[]>([])
 // Track which template IDs have been loaded to avoid duplicate reloads
 const loadedIds = ref<string>('')
 
-const modelData = computed({
-  get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val)
-})
+// Use reactive object synced with parent via watch instead of computed
+// (computed setter doesn't fire on nested property changes with v-model)
+const modelData = reactive<Record<string, any>>({ ...props.modelValue })
+
+// Sync parent → local
+let syncingFromParent = false
+watch(() => props.modelValue, (newVal) => {
+  syncingFromParent = true
+  for (const key of Object.keys(modelData)) {
+    if (!(key in newVal)) delete modelData[key]
+  }
+  Object.assign(modelData, newVal)
+  nextTick(() => { syncingFromParent = false })
+}, { deep: true })
+
+// Sync local → parent
+watch(modelData, () => {
+  if (syncingFromParent) return
+  emit('update:modelValue', { ...modelData })
+}, { deep: true })
+
+const message = useMessage()
 
 // Config type to store getter mapping
 const configGetterMap: Record<string, string> = {
@@ -149,6 +214,13 @@ const configGetterMap: Record<string, string> = {
   responsibleDepartments: 'responsibleDepartmentOptions',
   responsibleProcesses: 'responsibleProcessOptions'
 }
+
+// Stored options for auto-complete from server data
+const autoCompleteData = reactive<Record<string, string[]>>({
+  rollNos: [],
+  specificDefects: [],
+  productModels: []
+})
 
 function parseSelectOptions(optionsStr: string | null | undefined) {
   if (!optionsStr) return []
@@ -166,11 +238,105 @@ function parseSelectOptions(optionsStr: string | null | undefined) {
   }
 }
 
+// Cache for dynamically loaded field option configs
+const dynamicOptionCache = reactive<Record<string, any[]>>({})
+
 function getConfigOptions(configType: string | null | undefined) {
   if (!configType) return []
+  // First check standard config types
   const getter = configGetterMap[configType]
-  if (!getter) return []
-  return (configStore as any)[getter] || []
+  if (getter) return (configStore as any)[getter] || []
+  // Check dynamic cache
+  if (dynamicOptionCache[configType]) {
+    return dynamicOptionCache[configType]
+  }
+  // Trigger async load for dynamic configs
+  loadDynamicOptions(configType)
+  return []
+}
+
+async function loadDynamicOptions(configType: string) {
+  if (dynamicOptionCache[configType]) return
+  try {
+    const resp = await $fetch('/api/config/field-options', { params: { configKey: configType } })
+    if ((resp as any).success && (resp as any).data.length > 0) {
+      const opts = JSON.parse((resp as any).data[0].options)
+      dynamicOptionCache[configType] = opts.map((v: string) => ({ label: v, value: v }))
+    }
+  } catch (e) {
+    console.error('Failed to load dynamic options:', e)
+  }
+}
+
+function getAutoCompleteOptions(configType: string | null | undefined) {
+  if (!configType) return []
+  if (configType === 'productModels') {
+    const models = configStore.productModelOptions || []
+    const existing = autoCompleteData.productModels || []
+    const allOptions = [...new Set([...models.map((m: any) => m.label), ...existing])]
+    return allOptions.map((v: string) => ({ label: v, value: v }))
+  }
+  if (configType === 'rollNos') {
+    return (autoCompleteData.rollNos || []).map((v: string) => ({ label: v, value: v }))
+  }
+  if (configType === 'specificDefects') {
+    return (autoCompleteData.specificDefects || []).map((v: string) => ({ label: v, value: v }))
+  }
+  return []
+}
+
+// Upload handling
+const uploadFiles = reactive<Record<string, any[]>>({})
+
+async function handleUpload(options: UploadCustomRequestOptions, fieldKey: string) {
+  const file: globalThis.File = (options.file as any).file
+  if (!file) return
+
+  const formData = new FormData()
+  formData.append('file', file)
+
+  try {
+    const response = await $fetch('/api/upload', {
+      method: 'POST',
+      body: formData
+    })
+    const data = response as any
+    if (data.success) {
+      if (!uploadFiles[fieldKey]) uploadFiles[fieldKey] = []
+      uploadFiles[fieldKey].push({
+        fileName: data.data.fileName,
+        fileUrl: data.data.fileUrl,
+        fileType: data.data.fileType,
+        fileSize: data.data.fileSize
+      })
+      modelData[fieldKey] = [...(uploadFiles[fieldKey] || [])]
+      options.onFinish()
+    } else {
+      options.onError()
+      message.error(data.message || '上传失败')
+    }
+  } catch (e) {
+    options.onError()
+    message.error('上传失败')
+  }
+}
+
+function handleRemove(options: { file: UploadFileInfo }, fieldKey: string) {
+  if (uploadFiles[fieldKey]) {
+    uploadFiles[fieldKey] = uploadFiles[fieldKey].filter(
+      f => f.fileName !== options.file.name
+    )
+    modelData[fieldKey] = [...uploadFiles[fieldKey]]
+  }
+}
+
+function handleBeforeUpload(data: { file: UploadFileInfo }) {
+  const maxSize = 5 * 1024 * 1024 // 5MB
+  if (data.file.size && data.file.size > maxSize) {
+    message.error('文件大小不能超过5MB')
+    return false
+  }
+  return true
 }
 
 // Load fields from all selected templates and merge
@@ -211,10 +377,27 @@ async function loadFields() {
     fields.value = allFields
     loadedIds.value = idKey
 
+    // Check if any auto-complete fields need data loaded
+    const needsRollNos = allFields.some(f => f.fieldType === 'auto-complete' && f.configType === 'rollNos')
+    const needsSpecificDefects = allFields.some(f => f.fieldType === 'auto-complete' && f.configType === 'specificDefects')
+    const needsProductModels = allFields.some(f => f.fieldType === 'auto-complete' && f.configType === 'productModels')
+
+    if (needsRollNos || needsSpecificDefects) {
+      try {
+        const resp = await $fetch('/api/complaints/autocomplete-data')
+        if ((resp as any).success) {
+          if (needsRollNos) autoCompleteData.rollNos = (resp as any).data.rollNos || []
+          if (needsSpecificDefects) autoCompleteData.specificDefects = (resp as any).data.specificDefects || []
+        }
+      } catch (e) {
+        console.error('Failed to load autocomplete data:', e)
+      }
+    }
+
     // Initialize defaults for any missing values
     const defaults: Record<string, any> = {}
     for (const field of fields.value) {
-      if (modelData.value[field.fieldKey] === undefined) {
+      if (modelData[field.fieldKey] === undefined) {
         if (field.fieldType === 'switch') {
           defaults[field.fieldKey] = field.defaultValue === 'true'
         } else if (field.fieldType === 'number') {
@@ -225,7 +408,7 @@ async function loadFields() {
       }
     }
     if (Object.keys(defaults).length > 0) {
-      emit('update:modelValue', { ...modelData.value, ...defaults })
+      emit('update:modelValue', { ...modelData, ...defaults })
     }
   } catch (e) {
     console.error('Failed to load template fields:', e)

@@ -15,6 +15,14 @@
           </template>
           导出CSV
         </n-button>
+        <n-button type="default" @click="navigateTo('/complaints/import')">
+          <template #icon>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+          </template>
+          批量导入
+        </n-button>
         <n-button type="primary" @click="navigateTo('/complaints/new')">
           <template #icon>
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -32,12 +40,32 @@
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-corporate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
         </svg>
-        <span class="text-sm font-medium text-corporate-700">筛选条件</span>
+        <span class="text-sm font-medium text-corporate-700">筛选条件（AND：所有条件同时满足）</span>
+        <span v-if="activeFilterCount > 0" class="text-xs bg-primary-50 text-primary-600 px-2 py-0.5 rounded-full">{{ activeFilterCount }} 个条件</span>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+
+      <!-- Row 1: Always visible - Date + Template + Keyword -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 pb-4 border-b border-corporate-100">
+        <n-date-picker
+          v-model:value="dateRange"
+          type="daterange"
+          clearable
+          placeholder="选择日期范围"
+          @update:value="handleDateChange"
+        />
+
+        <n-select
+          v-model:value="selectedTemplateId"
+          :options="templateFilterOptions"
+          placeholder="选择表单模板（加载自定义字段）"
+          clearable
+          filterable
+          @update:value="handleTemplateChange"
+        />
+
         <n-input
           v-model:value="filters.keyword"
-          placeholder="搜索客诉编号/内容..."
+          placeholder="全局搜索：编号/内容/不良点..."
           clearable
           @clear="handleSearch"
           @keyup.enter="handleSearch"
@@ -48,56 +76,117 @@
             </svg>
           </template>
         </n-input>
-
-        <n-date-picker
-          v-model:value="dateRange"
-          type="daterange"
-          clearable
-          placeholder="选择日期范围"
-          @update:value="handleDateChange"
-        />
-
-        <n-select
-          v-model:value="filters.customerId"
-          :options="customerOptions"
-          placeholder="选择客户"
-          clearable
-          @update:value="handleSearch"
-        />
-
-        <n-select
-          v-model:value="filters.productionLineId"
-          :options="productionLineOptions"
-          placeholder="选择产线"
-          clearable
-          @update:value="handleSearch"
-        />
-
-        <n-select
-          v-model:value="filters.problemCategoryId"
-          :options="problemCategoryOptions"
-          placeholder="选择问题大类"
-          clearable
-          @update:value="handleSearch"
-        />
-
-        <n-select
-          v-model:value="filters.closureStatus"
-          :options="statusOptions"
-          placeholder="选择状态"
-          clearable
-          @update:value="handleSearch"
-        />
       </div>
 
-      <div class="flex justify-end mt-4 pt-4 border-t border-corporate-100">
+      <!-- Row 2+: Dynamic filter rows -->
+      <div v-if="selectedTemplateId" class="space-y-3 mb-4">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium text-corporate-500">
+            自定义字段筛选（基于"{{ selectedTemplateName }}"模板的字段）
+          </span>
+        </div>
+
+        <div v-for="(row, idx) in dynamicFilters" :key="idx"
+          class="flex flex-wrap items-center gap-2 p-3 bg-corporate-50 rounded-lg"
+        >
+          <!-- Field selector -->
+          <n-select
+            v-model:value="row.field"
+            :options="filterFieldOptions"
+            placeholder="选择字段"
+            clearable
+            style="min-width:160px;max-width:200px"
+            @update:value="(v: any) => onDynamicFieldChange(idx, v)"
+          />
+
+          <!-- Operator selector -->
+          <n-select
+            v-model:value="row.operator"
+            :options="getOperators(row)"
+            placeholder="操作符"
+            style="min-width:100px;max-width:130px"
+          />
+
+          <!-- Value input - varies by field type -->
+          <n-date-picker
+            v-if="getFieldConfig(row.field)?.fieldType === 'date'"
+            v-model:value="row._dateValue"
+            type="date"
+            clearable
+            style="min-width:160px;max-width:200px"
+            @update:value="(v: any) => row.value = v ? new Date(v).toISOString().slice(0,10) : ''"
+          />
+
+          <n-input-number
+            v-else-if="getFieldConfig(row.field)?.fieldType === 'number'"
+            v-model:value="row.value"
+            :min="0"
+            placeholder="输入数值"
+            style="min-width:140px;max-width:180px"
+          />
+
+          <n-select
+            v-else-if="hasOptions(row.field)"
+            v-model:value="row.value"
+            :options="getFieldOptions(row.field)"
+            placeholder="选择值"
+            clearable
+            filterable
+            style="min-width:160px;max-width:280px"
+          />
+
+          <n-input
+            v-else
+            v-model:value="row.value"
+            placeholder="输入筛选值"
+            clearable
+            style="min-width:160px;max-width:280px"
+          />
+
+          <!-- Remove button -->
+          <n-button type="error" text size="small" @click="removeDynamicFilter(idx)">
+            <template #icon>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </template>
+          </n-button>
+        </div>
+
+        <n-button dashed size="small" @click="addDynamicFilter">
+          <template #icon>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v16m8-8H4" />
+            </svg>
+          </template>
+          添加筛选条件
+        </n-button>
+      </div>
+
+      <!-- No template hint -->
+      <div v-else class="text-center py-6 text-sm text-corporate-400 bg-corporate-50 rounded-lg mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mx-auto mb-2 text-corporate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        选择表单模板后，可使用模板的自定义字段进行精确筛选
+      </div>
+
+      <div class="flex justify-end pt-4 border-t border-corporate-100 gap-2">
         <n-button type="default" @click="handleReset">
           <template #icon>
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </template>
-          重置筛选
+          重置全部
+        </n-button>
+        <n-button type="primary" @click="handleSearch">
+          <template #icon>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </template>
+          查询
         </n-button>
       </div>
     </div>
@@ -111,7 +200,7 @@
           :loading="loading"
           :pagination="false"
           :row-key="(row: any) => row.id"
-          :scroll-x="1500"
+          :scroll-x="800"
           @update:sorter="handleSort"
         />
       </div>
@@ -136,7 +225,7 @@
 
 <script setup lang="ts">
 import { h } from 'vue'
-import { NTag, NButton, NSpace } from 'naive-ui'
+import { NButton, NSpace } from 'naive-ui'
 import type { DataTableColumn } from 'naive-ui'
 import { useConfigStore } from '~/stores/config'
 import { useAuthStore } from '~/stores/auth'
@@ -169,6 +258,114 @@ const templateFilterOptions = computed(() =>
   }))
 )
 
+// Dynamic filter system
+const selectedTemplateId = ref<number | null>(null)
+const selectedTemplateName = computed(() => {
+  const t = templates.value.find(t => t.id === selectedTemplateId.value)
+  return t?.name || ''
+})
+const filterFieldConfigs = ref<any[]>([]) // Loaded filter fields from template
+const dynamicFilters = reactive<Array<{ field: string | null; operator: string; value: any; _dateValue: any }>>([])
+const activeFilterCount = computed(() => dynamicFilters.filter(r => r.field && r.value).length)
+
+const filterFieldOptions = computed(() =>
+  filterFieldConfigs.value.map((f: any) => ({
+    label: f.fieldLabel,
+    value: f.fieldKey
+  }))
+)
+
+function getFieldConfig(fieldKey: string | null) {
+  if (!fieldKey) return null
+  return filterFieldConfigs.value.find((f: any) => f.fieldKey === fieldKey) || null
+}
+
+function hasOptions(fieldKey: string | null) {
+  const cfg = getFieldConfig(fieldKey)
+  return cfg?.options && cfg.options.length > 0
+}
+
+function getFieldOptions(fieldKey: string | null) {
+  return getFieldConfig(fieldKey)?.options || []
+}
+
+function getOperators(row: any) {
+  const cfg = getFieldConfig(row.field)
+  if (!cfg) return [{ label: '包含(contains)', value: 'contains' }]
+
+  switch (cfg.fieldType) {
+    case 'number':
+      return [
+        { label: '等于(=)', value: 'eq' },
+        { label: '大于(>)', value: 'gt' },
+        { label: '小于(<)', value: 'lt' },
+        { label: '大于等于(>=)', value: 'gte' },
+        { label: '小于等于(<=)', value: 'lte' }
+      ]
+    case 'date':
+      return [
+        { label: '等于', value: 'date_eq' },
+        { label: '之后(>=)', value: 'date_gte' },
+        { label: '之前(<=)', value: 'date_lte' }
+      ]
+    case 'select':
+    case 'select-config':
+    case 'ref':
+      return [{ label: '等于', value: 'eq' }]
+    default:
+      return [
+        { label: '包含(contains)', value: 'contains' },
+        { label: '等于(eq)', value: 'eq' }
+      ]
+  }
+}
+
+function onDynamicFieldChange(idx: number, newField: string) {
+  const df = dynamicFilters[idx]
+  if (!df) return
+  // Reset operator and value when field changes
+  const cfg = getFieldConfig(newField)
+  if (cfg?.fieldType === 'number') {
+    df.operator = 'eq'
+  } else if (cfg?.fieldType === 'date') {
+    df.operator = 'date_eq'
+  } else if (cfg?.fieldType === 'select' || cfg?.fieldType === 'select-config' || cfg?.fieldType === 'ref') {
+    df.operator = 'eq'
+  } else {
+    df.operator = 'contains'
+  }
+  df.value = null
+  df._dateValue = null
+}
+
+function addDynamicFilter() {
+  dynamicFilters.push({ field: null, operator: 'contains', value: null, _dateValue: null })
+}
+
+function removeDynamicFilter(idx: number) {
+  dynamicFilters.splice(idx, 1)
+  handleSearch()
+}
+
+async function handleTemplateChange(tid: number | null) {
+  dynamicFilters.length = 0
+  filterFieldConfigs.value = []
+  if (!tid) {
+    handleSearch()
+    return
+  }
+  // Load filter fields for this template
+  try {
+    const resp = await $fetch(`/api/templates/${tid}/filter-fields`) as any
+    if (resp.success) {
+      filterFieldConfigs.value = resp.data || []
+    }
+  } catch (e) {
+    console.error('Failed to load filter fields:', e)
+  }
+  handleSearch()
+}
+
 // Pagination
 const pagination = reactive({
   page: 1,
@@ -192,21 +389,47 @@ const filters = reactive({
   productionLineId: null as number | null,
   productModelId: null as number | null,
   problemCategoryId: null as number | null,
+  complaintCategory: null as string | null,
+  defectSource: null as string | null,
   closureStatus: null as string | null,
   templateId: null as number | null
 })
 
 const dateRange = ref<[number, number] | null>(null)
 
-// Options for selects
-const customerOptions = computed(() => configStore.customerOptions)
-const productionLineOptions = computed(() => configStore.productionLineOptions)
-const problemCategoryOptions = computed(() => configStore.problemCategoryOptions)
-
 const statusOptions = [
   { label: '待分析', value: 'pending' },
   { label: '处理中', value: 'processing' },
   { label: '已结案', value: 'closed' }
+]
+
+const complaintCategoryOptions = [
+  { label: '成品外观', value: '成品外观' },
+  { label: '膜面平整性', value: '膜面平整性' },
+  { label: '涂布表观', value: '涂布表观' },
+  { label: '点弊病', value: '点弊病' },
+  { label: '轴身平整性', value: '轴身平整性' },
+  { label: '划伤', value: '划伤' },
+  { label: '管理不良', value: '管理不良' },
+  { label: '包装运输', value: '包装运输' },
+  { label: '物理特性', value: '物理特性' },
+  { label: '匹配性不良', value: '匹配性不良' },
+  { label: '客户匹配性不良', value: '客户匹配性不良' }
+]
+
+const defectSourceOptions = [
+  { label: '原材料', value: '原材料' },
+  { label: '配方', value: '配方' },
+  { label: '挤出工序', value: '挤出工序' },
+  { label: '纵拉工序', value: '纵拉工序' },
+  { label: '横拉工序', value: '横拉工序' },
+  { label: '涂布工序', value: '涂布工序' },
+  { label: '收卷工序', value: '收卷工序' },
+  { label: '分切工序', value: '分切工序' },
+  { label: '包装运输', value: '包装运输' },
+  { label: '环境管理', value: '环境管理' },
+  { label: '人员管理', value: '人员管理' },
+  { label: '设备异常', value: '设备异常' }
 ]
 
 // Resolve template names from templateIds JSON string
@@ -239,62 +462,16 @@ const columns: DataTableColumn<any>[] = [
   {
     title: '反馈日期',
     key: 'feedbackDate',
-    width: 110,
+    width: 120,
     sorter: true,
     render: (row) => row.feedbackDate ? dayjs(row.feedbackDate).format('YYYY-MM-DD') : '-'
   },
   {
-    title: '客户',
-    key: 'customer',
-    width: 150,
-    ellipsis: { tooltip: true },
-    render: (row) => row.customer?.name || '-'
-  },
-  {
-    title: '产品型号',
-    key: 'productModel',
-    width: 150,
-    ellipsis: { tooltip: true },
-    render: (row) => row.productModel?.name || '-'
-  },
-  {
     title: '表单模板',
     key: 'template',
-    width: 120,
+    width: 200,
     ellipsis: { tooltip: true },
     render: (row) => resolveTemplateNames(row.templateIds)
-  },
-  {
-    title: '问题大类',
-    key: 'problemCategory',
-    width: 100,
-    render: (row) => row.problemCategory?.name || '-'
-  },
-  {
-    title: '严重等级',
-    key: 'severityLevel',
-    width: 90,
-    render: (row) => {
-      if (!row.severityLevel) return '-'
-      return h(NTag, {
-        size: 'small',
-        color: { color: row.severityLevel.color + '20', textColor: row.severityLevel.color }
-      }, () => row.severityLevel.name)
-    }
-  },
-  {
-    title: '状态',
-    key: 'closureStatus',
-    width: 90,
-    render: (row) => {
-      const statusMap: Record<string, { label: string; type: 'warning' | 'info' | 'success' }> = {
-        pending: { label: '待分析', type: 'warning' },
-        processing: { label: '处理中', type: 'info' },
-        closed: { label: '已结案', type: 'success' }
-      }
-      const status = statusMap[row.closureStatus] || { label: row.closureStatus, type: 'default' as const }
-      return h(NTag, { type: status.type, size: 'small' }, () => status.label)
-    }
   },
   {
     title: '操作',
@@ -363,6 +540,24 @@ async function loadData() {
       ...filters
     }
 
+    // Add template ID filter
+    if (selectedTemplateId.value) {
+      params.templateId = selectedTemplateId.value
+    }
+
+    // Add dynamic filters as JSON
+    const activeDynamicFilters = dynamicFilters.filter(r => r.field && (r.value || r._dateValue))
+    if (activeDynamicFilters.length > 0) {
+      const cleaned = activeDynamicFilters.map(r => ({
+        field: r.field,
+        operator: r.operator,
+        value: r.field && getFieldConfig(r.field)?.fieldType === 'date' && r._dateValue
+          ? new Date(r._dateValue).toISOString().slice(0, 10)
+          : r.value
+      }))
+      params.filters = JSON.stringify(cleaned)
+    }
+
     // Remove empty filters
     Object.keys(params).forEach(key => {
       if (params[key] === '' || params[key] === null || params[key] === undefined) {
@@ -409,9 +604,14 @@ function handleReset() {
   filters.productionLineId = null
   filters.productModelId = null
   filters.problemCategoryId = null
+  filters.complaintCategory = null
+  filters.defectSource = null
   filters.closureStatus = null
   filters.templateId = null
   dateRange.value = null
+  selectedTemplateId.value = null
+  dynamicFilters.length = 0
+  filterFieldConfigs.value = []
   handleSearch()
 }
 

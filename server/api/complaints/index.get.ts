@@ -17,11 +17,15 @@ const querySchema = z.object({
   productModelId: z.coerce.number().int().optional(),
   productionLineId: z.coerce.number().int().optional(),
   problemCategoryId: z.coerce.number().int().optional(),
+  complaintCategory: z.string().optional(),
+  defectSource: z.string().optional(),
   closureStatus: z.enum(['pending', 'processing', 'closed']).optional(),
   responsibleDeptId: z.coerce.number().int().optional(),
   severityLevelId: z.coerce.number().int().optional(),
   repeatedIssue: booleanQueryParam,
-  templateId: z.coerce.number().int().optional()
+  templateId: z.coerce.number().int().optional(),
+  // Dynamic filters: JSON string of [{field, operator, value}]
+  filters: z.string().optional()
 })
 
 export default defineEventHandler(async (event) => {
@@ -47,6 +51,9 @@ export default defineEventHandler(async (event) => {
         { feedbackContent: { contains: keyword } },
         { customerComplaintText: { contains: keyword } },
         { internalComplaintName: { contains: keyword } },
+        { specificDefect: { contains: keyword } },
+        { defectSource: { contains: keyword } },
+        { complaintCategory: { contains: keyword } },
         { rootCauseAnalysis: { contains: keyword } },
         { correctiveAction: { contains: keyword } },
         { rollNo: { contains: keyword } },
@@ -70,6 +77,8 @@ export default defineEventHandler(async (event) => {
     if (params.productModelId) where.productModelId = params.productModelId
     if (params.productionLineId) where.productionLineId = params.productionLineId
     if (params.problemCategoryId) where.problemCategoryId = params.problemCategoryId
+    if (params.complaintCategory) where.complaintCategory = params.complaintCategory
+    if (params.defectSource) where.defectSource = params.defectSource
     if (params.closureStatus) where.closureStatus = params.closureStatus
     if (params.responsibleDeptId) where.responsibleDeptId = params.responsibleDeptId
     if (params.severityLevelId) where.severityLevelId = params.severityLevelId
@@ -77,8 +86,67 @@ export default defineEventHandler(async (event) => {
 
     // Template filter: search templateIds JSON string for the given templateId
     if (params.templateId) {
-      // SQLite: use LIKE to match the templateId in the JSON array
       where.templateIds = { contains: String(params.templateId) }
+    }
+
+    // Dynamic filters: parse JSON string
+    if (params.filters) {
+      try {
+        const dynamicFilters: Array<{ field: string; operator: string; value: any }> = JSON.parse(params.filters)
+        for (const df of dynamicFilters) {
+          if (!df.field || df.value === undefined || df.value === null || df.value === '') continue
+
+          const fieldName = df.field
+          const val = df.value
+
+          switch (df.operator) {
+            case 'eq':
+              // Number fields
+              if (['productModelId', 'customerId', 'productionLineId', 'problemCategoryId',
+                   'problemSubcategoryId', 'severityLevelId', 'customerDemandId',
+                   'compensationTypeId', 'responsibleDeptId', 'responsibleProcessId',
+                   'shaftCount', 'quantityInvolved'].includes(fieldName)) {
+                where[fieldName] = Number(val)
+              } else if (fieldName === 'closureStatus') {
+                where[fieldName] = val
+              } else {
+                where[fieldName] = { equals: val }
+              }
+              break
+            case 'contains':
+              where[fieldName] = { contains: String(val) }
+              break
+            case 'gt':
+              where[fieldName] = { gt: Number(val) }
+              break
+            case 'lt':
+              where[fieldName] = { lt: Number(val) }
+              break
+            case 'gte':
+              where[fieldName] = { gte: Number(val) }
+              break
+            case 'lte':
+              where[fieldName] = { lte: Number(val) }
+              break
+            case 'date_eq':
+              where[fieldName] = {
+                gte: new Date(val),
+                lte: new Date(new Date(val).setHours(23, 59, 59, 999))
+              }
+              break
+            case 'date_gte':
+              where[fieldName] = { gte: new Date(val) }
+              break
+            case 'date_lte':
+              where[fieldName] = { lte: new Date(val) }
+              break
+            default:
+              where[fieldName] = { contains: String(val) }
+          }
+        }
+      } catch (e) {
+        // Ignore parse errors for dynamic filters
+      }
     }
 
     // Get total count

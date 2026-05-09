@@ -90,8 +90,8 @@
       <div class="card lg:col-span-2">
         <div class="flex items-center justify-between mb-4">
           <h2 class="section-title mb-0">月度趋势</h2>
-          <n-button text size="small" @click="navigateTo('/stats')">
-            查看详情
+          <n-button text size="small" @click="navigateTo('/stats/custom')">
+            自定义分析
             <template #icon>
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />

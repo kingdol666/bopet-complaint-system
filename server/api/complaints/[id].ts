@@ -1,15 +1,17 @@
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
-import { requireSessionUser, requireWritePermission, canAccessDepartment } from '~/server/utils/auth'
+import { requireSessionUser, requireWritePermission, canAccessDepartment, isNormalUser } from '~/server/utils/auth'
 
 const updateSchema = z.object({
   feedbackDate: z.string().transform((v) => new Date(v)).optional(),
   productionTime: z.string().transform((v) => new Date(v)).nullable().optional(),
   productModelId: z.number().int().nullable().optional(),
+  shaftCount: z.number().int().positive().nullable().optional(),
   thickness: z.string().max(50).nullable().optional(),
-  rollNo: z.string().max(100).nullable().optional(),
+  rollNo: z.string().max(200).nullable().optional(),
+  specification: z.string().max(100).nullable().optional(),
   customerId: z.number().int().nullable().optional(),
-  quantityInvolved: z.number().nullable().optional(),
+  quantityInvolved: z.number().int().positive().nullable().optional(),
   application: z.string().max(200).nullable().optional(),
   productionLineId: z.number().int().nullable().optional(),
   shiftTeam: z.string().max(50).nullable().optional(),
@@ -18,6 +20,9 @@ const updateSchema = z.object({
   feedbackContent: z.string().nullable().optional(),
   customerComplaintText: z.string().nullable().optional(),
   internalComplaintName: z.string().max(200).nullable().optional(),
+  defectSource: z.string().max(100).nullable().optional(),
+  specificDefect: z.string().max(200).nullable().optional(),
+  complaintCategory: z.string().max(100).nullable().optional(),
   problemCategoryId: z.number().int().nullable().optional(),
   problemSubcategoryId: z.number().int().nullable().optional(),
   severityLevelId: z.number().int().nullable().optional(),
@@ -33,12 +38,18 @@ const updateSchema = z.object({
   lessonsLearned: z.string().nullable().optional(),
   reviewConclusion: z.string().nullable().optional(),
   standardizedAction: z.boolean().optional(),
+  productUsage: z.string().max(200).nullable().optional(),
+  improvementAction: z.string().nullable().optional(),
   remark: z.string().nullable().optional(),
   templateIds: z.array(z.number().int()).optional().nullable(),
-  templateData: z.record(z.any()).nullable().optional()
+  templateData: z.record(z.any()).nullable().optional(),
+  attachments: z.array(z.object({
+    fileName: z.string(),
+    fileUrl: z.string(),
+    fileType: z.string(),
+    fileSize: z.number()
+  })).optional().nullable()
 })
-
-
 
 const complaintInclude = {
   customer: true,
@@ -50,7 +61,8 @@ const complaintInclude = {
   customerDemand: true,
   compensationType: true,
   responsibleDept: true,
-  responsibleProcess: true
+  responsibleProcess: true,
+  attachments: true
 } as const
 
 export default defineEventHandler(async (event) => {
@@ -121,6 +133,14 @@ export default defineEventHandler(async (event) => {
         })
       }
 
+      // Normal users can only modify their own records
+      if (isNormalUser(currentUser) && existing.createdById !== currentUser.id) {
+        throw createError({
+          statusCode: 403,
+          message: '普通用户只能修改自己创建的记录'
+        })
+      }
+
       // If changing department, check access to new department
       if (data.responsibleDeptId !== undefined && !canAccessDepartment(currentUser, data.responsibleDeptId)) {
         throw createError({
@@ -129,10 +149,12 @@ export default defineEventHandler(async (event) => {
         })
       }
 
+      const { attachments, ...updateFields } = data
+
       const record = await prisma.complaintRecord.update({
         where: { id },
         data: {
-          ...data,
+          ...updateFields,
           templateIds: data.templateIds !== undefined
             ? JSON.stringify(data.templateIds)
             : undefined,
@@ -143,6 +165,25 @@ export default defineEventHandler(async (event) => {
         },
         include: complaintInclude
       })
+
+      // Handle attachments: delete old, create new
+      if (attachments !== undefined) {
+        // Delete existing attachments for this complaint
+        await prisma.complaintAttachment.deleteMany({ where: { complaintId: id } })
+        // Create new attachments
+        if (attachments && attachments.length > 0) {
+          await prisma.complaintAttachment.createMany({
+            data: attachments.map(a => ({
+              complaintId: record.id,
+              fileName: a.fileName,
+              fileUrl: a.fileUrl,
+              fileType: a.fileType,
+              fileSize: a.fileSize,
+              uploadedById: currentUser.id
+            }))
+          })
+        }
+      }
 
       await prisma.operationLog.create({
         data: {
@@ -191,6 +232,14 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 403,
         message: '您没有删除该记录的权限'
+      })
+    }
+
+    // Normal users cannot delete records
+    if (isNormalUser(currentUser)) {
+      throw createError({
+        statusCode: 403,
+        message: '普通用户没有删除权限'
       })
     }
 

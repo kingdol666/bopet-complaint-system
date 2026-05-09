@@ -9,7 +9,7 @@ const fieldSchema = z.object({
   id: z.number().int().optional(),
   fieldKey: z.string().min(1).max(100),
   fieldLabel: z.string().min(1).max(200),
-  fieldType: z.enum(['text', 'textarea', 'number', 'select', 'date', 'switch', 'select-config']),
+  fieldType: z.enum(['text', 'textarea', 'number', 'select', 'date', 'switch', 'select-config', 'auto-complete', 'upload']),
   required: z.boolean().default(false),
   sortOrder: z.number().int().default(0),
   options: z.string().optional().nullable(),
@@ -22,6 +22,7 @@ const updateTemplateSchema = z.object({
   name: z.string().min(1).max(200).optional(),
   description: z.string().max(500).optional().nullable(),
   departmentId: z.number().int().optional().nullable(),
+  isPublic: z.boolean().optional(),
   enabled: z.boolean().optional(),
   sortOrder: z.number().int().optional(),
   fields: z.array(fieldSchema).optional()
@@ -50,7 +51,9 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 404, message: '模板不存在' })
     }
 
-    if (template.departmentId && !canAccessDepartment(user, template.departmentId)) {
+    // Allow access if: superadmin, same department, template is public, or template is global
+    const hasAccess = !template.departmentId || template.isPublic || canAccessDepartment(user, template.departmentId)
+    if (!hasAccess) {
       throw createError({ statusCode: 403, message: '无权访问该模板' })
     }
 
@@ -101,6 +104,7 @@ export default defineEventHandler(async (event) => {
     if (data.name !== undefined) updateData.name = data.name
     if (data.description !== undefined) updateData.description = data.description
     if (data.departmentId !== undefined) updateData.departmentId = data.departmentId
+    if (data.isPublic !== undefined) updateData.isPublic = data.isPublic
     if (data.enabled !== undefined) updateData.enabled = data.enabled
     if (data.sortOrder !== undefined) updateData.sortOrder = data.sortOrder
 

@@ -8,8 +8,10 @@ export default defineEventHandler(async (event) => {
 
   if (!isSuperAdmin(user)) {
     const deptIds = user.departmentIds || []
+    // Users can see: global templates (departmentId=null), own department templates, and public templates from any department
     where.OR = [
       { departmentId: null },
+      { isPublic: true },
       ...(deptIds.length > 0 ? [{ departmentId: { in: deptIds } }] : [])
     ]
   }

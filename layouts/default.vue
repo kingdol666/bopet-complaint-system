@@ -168,7 +168,7 @@
 <script setup lang="ts">
 import { useAuthStore } from '~/stores/auth'
 
-type MenuIcon = 'dashboard' | 'list' | 'add' | 'mapping' | 'chart' | 'config' | 'users' | 'template'
+type MenuIcon = 'dashboard' | 'list' | 'add' | 'mapping' | 'chart' | 'users' | 'template'
 
 interface MenuItem {
   path: string
@@ -232,12 +232,13 @@ const menuItems = computed<MenuItem[]>(() => {
     { path: '/complaints', label: '客诉列表', icon: 'list' },
     { path: '/complaints/new', label: '新增客诉', icon: 'add' },
     { path: '/mappings', label: '问题映射', icon: 'mapping' },
-    { path: '/stats', label: '统计分析', icon: 'chart' }
+    { path: '/stats/custom', label: '自定义分析', icon: 'chart' }
   ]
+
+  items.push({ path: '/departments', label: '部门管理', icon: 'users' })
 
   if (authStore.isSuperAdmin) {
     items.push({ path: '/users', label: '用户管理', icon: 'users' })
-    items.push({ path: '/config', label: '系统配置', icon: 'config' })
   }
 
   if (authStore.canWrite) {

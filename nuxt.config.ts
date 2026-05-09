@@ -10,6 +10,11 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-04-03',
   devtools: { enabled: true },
 
+  // Disable app manifest to fix Windows ESM loader issue
+  experimental: {
+    appManifest: false
+  },
+
   modules: [
     '@pinia/nuxt',
     '@nuxtjs/tailwindcss'
@@ -28,7 +33,7 @@ export default defineNuxtConfig({
     // Server-side only
     databaseUrl: ['postgres', 'postgresql'].includes(process.env.PRISMA_DB_PROVIDER || '')
       ? process.env.POSTGRES_PRISMA_URL || process.env.DATABASE_URL || ''
-      : process.env.DATABASE_URL || 'file:./data/bopet.db',
+      : process.env.DATABASE_URL || 'file:./data/dev/bopet.db',
     jwtSecret: process.env.JWT_SECRET || '',
     // Public
     public: {
@@ -74,7 +79,15 @@ export default defineNuxtConfig({
   // Nitro config
   nitro: {
     externals: {
-      inline: ['naive-ui', 'vueuc']
+      inline: ['naive-ui', 'vueuc', 'xlsx']
+    },
+    experimental: {
+      wasm: false
+    },
+    esbuild: {
+      options: {
+        target: 'esnext'
+      }
     }
   }
 })

@@ -177,21 +177,28 @@ const SECTION_MAP: Record<string, string> = {
   productionTime: '基础信息',
   customerId: '基础信息',
   productModelId: '基础信息',
+  shaftCount: '基础信息',
   thickness: '基础信息',
   rollNo: '基础信息',
+  specification: '基础信息',
   quantityInvolved: '基础信息',
   application: '基础信息',
   productionLineId: '基础信息',
   shiftTeam: '基础信息',
   machineNo: '基础信息',
   batchNo: '基础信息',
+  productUsage: '基础信息',
   feedbackContent: '客诉内容',
   customerComplaintText: '客诉内容',
   internalComplaintName: '客诉内容',
+  defectSource: '客诉内容',
+  specificDefect: '客诉内容',
+  complaintCategory: '客诉内容',
   problemCategoryId: '客诉内容',
   problemSubcategoryId: '客诉内容',
   severityLevelId: '客诉内容',
   repeatedIssue: '客诉内容',
+  attachments: '客诉内容',
   customerDemandId: '诉求与处置',
   compensationTypeId: '诉求与处置',
   closureStatus: '诉求与处置',
@@ -203,6 +210,7 @@ const SECTION_MAP: Record<string, string> = {
   lessonsLearned: '原因与改善',
   reviewConclusion: '原因与改善',
   standardizedAction: '原因与改善',
+  improvementAction: '原因与改善',
   remark: '原因与改善'
 }
 
@@ -337,6 +345,11 @@ function resolveDisplayValue(field: any, record: any): string {
     const map: Record<string, string> = { pending: '待分析', processing: '处理中', closed: '已结案' }
     return map[value] || value
   }
+  if (field.fieldType === 'upload' || field.fieldKey === 'attachments') {
+    const attachments = record.attachments || []
+    if (attachments.length === 0) return '无附件'
+    return attachments.map((a: any) => a.fileName).join(', ')
+  }
 
   return String(value)
 }
@@ -346,18 +359,22 @@ function buildFallbackFields() {
   const fields: any[] = []
   const standardFieldLabels: Record<string, string> = {
     feedbackDate: '反馈日期', productionTime: '生产时间', customerId: '客户',
-    productModelId: '产品型号', thickness: '厚度', rollNo: '轴号',
-    quantityInvolved: '涉及数量', application: '用途', productionLineId: '产线',
-    shiftTeam: '班组', machineNo: '机台', batchNo: '批次号',
+    productModelId: '产品型号', shaftCount: '轴数', thickness: '厚度',
+    rollNo: '轴号', specification: '规格', quantityInvolved: '涉及数量',
+    application: '用途', productionLineId: '产线', shiftTeam: '班组',
+    machineNo: '机台', batchNo: '批次号', productUsage: '产品用途',
     feedbackContent: '反馈内容', customerComplaintText: '客户投诉描述',
-    internalComplaintName: '内部问题名称', problemCategoryId: '问题大类',
-    problemSubcategoryId: '问题小类', severityLevelId: '严重等级',
-    repeatedIssue: '是否重复', customerDemandId: '客户诉求',
-    compensationTypeId: '赔偿方式', closureStatus: '闭环状态',
-    responsibleDeptId: '责任部门', responsibleProcessId: '责任工序',
-    disposalResult: '处置结果', rootCauseAnalysis: '问题分析',
-    correctiveAction: '改善措施', lessonsLearned: '启示',
-    reviewConclusion: '复盘结论', standardizedAction: '标准化措施', remark: '备注'
+    internalComplaintName: '内部问题名称', defectSource: '弊病源',
+    specificDefect: '具体不良点', complaintCategory: '客诉分类',
+    problemCategoryId: '问题大类', problemSubcategoryId: '问题小类',
+    severityLevelId: '严重等级', repeatedIssue: '是否重复',
+    customerDemandId: '客户诉求', compensationTypeId: '赔偿方式',
+    closureStatus: '闭环状态', responsibleDeptId: '责任部门',
+    responsibleProcessId: '责任工序', disposalResult: '处置结果',
+    rootCauseAnalysis: '问题分析', correctiveAction: '纠正措施',
+    lessonsLearned: '启示', reviewConclusion: '复盘结论',
+    standardizedAction: '标准化措施', improvementAction: '改善措施',
+    remark: '备注', attachments: '附件/8D报告'
   }
 
   for (const [key, label] of Object.entries(standardFieldLabels)) {

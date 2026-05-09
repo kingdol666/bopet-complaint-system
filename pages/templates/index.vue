@@ -6,14 +6,24 @@
         <h1 class="page-title">表单模板管理</h1>
         <p class="page-subtitle">配置客诉表单模板和字段</p>
       </div>
-      <n-button v-if="authStore.canWrite" type="primary" @click="handleAdd">
-        <template #icon>
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v16m8-8H4" />
-          </svg>
-        </template>
-        新增模板
-      </n-button>
+      <div class="flex items-center gap-2">
+        <n-button v-if="authStore.canWrite" type="default" @click="navigateTo('/templates/create-from-file')">
+          <template #icon>
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+          </template>
+          OCR创建
+        </n-button>
+        <n-button v-if="authStore.canWrite" type="primary" @click="handleAdd">
+          <template #icon>
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v16m8-8H4" />
+            </svg>
+          </template>
+          新增模板
+        </n-button>
+      </div>
     </div>
 
     <div class="card">
@@ -53,6 +63,10 @@
           </n-form-item>
           <n-form-item label="启用">
             <n-switch v-model:value="formData.enabled" />
+          </n-form-item>
+          <n-form-item label="公开模板" v-if="formData.departmentId">
+            <n-switch v-model:value="formData.isPublic" />
+            <span class="text-xs text-corporate-400 ml-2">公开后其他部门可查看但不能修改</span>
           </n-form-item>
         </div>
 
@@ -197,6 +211,7 @@ const formData = reactive({
   name: '',
   description: null as string | null,
   departmentId: null as number | null,
+  isPublic: false,
   enabled: true,
   sortOrder: 0,
   fields: [] as FieldForm[]
@@ -212,8 +227,10 @@ const fieldTypeOptions = [
   { label: '数字', value: 'number' },
   { label: '下拉选择', value: 'select' },
   { label: '配置选择', value: 'select-config' },
+  { label: '自动补全', value: 'auto-complete' },
   { label: '日期', value: 'date' },
-  { label: '开关', value: 'switch' }
+  { label: '开关', value: 'switch' },
+  { label: '文件上传', value: 'upload' }
 ]
 
 const configTypeOptions = [
@@ -349,6 +366,7 @@ function handleEdit(row: any) {
   formData.name = row.name
   formData.description = row.description
   formData.departmentId = row.departmentId
+  formData.isPublic = row.isPublic || false
   formData.enabled = row.enabled
   formData.sortOrder = row.sortOrder
   formData.fields = (row.fields || []).map((f: any) => ({

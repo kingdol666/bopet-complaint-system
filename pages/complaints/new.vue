@@ -190,7 +190,11 @@ async function handleSubmit() {
     })
 
     if (response.success) {
-      message.success('客诉记录创建成功')
+      if (response.warning) {
+        message.warning(response.warning)
+      } else {
+        message.success('客诉记录创建成功')
+      }
       router.push('/complaints')
     }
   } catch (error: any) {

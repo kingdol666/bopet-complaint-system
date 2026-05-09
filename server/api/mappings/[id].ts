@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
+import { requireSessionUser } from '~/server/utils/auth'
 
 const updateSchema = z.object({
   customerExpression: z.string().max(500).optional(),
@@ -11,6 +12,7 @@ const updateSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
+  await requireSessionUser(event)
   const id = parseInt(getRouterParam(event, 'id') || '0')
 
   if (!id) {

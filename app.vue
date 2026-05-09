@@ -102,6 +102,7 @@ const themeOverrides = {
 useHead({
   titleTemplate: (title) => title ? `${title} - BOPET客诉系统` : 'BOPET客诉管理系统',
   meta: [
+    { name: 'viewport', content: 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' },
     { name: 'description', content: 'BOPET客诉管理系统 - 企业级客诉处理平台' }
   ],
   link: [

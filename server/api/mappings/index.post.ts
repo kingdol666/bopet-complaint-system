@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client'
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
+import { requireSessionUser } from '~/server/utils/auth'
 
 const createSchema = z.object({
   customerExpression: z.string().max(500),
@@ -13,6 +14,7 @@ const createSchema = z.object({
 
 export default defineEventHandler(async (event) => {
   try {
+    await requireSessionUser(event)
     const body = await readBody(event)
     const data = createSchema.parse(body)
 

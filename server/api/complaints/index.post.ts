@@ -7,10 +7,12 @@ const createSchema = z.object({
   feedbackDate: z.string().transform((v) => new Date(v)),
   productionTime: z.string().transform((v) => new Date(v)).optional().nullable(),
   productModelId: z.number().int().optional().nullable(),
+  shaftCount: z.number().int().positive().optional().nullable(),
   thickness: z.string().max(50).optional().nullable(),
-  rollNo: z.string().max(100).optional().nullable(),
+  rollNo: z.string().max(200).optional().nullable(),
+  specification: z.string().max(100).optional().nullable(),
   customerId: z.number().int().optional().nullable(),
-  quantityInvolved: z.number().optional().nullable(),
+  quantityInvolved: z.number().int().positive().optional().nullable(),
   application: z.string().max(200).optional().nullable(),
   productionLineId: z.number().int().optional().nullable(),
   shiftTeam: z.string().max(50).optional().nullable(),
@@ -19,6 +21,9 @@ const createSchema = z.object({
   feedbackContent: z.string().optional().nullable(),
   customerComplaintText: z.string().optional().nullable(),
   internalComplaintName: z.string().max(200).optional().nullable(),
+  defectSource: z.string().max(100).optional().nullable(),
+  specificDefect: z.string().max(200).optional().nullable(),
+  complaintCategory: z.string().max(100).optional().nullable(),
   problemCategoryId: z.number().int().optional().nullable(),
   problemSubcategoryId: z.number().int().optional().nullable(),
   severityLevelId: z.number().int().optional().nullable(),
@@ -34,9 +39,17 @@ const createSchema = z.object({
   lessonsLearned: z.string().optional().nullable(),
   reviewConclusion: z.string().optional().nullable(),
   standardizedAction: z.boolean().default(false),
+  productUsage: z.string().max(200).optional().nullable(),
+  improvementAction: z.string().optional().nullable(),
   remark: z.string().optional().nullable(),
   templateIds: z.array(z.number().int()).optional().nullable(),
-  templateData: z.record(z.any()).optional().nullable()
+  templateData: z.record(z.any()).optional().nullable(),
+  attachments: z.array(z.object({
+    fileName: z.string(),
+    fileUrl: z.string(),
+    fileType: z.string(),
+    fileSize: z.number()
+  })).optional().nullable()
 })
 
 const complaintInclude = {
@@ -99,13 +112,31 @@ export default defineEventHandler(async (event) => {
 
     for (let attempt = 0; attempt < 5; attempt += 1) {
       const complaintNo = await generateComplaintNo()
+
+      // Duplicate detection: same customer + same model + same defect within 90 days
+      let duplicateCount = 0
+      if (data.customerId && data.productModelId && data.specificDefect) {
+        const ninetyDaysAgo = new Date()
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
+        duplicateCount = await prisma.complaintRecord.count({
+          where: {
+            customerId: data.customerId,
+            productModelId: data.productModelId,
+            specificDefect: data.specificDefect,
+            feedbackDate: { gte: ninetyDaysAgo }
+          }
+        })
+      }
+
       const createData: Prisma.ComplaintRecordUncheckedCreateInput = {
         complaintNo,
         feedbackDate: data.feedbackDate,
         productionTime: data.productionTime,
         productModelId: data.productModelId,
+        shaftCount: data.shaftCount,
         thickness: data.thickness,
         rollNo: data.rollNo,
+        specification: data.specification,
         customerId: data.customerId,
         quantityInvolved: data.quantityInvolved,
         application: data.application,
@@ -116,6 +147,9 @@ export default defineEventHandler(async (event) => {
         feedbackContent: data.feedbackContent,
         customerComplaintText: data.customerComplaintText,
         internalComplaintName: data.internalComplaintName,
+        defectSource: data.defectSource,
+        specificDefect: data.specificDefect,
+        complaintCategory: data.complaintCategory,
         problemCategoryId: data.problemCategoryId,
         problemSubcategoryId: data.problemSubcategoryId,
         severityLevelId: data.severityLevelId,
@@ -131,6 +165,8 @@ export default defineEventHandler(async (event) => {
         lessonsLearned: data.lessonsLearned,
         reviewConclusion: data.reviewConclusion,
         standardizedAction: data.standardizedAction,
+        productUsage: data.productUsage,
+        improvementAction: data.improvementAction,
         remark: data.remark,
         templateIds: data.templateIds ? JSON.stringify(data.templateIds) : null,
         templateData: data.templateData ? JSON.stringify(data.templateData) : null,
@@ -143,6 +179,20 @@ export default defineEventHandler(async (event) => {
           data: createData,
           include: complaintInclude
         })
+
+        // Create attachment records if uploaded
+        if (data.attachments && data.attachments.length > 0) {
+          await prisma.complaintAttachment.createMany({
+            data: data.attachments.map(a => ({
+              complaintId: record.id,
+              fileName: a.fileName,
+              fileUrl: a.fileUrl,
+              fileType: a.fileType,
+              fileSize: a.fileSize,
+              uploadedById: currentUser.id
+            }))
+          })
+        }
 
         await prisma.operationLog.create({
           data: {
@@ -158,6 +208,7 @@ export default defineEventHandler(async (event) => {
         return {
           success: true,
           data: record,
+          warning: duplicateCount > 0 ? `疑似重复客诉：同一客户/型号/不良点在90天内已有${duplicateCount}条记录` : undefined,
           message: '客诉记录创建成功'
         }
       } catch (error) {

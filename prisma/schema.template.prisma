@@ -27,6 +27,10 @@ model User {
   operationLogs     OperationLog[]
   departments       UserDepartment[]
   templates         FormTemplate[]
+  uploadedAttachments ComplaintAttachment[]
+  importLogs        ImportLog[]
+  fieldOptionConfigs FieldOptionConfig[]
+  savedAnalyses     SavedAnalysis[]
 
   @@map("users")
 }
@@ -207,6 +211,7 @@ model ResponsibleDepartment {
   processes      ResponsibleProcess[]
   userDepartments UserDepartment[]
   formTemplates  FormTemplate[]
+  fieldOptionConfigs FieldOptionConfig[]
 
   @@index([enabled, sortOrder])
   @@map("responsible_departments")
@@ -260,11 +265,13 @@ model ComplaintRecord {
   productionTime          DateTime? // 生产时间
   productModelId          Int?
   productModel            ProductModel? @relation(fields: [productModelId], references: [id])
+  shaftCount              Int?      // 轴数（正整数）
   thickness               String? // 厚度
   rollNo                  String? // 轴号
+  specification           String? // 规格（如 100*970*3000）
   customerId              Int?
   customer                Customer? @relation(fields: [customerId], references: [id])
-  quantityInvolved        Float?   // 涉及数量
+  quantityInvolved        Int?      // 涉及数量
   application             String? // 用途
   productionLineId        Int?
   productionLine          ProductionLine? @relation(fields: [productionLineId], references: [id])
@@ -276,6 +283,9 @@ model ComplaintRecord {
   feedbackContent         String? // 反馈内容
   customerComplaintText   String? // 客诉问题（客户原始表述）
   internalComplaintName   String? // 客诉问题内部映射名称
+  defectSource            String? // 弊病源（原材料、涂布工序、挤出工序等）
+  specificDefect          String? // 具体不良点
+  complaintCategory       String? // 客诉分类（成品外观、膜面平整性、涂布表观等）
   problemCategoryId       Int?
   problemCategory         ProblemCategory? @relation(fields: [problemCategoryId], references: [id])
   problemSubcategoryId    Int?
@@ -302,6 +312,8 @@ model ComplaintRecord {
   lessonsLearned          String? // 启示
   reviewConclusion        String? // 复盘结论
   standardizedAction      Boolean  @default(false) // 是否形成标准化措施
+  productUsage            String? // 产品用途
+  improvementAction       String? // 改善措施
 
   // 审计字段
   createdAt               DateTime @default(now())
@@ -315,6 +327,9 @@ model ComplaintRecord {
   // 表单模板（支持多个）
   templateIds             String?  // JSON 数组: "[1,2,3]" 关联的模板ID列表
   templateData            String?  // 自定义字段值 JSON
+
+  // 附件
+  attachments             ComplaintAttachment[]
 
   @@index([feedbackDate])
   @@index([customerId])
@@ -354,6 +369,7 @@ model FormTemplate {
   createdById  Int
   enabled      Boolean   @default(true)
   isDefault    Boolean   @default(false) // 是否为系统默认模板
+  isPublic     Boolean   @default(false) // 是否为公开模板（部门模板可设为公开供查看）
   sortOrder    Int       @default(0)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -372,11 +388,11 @@ model FormTemplateField {
   templateId   Int
   fieldKey     String   // 映射到 ComplaintRecord 列名或自定义键名
   fieldLabel   String   // 显示标签
-  fieldType    String   // text, textarea, number, select, date, switch, select-config
+  fieldType    String   // text, textarea, number, select, date, switch, select-config, auto-complete, upload
   required     Boolean  @default(false)
   sortOrder    Int      @default(0)
   options      String?  // select 类型选项 JSON: '["选项1","选项2"]'
-  configType   String?  // select-config 时指定配置源
+  configType   String?  // select-config / auto-complete 时指定配置源
   defaultValue String?
   placeholder  String?
 
@@ -385,4 +401,73 @@ model FormTemplateField {
   @@unique([templateId, fieldKey])
   @@index([templateId, sortOrder])
   @@map("form_template_fields")
+}
+
+// ==================== 客诉附件表 ====================
+model ComplaintAttachment {
+  id           Int      @id @default(autoincrement())
+  complaintId  Int
+  fileName     String   // 文件名
+  fileUrl      String   // 文件路径/URL
+  fileType     String   // image/png, application/pdf, video/mp4
+  fileSize     Int      // 文件大小(字节)
+  uploadedById Int?
+  createdAt    DateTime @default(now())
+
+  complaint    ComplaintRecord @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  uploadedBy   User?           @relation(fields: [uploadedById], references: [id])
+
+  @@index([complaintId])
+  @@map("complaint_attachments")
+}
+
+// ==================== 字段选项配置表（部门级下拉选项） ====================
+model FieldOptionConfig {
+  id           Int      @id @default(autoincrement())
+  name         String   // 配置名称，如"弊病源选项"
+  configKey    String   @unique // 唯一键，如"defect_source_options"
+  options      String   // JSON数组字符串: '["选项1","选项2"]'
+  departmentId Int?     // null = 全局配置；非null = 部门级配置
+  createdById  Int
+  enabled      Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  department   ResponsibleDepartment? @relation(fields: [departmentId], references: [id])
+  createdBy    User                   @relation(fields: [createdById], references: [id])
+
+  @@index([departmentId, enabled])
+  @@index([configKey])
+  @@map("field_option_configs")
+}
+
+// ==================== 批量导入日志表 ====================
+model ImportLog {
+  id           Int      @id @default(autoincrement())
+  fileName     String   // 导入文件名
+  totalRows    Int      @default(0) // 总行数
+  successCount Int      @default(0) // 成功条数
+  errorCount   Int      @default(0) // 失败条数
+  errors       String?  // 错误详情 JSON
+  importedById Int?
+  createdAt    DateTime @default(now())
+
+  importedBy   User?    @relation(fields: [importedById], references: [id])
+
+  @@map("import_logs")
+}
+
+// ==================== 用户保存的分析配置 ====================
+model SavedAnalysis {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  name      String
+  config    String   // JSON: { templateId, groupByField, fieldLabel, chartType, dateRange, limit }
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("saved_analyses")
 }

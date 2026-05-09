@@ -117,16 +117,24 @@ export default defineEventHandler(async (event) => {
       }
     })
 
+    // Add watermark / export info row
+    const watermarkRows = [
+      `导出人:${currentUser.name} 时间:${new Date().toISOString().slice(0, 10)} 内部使用`,
+      ''
+    ]
+
     // Build CSV content
     const headers = [
       '客诉编号',
       '反馈日期',
-      '生产时间',
+      '生产日期',
       '客户编码',
       '客户名称',
       '产品型号',
+      '轴数',
       '厚度',
       '轴号',
+      '规格',
       '涉及数量',
       '用途',
       '产线',
@@ -136,6 +144,9 @@ export default defineEventHandler(async (event) => {
       '反馈内容',
       '客户投诉描述',
       '内部问题名称',
+      '弊病源',
+      '具体不良点',
+      '客诉分类',
       '问题大类',
       '问题小类',
       '严重等级',
@@ -151,6 +162,7 @@ export default defineEventHandler(async (event) => {
       '启示',
       '复盘结论',
       '标准化措施',
+      '产品用途',
       '备注',
       '创建时间',
       '更新时间'
@@ -169,9 +181,11 @@ export default defineEventHandler(async (event) => {
       escapeCSV(r.customer?.code),
       escapeCSV(r.customer?.name),
       escapeCSV(r.productModel?.name),
+      escapeCSV(r.shaftCount ?? ''),
       escapeCSV(r.thickness),
       escapeCSV(r.rollNo),
-      escapeCSV(r.quantityInvolved),
+      escapeCSV(r.specification),
+      escapeCSV(r.quantityInvolved ?? ''),
       escapeCSV(r.application),
       escapeCSV(r.productionLine?.name),
       escapeCSV(r.shiftTeam),
@@ -180,6 +194,9 @@ export default defineEventHandler(async (event) => {
       escapeCSV(r.feedbackContent),
       escapeCSV(r.customerComplaintText),
       escapeCSV(r.internalComplaintName),
+      escapeCSV(r.defectSource),
+      escapeCSV(r.specificDefect),
+      escapeCSV(r.complaintCategory),
       escapeCSV(r.problemCategory?.name),
       escapeCSV(r.problemSubcategory?.name),
       escapeCSV(r.severityLevel?.name),
@@ -195,12 +212,14 @@ export default defineEventHandler(async (event) => {
       escapeCSV(r.lessonsLearned),
       escapeCSV(r.reviewConclusion),
       escapeCSV(r.standardizedAction ? '是' : '否'),
+      escapeCSV(r.productUsage),
       escapeCSV(r.remark),
       escapeCSV(r.createdAt ? formatDateTimeSafe(r.createdAt) : ''),
       escapeCSV(r.updatedAt ? formatDateTimeSafe(r.updatedAt) : '')
     ])
 
-    const csvContent = '\uFEFF' + headers.join(',') + '\n' + rows.map(r => r.join(',')).join('\n')
+    const watermarkLine = `\u5BFC\u51FA\u4EBA:${currentUser.name} \u5BFC\u51FA\u65F6\u95F4:${new Date().toISOString().slice(0, 10)} \u5185\u90E8\u4F7F\u7528\uFF0C\u8BF7\u52FF\u5916\u4F20`
+    const csvContent = '\uFEFF' + watermarkLine + '\n\n' + headers.join(',') + '\n' + rows.map(r => r.join(',')).join('\n')
 
     // Set response headers for file download
     setResponseHeaders(event, {

@@ -7,7 +7,7 @@
   "scripts": {
     "prisma:prepare": "node scripts/prepare-prisma-schema.mjs",
     "build": "npm run prisma:prepare && prisma generate && nuxt build",
-    "dev": "npm run prisma:prepare && prisma generate && nuxt dev",
+    "dev": "npm run prisma:prepare && prisma generate && nuxt dev --port 3100",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "npm run prisma:prepare && nuxt prepare",
@@ -28,14 +28,15 @@
     "@pinia/nuxt": "^0.5.1",
     "@prisma/client": "^5.10.0",
     "dayjs": "^1.11.10",
+    "echarts": "^5.5.0",
     "naive-ui": "^2.38.1",
     "nuxt": "^3.10.0",
     "pinia": "^2.1.7",
     "vue": "^3.4.0",
+    "vue-echarts": "^6.6.9",
     "vue-router": "^4.2.5",
-    "zod": "^3.22.4",
-    "echarts": "^5.5.0",
-    "vue-echarts": "^6.6.9"
+    "xlsx": "^0.18.5",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@nuxtjs/tailwindcss": "^6.11.0",
