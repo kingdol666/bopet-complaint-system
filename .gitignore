@@ -30,14 +30,15 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 
+# Data files (large files, generated data)
+data/
+
 # Prisma
 # Note: SQLite database files are now tracked in git for data persistence
 # prisma/*.db
 # prisma/*.db-journal
 # prisma/data/*.db
 # prisma/data/*.db-journal
-# data/*.db
-# data/*.db-journal
 prisma/prisma/
 
 # Test scripts
