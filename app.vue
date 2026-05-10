@@ -22,7 +22,7 @@ import {
   zhCN
 } from 'naive-ui'
 
-// Enterprise theme overrides
+// iOS 26 Glassmorphism theme overrides
 const themeOverrides = {
   common: {
     fontFamily: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif',
@@ -31,71 +31,64 @@ const themeOverrides = {
     primaryColorHover: '#0284c7',
     primaryColorPressed: '#0369a1',
     primaryColorSuppl: '#38bdf8',
-    infoColor: '#3b82f6',
+    infoColor: '#6366f1',
     successColor: '#10b981',
     warningColor: '#f59e0b',
     errorColor: '#ef4444',
-    bodyColor: '#f8fafc',
-    cardColor: '#ffffff',
-    modalColor: '#ffffff',
-    popoverColor: '#ffffff',
-    tableColor: '#ffffff',
-    borderColor: '#e2e8f0',
-    dividerColor: '#f1f5f9',
-    boxShadow1: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)',
-    boxShadow2: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
-    borderRadius: '8px',
-    borderRadiusSmall: '6px'
+    bodyColor: 'transparent',
+    cardColor: 'rgba(255,255,255,0.72)',
+    modalColor: 'rgba(255,255,255,0.88)',
+    popoverColor: 'rgba(255,255,255,0.88)',
+    tableColor: 'rgba(255,255,255,0.55)',
+    tableColorHover: 'rgba(255,255,255,0.82)',
+    borderColor: 'rgba(0,0,0,0.06)',
+    dividerColor: 'rgba(0,0,0,0.04)',
+    boxShadow1: '0 1px 3px rgba(0,0,0,0.04)',
+    boxShadow2: '0 4px 16px rgba(0,0,0,0.06)',
+    boxShadow3: '0 12px 32px rgba(0,0,0,0.08)',
+    borderRadius: '11px',
+    borderRadiusSmall: '8px',
+    fontSizeSmall: '0.8125rem',
+    fontSizeMedium: '0.875rem',
+    fontSizeLarge: '0.9375rem',
+    cubicBezierEaseInOut: 'cubic-bezier(0.25, 0.1, 0.25, 1)',
   },
   Button: {
-    heightMedium: '38px',
-    heightLarge: '44px',
-    borderRadiusMedium: '8px',
-    borderRadiusLarge: '10px',
+    borderRadiusMedium: '10px',
+    borderRadiusLarge: '12px',
     fontWeight: '500',
-    paddingMedium: '0 16px',
-    paddingLarge: '0 20px'
+    paddingMedium: '0 18px',
+    paddingLarge: '0 22px',
   },
   Card: {
-    borderRadius: '12px',
-    color: '#ffffff',
-    boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05)'
+    borderRadius: '16px',
+    color: 'rgba(255,255,255,0.72)',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+    borderColor: 'rgba(0,0,0,0.05)',
   },
   Input: {
-    borderRadius: '8px',
-    color: '#ffffff',
-    colorFocus: '#ffffff',
-    boxShadowFocus: '0 0 0 3px rgba(14, 165, 233, 0.1)',
-    heightMedium: '38px',
-    heightLarge: '44px'
+    borderRadius: '10px',
+    color: 'rgba(255,255,255,0.65)',
+    colorFocus: 'rgba(255,255,255,0.88)',
+    border: '1px solid rgba(0,0,0,0.08)',
+    borderFocus: '1px solid #0ea5e9',
+    boxShadowFocus: '0 0 0 3px rgba(14,165,233,0.1)',
   },
   Select: {
-    borderRadius: '8px',
-    peers: {
-      InternalSelection: {
-        borderRadius: '8px',
-        heightMedium: '38px'
-      }
-    }
+    borderRadius: '10px',
+    peers: { InternalSelection: { borderRadius: '10px' } }
   },
   DataTable: {
-    borderRadius: '12px',
-    thColor: '#f8fafc',
-    thColorHover: '#f1f5f9',
-    tdColor: '#ffffff',
-    tdColorHover: '#f8fafc',
-    borderColor: '#e2e8f0'
+    borderRadius: '14px',
+    thColor: 'rgba(0,0,0,0.02)',
+    tdColor: 'rgba(255,255,255,0.4)',
+    tdColorHover: 'rgba(255,255,255,0.76)',
+    borderColor: 'rgba(0,0,0,0.04)',
   },
-  Tag: {
-    borderRadius: '6px',
-    fontWeight: '500'
-  },
-  Modal: {
-    borderRadius: '16px'
-  },
-  Pagination: {
-    itemBorderRadius: '6px'
-  }
+  Tag: { borderRadius: '7px', fontWeight: '500' },
+  Modal: { borderRadius: '20px', boxShadow: '0 24px 56px rgba(0,0,0,0.12)' },
+  Pagination: { itemBorderRadius: '8px' },
+  Switch: { railColorActive: '#0ea5e9' },
 }
 
 // Add page meta
@@ -114,19 +107,32 @@ useHead({
 </script>
 
 <style>
-/* Global transitions */
-.page-enter-active,
-.page-leave-active {
-  transition: all 0.2s ease;
-}
+.page-enter-active, .page-leave-active { transition: all 0.25s ease; }
+.page-enter-from { opacity: 0; transform: translateY(6px); }
+.page-leave-to { opacity: 0; transform: translateY(-6px); }
 
-.page-enter-from {
-  opacity: 0;
-  transform: translateY(10px);
+/* iOS glass on Naive UI overlays */
+.n-modal, .n-modal .n-card, .n-drawer, .n-popover, .n-dropdown-menu {
+  backdrop-filter: blur(28px) saturate(2) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(2) !important;
 }
-
-.page-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
+.n-modal-mask {
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  background: rgba(0,0,0,0.06) !important;
 }
+.n-base-select-menu, .n-dropdown-menu {
+  background: rgba(255,255,255,0.92) !important;
+  backdrop-filter: blur(24px) saturate(2) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(2) !important;
+  border: 1px solid rgba(0,0,0,0.05) !important;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.08) !important;
+  border-radius: 14px !important;
+}
+.n-data-table .n-data-table-th {
+  background: rgba(0,0,0,0.015) !important;
+  font-weight: 600 !important; font-size: 0.8125rem !important; color: #64748b !important;
+}
+.n-button--primary-type { box-shadow: 0 2px 8px rgba(14,165,233,0.25) !important; }
+.n-button--primary-type:hover { box-shadow: 0 4px 16px rgba(14,165,233,0.35) !important; }
 </style>
