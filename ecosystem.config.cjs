@@ -12,37 +12,40 @@
 module.exports = {
   apps: [
     {
-      name: 'bopet-eda',
-      script: 'scripts/start.mjs',
+      name: "bopet-eda",
+      script: "scripts/start.mjs",
       cwd: __dirname,
 
       // ── 公网绑定 ──
       // HOST=0.0.0.0 使服务监听所有网络接口 (公网 + 内网均可访问)
       // PORT=3001 生产端口
       env: {
-        NODE_ENV: 'production',
-        HOST: '0.0.0.0',
-        PORT: '3001',
+        NODE_ENV: "production",
+        HOST: "0.0.0.0",
+        PORT: "3001",
       },
+
+      // ── Node.js 内存限制 (防止 OOM) ──
+      node_args: "--max-old-space-size=4096",
 
       // ── 进程守护 ──
       autorestart: true,
       max_restarts: 10,
       restart_delay: 3000,
-      max_memory_restart: '512M',
+      max_memory_restart: "3072M",
       instances: 1,
-      exec_mode: 'fork',
+      exec_mode: "fork",
 
       // ── 日志 (带时间戳) ──
-      error_file: 'logs/pm2-error.log',
-      out_file: 'logs/pm2-out.log',
-      log_file: 'logs/pm2-combined.log',
+      error_file: "logs/pm2-error.log",
+      out_file: "logs/pm2-out.log",
+      log_file: "logs/pm2-combined.log",
       time: true,
-      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
 
       // ── 优雅退出 ──
       kill_timeout: 5000,
       listen_timeout: 10000,
     },
   ],
-}
+};

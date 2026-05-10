@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "prisma:prepare": "node scripts/prepare-prisma-schema.mjs",
-    "build": "npm run prisma:prepare && npx prisma generate && npx prisma db push && npm run db:seed && nuxt build",
+    "build": "npm run prisma:prepare && npx prisma generate && npx prisma db push && npm run db:seed && node scripts/build.mjs",
     "dev": "npm run prisma:prepare && npx prisma generate && npx prisma db push && nuxt dev --port 3100",
     "generate": "nuxt generate",
     "preview": "nuxt preview",

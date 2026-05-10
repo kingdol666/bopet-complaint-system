@@ -31,9 +31,15 @@ process.env.PORT = process.env.PORT || '3001'
 console.log(`[start] DATABASE_URL = ${process.env.DATABASE_URL}`)
 console.log(`[start] Listening on ${process.env.HOST}:${process.env.PORT}`)
 
+// Set heap memory limit to avoid OOM (inherits from parent if set via NODE_OPTIONS)
+if (!process.env.NODE_OPTIONS) {
+  process.env.NODE_OPTIONS = '--max-old-space-size=4096'
+}
+console.log(`[start] NODE_OPTIONS = ${process.env.NODE_OPTIONS}`)
+
 // Launch the Nitro server
 const serverEntry = resolve(rootDir, '.output', 'server', 'index.mjs')
-const child = spawn('node', [serverEntry], {
+const child = spawn('node', ['--max-old-space-size=4096', serverEntry], {
   stdio: 'inherit',
   env: process.env,
   cwd: rootDir

@@ -136,6 +136,10 @@ install_deps() {
 build_project() {
   info "构建项目..."
 
+  # Increase Node.js heap to 4GB to avoid OOM during Nuxt build
+  export NODE_OPTIONS="--max-old-space-size=4096"
+  info "  Node.js 堆内存: 4096MB"
+
   # Ensure data directory exists before any DB operations
   info "  0) 创建数据目录..."
   mkdir -p "$PROJECT_DIR/data"
@@ -152,8 +156,8 @@ build_project() {
   info "  4) 写入种子数据..."
   npm run db:seed
 
-  info "  5) Nuxt 生产构建..."
-  npx nuxt build
+  info "  5) Nuxt 生产构建 (4GB heap)..."
+  node scripts/build.mjs
 
   log "构建完成"
 }
