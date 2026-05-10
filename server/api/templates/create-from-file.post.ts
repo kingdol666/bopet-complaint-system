@@ -1,7 +1,7 @@
 import { prisma } from '~/server/utils/prisma'
 import { requireWritePermission, isSuperAdmin, getVisibleDepartmentIds } from '~/server/utils/auth'
 
-function detectType(values: any[]): string {
+function detectType(values: any[], rowCount: number, selectThreshold: number = 5): string {
   const nonEmpty = values.filter(v => v !== null && v !== undefined && String(v).trim() !== '')
   if (nonEmpty.length === 0) return 'text'
 
@@ -21,8 +21,12 @@ function detectType(values: any[]): string {
   const allBool = nonEmpty.every(v => bools.includes(String(v).trim().toUpperCase()))
   if (allBool && nonEmpty.length > 0) return 'switch'
 
+  // 数据量小于100条时，全部是文本类型
+  if (rowCount < 100) return 'text'
+
+  // 数据量大于等于100条时，检查唯一值数量
   const unique = [...new Set(nonEmpty.map(v => String(v).trim()))]
-  if (unique.length <= 15 && nonEmpty.every(v => String(v).length < 40)) return 'select'
+  if (unique.length <= selectThreshold && nonEmpty.every(v => String(v).length < 40)) return 'select'
 
   const avgLen = nonEmpty.reduce((s, v) => s + String(v).length, 0) / nonEmpty.length
   return avgLen > 50 ? 'textarea' : 'text'
@@ -115,12 +119,12 @@ export default defineEventHandler(async (event) => {
       const colValues = rows.map(r => r[h.index]).filter(v => v !== undefined)
       const fieldKey = sanitizeKey(h.name, detectedFields.length)
       const override = overrideMap.get(fieldKey)
-      const fieldType = override?.fieldType || detectType(colValues)
+      const fieldType = override?.fieldType || detectType(colValues, rows.length)
       const fieldLabel = override?.fieldLabel || h.name
 
       const field: any = {
         fieldKey, fieldLabel: h.name, suggestedLabel: fieldLabel, fieldType,
-        suggestedType: detectType(colValues),
+        suggestedType: detectType(colValues, rows.length),
         samples: colValues.filter(v => v && String(v).trim()).slice(0, 5).map(v => String(v).trim())
       }
 

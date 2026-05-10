@@ -191,6 +191,24 @@
       </div>
     </div>
 
+    <!-- Batch actions bar -->
+    <div v-if="checkedRowKeys.length > 0" class="card mb-4 bg-primary-50 border-primary-200">
+      <div class="flex items-center justify-between">
+        <span class="text-sm font-medium text-primary-700">
+          已选择 <span class="font-bold">{{ checkedRowKeys.length }}</span> 条记录
+        </span>
+        <div class="flex items-center gap-2">
+          <n-button type="primary" size="small" :loading="batchProcessing" @click="batchMarkProcessed">
+            批量标记已处理
+          </n-button>
+          <n-button type="error" size="small" :loading="batchProcessing" @click="batchDelete">
+            批量删除
+          </n-button>
+          <n-button size="small" @click="checkedRowKeys = []">取消选择</n-button>
+        </div>
+      </div>
+    </div>
+
     <!-- Table -->
     <div class="card overflow-hidden">
       <div class="overflow-x-auto">
@@ -200,8 +218,10 @@
           :loading="loading"
           :pagination="false"
           :row-key="(row: any) => row.id"
-          :scroll-x="800"
+          :checked-row-keys="checkedRowKeys"
+          :scroll-x="900"
           @update:sorter="handleSort"
+          @update:checked-row-keys="(keys: any) => checkedRowKeys = keys"
         />
       </div>
 
@@ -225,7 +245,7 @@
 
 <script setup lang="ts">
 import { h } from 'vue'
-import { NButton, NSpace } from 'naive-ui'
+import { NButton, NSpace, NSwitch } from 'naive-ui'
 import type { DataTableColumn } from 'naive-ui'
 import { useConfigStore } from '~/stores/config'
 import { useAuthStore } from '~/stores/auth'
@@ -245,6 +265,8 @@ const dialog = useDialog()
 // Loading state
 const loading = ref(false)
 const exporting = ref(false)
+const batchProcessing = ref(false)
+const checkedRowKeys = ref<any[]>([])
 
 // Table data
 const tableData = ref<any[]>([])
@@ -400,7 +422,7 @@ const dateRange = ref<[number, number] | null>(null)
 const statusOptions = [
   { label: '待分析', value: 'pending' },
   { label: '处理中', value: 'processing' },
-  { label: '已结案', value: 'closed' }
+  { label: '已处理', value: 'closed' }
 ]
 
 const complaintCategoryOptions = [
@@ -450,6 +472,11 @@ function resolveTemplateNames(templateIds: string | null): string {
 // Table columns
 const columns: DataTableColumn<any>[] = [
   {
+    type: 'selection',
+    width: 40,
+    fixed: 'left'
+  },
+  {
     title: '客诉编号',
     key: 'complaintNo',
     width: 140,
@@ -472,6 +499,18 @@ const columns: DataTableColumn<any>[] = [
     width: 200,
     ellipsis: { tooltip: true },
     render: (row) => resolveTemplateNames(row.templateIds)
+  },
+  {
+    title: '是否已处理',
+    key: 'isProcessed',
+    width: 100,
+    render: (row) => h(NSwitch, {
+      checkedValue: 'closed',
+      uncheckedValue: 'pending',
+      value: row.closureStatus,
+      size: 'small' as const,
+      onUpdateValue: (val: string) => handleProcessedChange(row, val)
+    })
   },
   {
     title: '操作',
@@ -637,7 +676,6 @@ function handleDelete(row: any) {
     negativeText: '取消',
     onPositiveClick: async () => {
       try {
-        const authStore = useAuthStore()
         await $fetch(`/api/complaints/${row.id}`, {
           method: 'DELETE',
           headers: authStore.getAuthHeaders()
@@ -646,6 +684,81 @@ function handleDelete(row: any) {
         await loadData()
       } catch (e) {
         message.error('删除失败')
+      }
+    }
+  })
+}
+
+async function handleProcessedChange(row: any, value: string) {
+  try {
+    await $fetch(`/api/complaints/${row.id}`, {
+      method: 'PUT',
+      headers: authStore.getAuthHeaders(),
+      body: { closureStatus: value }
+    })
+    row.closureStatus = value
+    message.success(value === 'closed' ? '已标记为已处理' : '已标记为待分析')
+  } catch (e) {
+    message.error('更新失败')
+    // Revert in UI
+    row.closureStatus = value === 'closed' ? 'pending' : 'closed'
+  }
+}
+
+async function batchMarkProcessed() {
+  if (checkedRowKeys.value.length === 0) return
+  batchProcessing.value = true
+  let successCount = 0
+  try {
+    for (const id of checkedRowKeys.value) {
+      try {
+        await $fetch(`/api/complaints/${id}`, {
+          method: 'PUT',
+          headers: authStore.getAuthHeaders(),
+          body: { closureStatus: 'closed' }
+        })
+        // Update local data
+        const row = tableData.value.find((r: any) => r.id === id)
+        if (row) row.closureStatus = 'closed'
+        successCount++
+      } catch { /* skip failed */ }
+    }
+    message.success(`成功标记 ${successCount} 条为已处理`)
+    checkedRowKeys.value = []
+  } catch {
+    message.error('批量操作失败')
+  } finally {
+    batchProcessing.value = false
+  }
+}
+
+function batchDelete() {
+  if (checkedRowKeys.value.length === 0) return
+  dialog.warning({
+    title: '确认批量删除',
+    content: `确定要删除选中的 ${checkedRowKeys.value.length} 条客诉记录吗？此操作不可撤销。`,
+    positiveText: '删除',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      batchProcessing.value = true
+      let successCount = 0
+      try {
+        for (const id of checkedRowKeys.value) {
+          try {
+            await $fetch(`/api/complaints/${id}`, {
+              method: 'DELETE',
+              headers: authStore.getAuthHeaders()
+            })
+            successCount++
+          } catch { /* skip failed */ }
+        }
+        message.success(`成功删除 ${successCount} 条记录`)
+        checkedRowKeys.value = []
+        await loadData()
+      } catch {
+        message.error('批量删除失败')
+      } finally {
+        batchProcessing.value = false
       }
     }
   })

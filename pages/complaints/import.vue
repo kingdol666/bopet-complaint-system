@@ -97,7 +97,6 @@ const templateFields = ref<any[]>([])
 const columnMap = reactive<Record<string, string | null>>({})
 const autoMatched = reactive<Record<string, boolean>>({})
 const fileData = ref<{ headers: string[]; rows: any[][] } | null>(null)
-const rawFileRef = ref<globalThis.File | null>(null)
 const importing = ref(false)
 const importResult = ref<any>(null)
 
@@ -180,7 +179,6 @@ async function handleFileUpload(opts: UploadCustomRequestOptions) {
     }
 
     fileName.value = rawFile.name
-    rawFileRef.value = rawFile
     fileHeaders.value = headers
     previewRows.value = rows.length
     previewColCount.value = headers.length
@@ -243,13 +241,17 @@ function handleAutoMap() {
 }
 
 async function handleImport() {
-  if (!rawFileRef.value) { message.error('未选择文件'); return }
+  if (!fileData.value) { message.error('未选择文件'); return }
   if (!selectedTemplateId.value) { message.error('未选择模板'); return }
 
   importing.value = true
   try {
+    const csvContent = fileData.value.headers.join(',') + '\n' +
+      fileData.value.rows.map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+
     const fd = new FormData()
-    fd.append('file', rawFileRef.value)
+    fd.append('file', blob, fileName.value || 'data.csv')
     fd.append('templateId', String(selectedTemplateId.value))
     fd.append('columnMap', JSON.stringify(columnMap))
 

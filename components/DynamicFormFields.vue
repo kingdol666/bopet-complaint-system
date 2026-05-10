@@ -11,138 +11,70 @@
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <template v-for="field in fields" :key="field.id || field.fieldKey">
         <!-- Text -->
-        <n-form-item
-          v-if="field.fieldType === 'text'"
-          :label="field.fieldLabel"
-          :path="field.fieldKey"
-          :rule="field.required ? { required: true, message: `请输入${field.fieldLabel}`, trigger: 'blur' } : undefined"
-        >
-          <n-input
-            v-model:value="modelData[field.fieldKey]"
-            :placeholder="field.placeholder || ''"
-          />
+        <n-form-item v-if="field.fieldType === 'text'" :label="field.fieldLabel" :path="field.fieldKey"
+          :rule="field.required ? { required: true, message: `请输入${field.fieldLabel}`, trigger: 'blur' } : undefined">
+          <n-input v-model:value="modelData[field.fieldKey]" :placeholder="field.placeholder || ''" />
         </n-form-item>
 
         <!-- Textarea -->
-        <n-form-item
-          v-else-if="field.fieldType === 'textarea'"
-          :label="field.fieldLabel"
-          :path="field.fieldKey"
+        <n-form-item v-else-if="field.fieldType === 'textarea'" :label="field.fieldLabel" :path="field.fieldKey"
           :rule="field.required ? { required: true, message: `请输入${field.fieldLabel}`, trigger: 'blur' } : undefined"
-          class="lg:col-span-3"
-        >
-          <n-input
-            v-model:value="modelData[field.fieldKey]"
-            type="textarea"
-            :placeholder="field.placeholder || ''"
-            :rows="3"
-          />
+          class="lg:col-span-3">
+          <n-input v-model:value="modelData[field.fieldKey]" type="textarea" :placeholder="field.placeholder || ''"
+            :rows="3" />
         </n-form-item>
 
         <!-- Number -->
-        <n-form-item
-          v-else-if="field.fieldType === 'number'"
-          :label="field.fieldLabel"
-          :path="field.fieldKey"
-          :rule="field.required ? { type: 'number', required: true, message: `请输入${field.fieldLabel}`, trigger: 'blur' } : undefined"
-        >
-          <n-input-number
-            v-model:value="modelData[field.fieldKey]"
-            class="w-full"
-            :placeholder="field.placeholder || ''"
-            :min="0"
-            :decimal-places="0"
-          />
+        <n-form-item v-else-if="field.fieldType === 'number'" :label="field.fieldLabel" :path="field.fieldKey"
+          :rule="field.required ? { type: 'number', required: true, message: `请输入${field.fieldLabel}`, trigger: 'blur' } : undefined">
+          <n-input-number v-model:value="modelData[field.fieldKey]" class="w-full"
+            :placeholder="field.placeholder || ''" :min="0" :decimal-places="0" />
         </n-form-item>
 
         <!-- Select with static options -->
-        <n-form-item
-          v-else-if="field.fieldType === 'select'"
-          :label="field.fieldLabel"
-          :path="field.fieldKey"
-          :rule="field.required ? { required: true, message: `请选择${field.fieldLabel}`, trigger: 'change' } : undefined"
-        >
-          <n-select
-            v-model:value="modelData[field.fieldKey]"
-            :options="parseSelectOptions(field.options)"
-            :placeholder="field.placeholder || '请选择'"
-            clearable
-          />
+        <n-form-item v-else-if="field.fieldType === 'select'" :label="field.fieldLabel" :path="field.fieldKey"
+          :rule="field.required ? { required: true, message: `请选择${field.fieldLabel}`, trigger: 'change' } : undefined">
+          <n-select v-model:value="modelData[field.fieldKey]" :options="parseSelectOptions(field.options)"
+            :placeholder="field.placeholder || '请选择'" clearable />
         </n-form-item>
 
         <!-- Select with config options -->
-        <n-form-item
-          v-else-if="field.fieldType === 'select-config'"
-          :label="field.fieldLabel"
-          :path="field.fieldKey"
-          :rule="field.required ? { required: true, message: `请选择${field.fieldLabel}`, trigger: 'change' } : undefined"
-        >
-          <n-select
-            v-model:value="modelData[field.fieldKey]"
-            :options="getConfigOptions(field.configType)"
-            :placeholder="field.placeholder || '请选择'"
-            clearable
-            filterable
-          />
+        <n-form-item v-else-if="field.fieldType === 'select-config'" :label="field.fieldLabel" :path="field.fieldKey"
+          :rule="field.required ? { required: true, message: `请选择${field.fieldLabel}`, trigger: 'change' } : undefined">
+          <n-select v-model:value="modelData[field.fieldKey]" :options="getConfigOptions(field.configType)"
+            :placeholder="field.placeholder || '请选择'" clearable filterable />
         </n-form-item>
 
         <!-- Auto-complete (manual input + dropdown) -->
-        <n-form-item
-          v-else-if="field.fieldType === 'auto-complete'"
-          :label="field.fieldLabel"
-          :path="field.fieldKey"
-          :rule="field.required ? { required: true, message: `请输入${field.fieldLabel}`, trigger: 'blur' } : undefined"
-        >
-          <n-auto-complete
-            v-model:value="modelData[field.fieldKey]"
-            :options="getAutoCompleteOptions(field.configType)"
-            :placeholder="field.placeholder || '输入或选择'"
-            :clearable="true"
-          />
+        <n-form-item v-else-if="field.fieldType === 'auto-complete'" :label="field.fieldLabel" :path="field.fieldKey"
+          :rule="field.required ? { required: true, message: `请输入${field.fieldLabel}`, trigger: 'blur' } : undefined">
+          <n-auto-complete v-model:value="modelData[field.fieldKey]" :options="getAutoCompleteOptions(field.configType)"
+            :placeholder="field.placeholder || '输入或选择'" :clearable="true" />
         </n-form-item>
 
         <!-- Date -->
-        <n-form-item
-          v-else-if="field.fieldType === 'date'"
-          :label="field.fieldLabel"
-          :path="field.fieldKey"
-          :rule="field.required ? { type: 'number', required: true, message: `请选择${field.fieldLabel}`, trigger: 'change' } : undefined"
-        >
-          <n-date-picker
-            v-model:value="modelData[field.fieldKey]"
-            type="date"
-            class="w-full"
-          />
+        <n-form-item v-else-if="field.fieldType === 'date'" :label="field.fieldLabel" :path="field.fieldKey"
+          :rule="field.required ? { type: 'number', required: true, message: `请选择${field.fieldLabel}`, trigger: 'change' } : undefined">
+          <n-date-picker v-model:value="modelData[field.fieldKey]" type="date" class="w-full" />
         </n-form-item>
 
         <!-- Switch -->
-        <n-form-item
-          v-else-if="field.fieldType === 'switch'"
-          :label="field.fieldLabel"
-          :path="field.fieldKey"
-        >
+        <n-form-item v-else-if="field.fieldType === 'switch'" :label="field.fieldLabel" :path="field.fieldKey">
           <n-switch v-model:value="modelData[field.fieldKey]" />
         </n-form-item>
 
         <!-- Upload -->
-        <n-form-item
-          v-else-if="field.fieldType === 'upload'"
-          :label="field.fieldLabel"
-          :path="field.fieldKey"
-        >
+        <n-form-item v-else-if="field.fieldType === 'upload'" :label="field.fieldLabel" :path="field.fieldKey">
           <div class="w-full">
-            <n-upload
-              :multiple="true"
-              :max="10"
-              accept="image/*,application/pdf,.doc,.docx"
+            <n-upload :multiple="true" :max="10" accept="image/*,application/pdf,.doc,.docx"
               :custom-request="(opts: any) => handleUpload(opts, field.fieldKey)"
-              @remove="(opts: any) => handleRemove(opts, field.fieldKey)"
-              @before-upload="handleBeforeUpload"
-            >
+              @remove="(opts: any) => handleRemove(opts, field.fieldKey)" @before-upload="handleBeforeUpload">
               <n-button>
                 <template #icon>
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                   </svg>
                 </template>
                 上传文件
@@ -332,7 +264,7 @@ function handleRemove(options: { file: UploadFileInfo }, fieldKey: string) {
 
 function handleBeforeUpload(data: { file: UploadFileInfo }) {
   const maxSize = 5 * 1024 * 1024 // 5MB
-  if (data.file.size && data.file.size > maxSize) {
+  if (data.file.file?.size && data.file.file.size > maxSize) {
     message.error('文件大小不能超过5MB')
     return false
   }

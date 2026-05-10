@@ -3,6 +3,20 @@ import { prisma } from '~/server/utils/prisma'
 import { booleanQueryParam } from '~/server/utils/query'
 import { requireSessionUser, buildDepartmentFilter } from '~/server/utils/auth'
 
+// All known DB columns on ComplaintRecord
+const DB_COLUMNS = new Set([
+  'complaintNo', 'feedbackDate', 'productionTime', 'customerId', 'productModelId', 'shaftCount',
+  'thickness', 'rollNo', 'specification', 'quantityInvolved', 'application',
+  'productionLineId', 'shiftTeam', 'machineNo', 'batchNo',
+  'feedbackContent', 'customerComplaintText', 'internalComplaintName',
+  'defectSource', 'specificDefect', 'complaintCategory',
+  'problemCategoryId', 'problemSubcategoryId', 'severityLevelId', 'repeatedIssue',
+  'customerDemandId', 'disposalResult', 'compensationTypeId', 'closureStatus',
+  'responsibleDeptId', 'responsibleProcessId',
+  'rootCauseAnalysis', 'correctiveAction', 'lessonsLearned', 'reviewConclusion',
+  'standardizedAction', 'productUsage', 'improvementAction', 'remark'
+])
+
 // Query schema for filtering and pagination
 const querySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
@@ -27,6 +41,70 @@ const querySchema = z.object({
   // Dynamic filters: JSON string of [{field, operator, value}]
   filters: z.string().optional()
 })
+
+function applyDynamicFilter(where: any, fieldName: string, operator: string, val: any) {
+  if (val === undefined || val === null || val === '') return
+
+  const isDBColumn = DB_COLUMNS.has(fieldName)
+
+  if (isDBColumn) {
+    // Apply filter directly to DB column
+    switch (operator) {
+      case 'eq':
+        if (['shaftCount', 'quantityInvolved', 'productModelId', 'customerId', 'productionLineId',
+             'problemCategoryId', 'problemSubcategoryId', 'severityLevelId', 'customerDemandId',
+             'compensationTypeId', 'responsibleDeptId', 'responsibleProcessId'].includes(fieldName)) {
+          where[fieldName] = Number(val)
+        } else if (fieldName === 'closureStatus') {
+          where[fieldName] = val
+        } else if (fieldName === 'repeatedIssue') {
+          where[fieldName] = ['是', 'yes', 'true', '1', 'y', true].includes(String(val).toLowerCase())
+        } else if (fieldName === 'feedbackDate' || fieldName === 'productionTime') {
+          where[fieldName] = {
+            gte: new Date(val),
+            lte: new Date(new Date(val).setHours(23, 59, 59, 999))
+          }
+        } else {
+          where[fieldName] = { equals: val }
+        }
+        break
+      case 'contains':
+        where[fieldName] = { contains: String(val) }
+        break
+      case 'gt':
+        where[fieldName] = { gt: Number(val) }
+        break
+      case 'lt':
+        where[fieldName] = { lt: Number(val) }
+        break
+      case 'gte':
+        where[fieldName] = { gte: Number(val) }
+        break
+      case 'lte':
+        where[fieldName] = { lte: Number(val) }
+        break
+      case 'date_eq':
+        where[fieldName] = {
+          gte: new Date(val),
+          lte: new Date(new Date(val).setHours(23, 59, 59, 999))
+        }
+        break
+      case 'date_gte':
+        where[fieldName] = { gte: new Date(val) }
+        break
+      case 'date_lte':
+        where[fieldName] = { lte: new Date(val) }
+        break
+      default:
+        where[fieldName] = { contains: String(val) }
+    }
+  } else {
+    // Custom field stored in templateData JSON - add to where clause for templateData
+    // We'll filter these in memory after fetching
+    if (!where._customFilters) where._customFilters = []
+    where._customFilters.push({ fieldName, operator, val: String(val) })
+  }
+}
 
 export default defineEventHandler(async (event) => {
   try {
@@ -94,87 +172,130 @@ export default defineEventHandler(async (event) => {
       try {
         const dynamicFilters: Array<{ field: string; operator: string; value: any }> = JSON.parse(params.filters)
         for (const df of dynamicFilters) {
-          if (!df.field || df.value === undefined || df.value === null || df.value === '') continue
-
-          const fieldName = df.field
-          const val = df.value
-
-          switch (df.operator) {
-            case 'eq':
-              // Number fields
-              if (['productModelId', 'customerId', 'productionLineId', 'problemCategoryId',
-                   'problemSubcategoryId', 'severityLevelId', 'customerDemandId',
-                   'compensationTypeId', 'responsibleDeptId', 'responsibleProcessId',
-                   'shaftCount', 'quantityInvolved'].includes(fieldName)) {
-                where[fieldName] = Number(val)
-              } else if (fieldName === 'closureStatus') {
-                where[fieldName] = val
-              } else {
-                where[fieldName] = { equals: val }
-              }
-              break
-            case 'contains':
-              where[fieldName] = { contains: String(val) }
-              break
-            case 'gt':
-              where[fieldName] = { gt: Number(val) }
-              break
-            case 'lt':
-              where[fieldName] = { lt: Number(val) }
-              break
-            case 'gte':
-              where[fieldName] = { gte: Number(val) }
-              break
-            case 'lte':
-              where[fieldName] = { lte: Number(val) }
-              break
-            case 'date_eq':
-              where[fieldName] = {
-                gte: new Date(val),
-                lte: new Date(new Date(val).setHours(23, 59, 59, 999))
-              }
-              break
-            case 'date_gte':
-              where[fieldName] = { gte: new Date(val) }
-              break
-            case 'date_lte':
-              where[fieldName] = { lte: new Date(val) }
-              break
-            default:
-              where[fieldName] = { contains: String(val) }
-          }
+          if (!df.field) continue
+          applyDynamicFilter(where, df.field, df.operator, df.value)
         }
       } catch (e) {
         // Ignore parse errors for dynamic filters
       }
     }
 
-    // Get total count
-    const total = await prisma.complaintRecord.count({ where })
+    // Extract custom filters before querying
+    const customFilters = where._customFilters || []
+    delete where._customFilters
 
-    // Get paginated data
-    const records = await prisma.complaintRecord.findMany({
-      where,
-      include: {
-        customer: true,
-        productModel: true,
-        productionLine: true,
-        problemCategory: true,
-        problemSubcategory: true,
-        severityLevel: true,
-        customerDemand: true,
-        compensationType: true,
-        responsibleDept: true,
-        responsibleProcess: true,
-        createdBy: { select: { id: true, name: true } },
-        updatedBy: { select: { id: true, name: true } }
-      },
-      orderBy: {
-        [sortBy]: sortOrder
-      },
-      skip: (page - 1) * pageSize,
-      take: pageSize
-    })
+    // If there are custom filters, we need to filter in memory
+    // First get all records matching DB filters, then filter custom fields
+    let records: any[] = []
+    let total = 0
+
+    if (customFilters.length > 0) {
+      // Get all records matching DB filters (no pagination limit initially)
+      const allRecords = await prisma.complaintRecord.findMany({
+        where,
+        include: {
+          customer: true,
+          productModel: true,
+          productionLine: true,
+          problemCategory: true,
+          problemSubcategory: true,
+          severityLevel: true,
+          customerDemand: true,
+          compensationType: true,
+          responsibleDept: true,
+          responsibleProcess: true,
+          createdBy: { select: { id: true, name: true } },
+          updatedBy: { select: { id: true, name: true } }
+        },
+        orderBy: {
+          [sortBy]: sortOrder
+        }
+      })
+
+      // Filter in memory for custom fields
+      const filtered = allRecords.filter(record => {
+        let templateData: Record<string, any> = {}
+        if (record.templateData) {
+          try {
+            templateData = JSON.parse(record.templateData)
+          } catch {
+            return false
+          }
+        }
+
+        for (const cf of customFilters) {
+          const fieldVal = templateData[cf.fieldName]
+          if (fieldVal === undefined || fieldVal === null) return false
+
+          const strFieldVal = String(fieldVal).toLowerCase()
+          const strCfVal = String(cf.val).toLowerCase()
+
+          switch (cf.operator) {
+            case 'eq':
+              if (strFieldVal !== strCfVal) return false
+              break
+            case 'contains':
+              if (!strFieldVal.includes(strCfVal)) return false
+              break
+            case 'gt':
+              if (Number(fieldVal) <= Number(cf.val)) return false
+              break
+            case 'lt':
+              if (Number(fieldVal) >= Number(cf.val)) return false
+              break
+            case 'gte':
+              if (Number(fieldVal) < Number(cf.val)) return false
+              break
+            case 'lte':
+              if (Number(fieldVal) > Number(cf.val)) return false
+              break
+            case 'date_eq':
+            case 'date_gte':
+            case 'date_lte':
+              const fieldDate = new Date(fieldVal)
+              const filterDate = new Date(cf.val)
+              if (cf.operator === 'date_eq' && fieldDate.toISOString().slice(0, 10) !== filterDate.toISOString().slice(0, 10)) return false
+              if (cf.operator === 'date_gte' && fieldDate < filterDate) return false
+              if (cf.operator === 'date_lte' && fieldDate > filterDate) return false
+              break
+            default:
+              if (!strFieldVal.includes(strCfVal)) return false
+          }
+        }
+        return true
+      })
+
+      total = filtered.length
+      // Apply pagination
+      const start = (page - 1) * pageSize
+      records = filtered.slice(start, start + pageSize)
+    } else {
+      // No custom filters, use normal pagination
+      total = await prisma.complaintRecord.count({ where })
+
+      records = await prisma.complaintRecord.findMany({
+        where,
+        include: {
+          customer: true,
+          productModel: true,
+          productionLine: true,
+          problemCategory: true,
+          problemSubcategory: true,
+          severityLevel: true,
+          customerDemand: true,
+          compensationType: true,
+          responsibleDept: true,
+          responsibleProcess: true,
+          createdBy: { select: { id: true, name: true } },
+          updatedBy: { select: { id: true, name: true } }
+        },
+        orderBy: {
+          [sortBy]: sortOrder
+        },
+        skip: (page - 1) * pageSize,
+        take: pageSize
+      })
+    }
 
     return {
       success: true,

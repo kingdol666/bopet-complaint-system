@@ -4,7 +4,11 @@ import { requireSessionUser } from '~/server/utils/auth'
 
 const updateSchema = z.object({
   name: z.string().min(1).max(100).optional(),
-  config: z.object({}).passthrough().optional()
+  config: z.object({}).passthrough().optional(),
+  dashboardId: z.number().positive().nullable().optional(),
+  sortOrder: z.number().int().min(0).optional(),
+  gridW: z.number().int().min(1).max(3).optional(),
+  gridH: z.number().int().min(1).max(3).optional()
 })
 
 export default defineEventHandler(async (event) => {
@@ -22,6 +26,10 @@ export default defineEventHandler(async (event) => {
     const data: any = {}
     if (validated.name) data.name = validated.name
     if (validated.config) data.config = JSON.stringify(validated.config)
+    if (validated.dashboardId !== undefined) data.dashboardId = validated.dashboardId
+    if (validated.sortOrder !== undefined) data.sortOrder = validated.sortOrder
+    if (validated.gridW !== undefined) data.gridW = validated.gridW
+    if (validated.gridH !== undefined) data.gridH = validated.gridH
 
     const analysis = await prisma.savedAnalysis.update({
       where: { id },

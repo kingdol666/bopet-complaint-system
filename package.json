@@ -1,7 +1,7 @@
 {
-  "name": "bopet-complaint-system",
-  "version": "1.0.0",
-  "description": "BOPET客诉闭环管理系统",
+  "name": "bopet-eda-platform",
+  "version": "2.0.0",
+  "description": "BOPET企业数据管理与分析平台",
   "private": true,
   "type": "module",
   "scripts": {
@@ -34,6 +34,7 @@
     "nuxt": "^3.10.0",
     "pinia": "^2.1.7",
     "vue": "^3.4.0",
+    "vue-draggable-next": "2.3.0",
     "vue-echarts": "^6.6.9",
     "vue-router": "^4.2.5",
     "xlsx": "^0.18.5",

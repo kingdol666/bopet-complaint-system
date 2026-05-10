@@ -31,6 +31,7 @@ model User {
   importLogs        ImportLog[]
   fieldOptionConfigs FieldOptionConfig[]
   savedAnalyses     SavedAnalysis[]
+  dashboards        AnalysisDashboard[]
 
   @@map("users")
 }
@@ -459,15 +460,38 @@ model ImportLog {
 
 // ==================== 用户保存的分析配置 ====================
 model SavedAnalysis {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  name      String
-  config    String   // JSON: { templateId, groupByField, fieldLabel, chartType, dateRange, limit }
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          Int                 @id @default(autoincrement())
+  userId      Int
+  name        String
+  config      String              // JSON: { templateId, groupByField, fieldLabel, chartType, dateRange, limit }
+  dashboardId Int?                // 所属看板（null = 独立面板）
+  sortOrder   Int                 @default(0) // 在看板中的排序
+  gridW       Int                 @default(1) // 格子宽度（1-3）
+  gridH       Int                 @default(1) // 格子高度
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dashboard   AnalysisDashboard?  @relation(fields: [dashboardId], references: [id], onDelete: SetNull)
 
   @@index([userId])
+  @@index([dashboardId])
   @@map("saved_analyses")
+}
+
+// ==================== 分析看板组合 ====================
+model AnalysisDashboard {
+  id          Int             @id @default(autoincrement())
+  userId      Int
+  name        String
+  description String?
+  layout      String          @default("{}") // JSON: {"columns":2}
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analyses    SavedAnalysis[]
+
+  @@index([userId])
+  @@map("analysis_dashboards")
 }

@@ -225,7 +225,7 @@ const statusLabel = computed(() => {
   const map: Record<string, string> = {
     pending: '待分析',
     processing: '处理中',
-    closed: '已结案'
+    closed: '已处理'
   }
   return map[complaint.value?.closureStatus] || '-'
 })
@@ -342,7 +342,7 @@ function resolveDisplayValue(field: any, record: any): string {
     return value ? '是' : '否'
   }
   if (field.fieldKey === 'closureStatus') {
-    const map: Record<string, string> = { pending: '待分析', processing: '处理中', closed: '已结案' }
+    const map: Record<string, string> = { pending: '待分析', processing: '处理中', closed: '已处理' }
     return map[value] || value
   }
   if (field.fieldType === 'upload' || field.fieldKey === 'attachments') {
