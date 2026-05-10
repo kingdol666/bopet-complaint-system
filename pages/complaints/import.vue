@@ -16,7 +16,7 @@
           <n-upload :multiple="false" accept=".xlsx,.xls,.csv" :custom-request="handleFileUpload" :show-file-list="false">
             <n-button type="primary">选择文件</n-button>
           </n-upload>
-          <p v-if="fileName" class="text-sm text-primary-600 mt-2">{{ fileName }} ({{ previewRows }}行, {{ previewCols }}列)</p>
+          <p v-if="fileName" class="text-sm text-primary-600 mt-2">{{ fileName }} ({{ previewRows }}行, {{ previewColCount }}列)</p>
         </div>
 
         <h3 class="section-title">2. 选择模板</h3>
@@ -47,6 +47,12 @@
         <div v-else-if="!fileHeaders.length" class="text-center py-8 text-corporate-400">请先上传文件</div>
         <div v-else class="text-center py-8 text-corporate-400">请先选择模板</div>
       </div>
+    </div>
+
+    <!-- Data Preview -->
+    <div v-if="fileHeaders.length && previewData.length" class="card mt-6">
+      <h3 class="section-title">数据预览（前5行）</h3>
+      <n-data-table :columns="previewCols" :data="previewData" size="small" :max-height="300" />
     </div>
 
     <!-- Import button -->
@@ -81,42 +87,105 @@ import type { UploadCustomRequestOptions } from 'naive-ui'
 const authStore = useAuthStore()
 const message = useMessage()
 
-const fileName = ref(''); const fileHeaders = ref<string[]>([])
-const previewRows = ref(0); const previewCols = ref(0)
+const fileName = ref('')
+const fileHeaders = ref<string[]>([])
+const previewRows = ref(0)
+const previewColCount = ref(0)
 const selectedTemplateId = ref<number | null>(null)
-const templates = ref<any[]>([]); const templateFields = ref<any[]>([])
+const templates = ref<any[]>([])
+const templateFields = ref<any[]>([])
 const columnMap = reactive<Record<string, string | null>>({})
 const autoMatched = reactive<Record<string, boolean>>({})
 const fileData = ref<{ headers: string[]; rows: any[][] } | null>(null)
-const importing = ref(false); const importResult = ref<any>(null)
+const rawFileRef = ref<globalThis.File | null>(null)
+const importing = ref(false)
+const importResult = ref<any>(null)
 
 const templateOptions = computed(() => templates.value.map(t => ({ label: t.name, value: t.id })))
 const fileHeaderOptions = computed(() => fileHeaders.value.map(h => ({ label: h, value: h })))
 const errorCols = [{ title: '行号', key: 'row', width: 70 }, { title: '错误', key: 'message' }]
+
+const previewCols = computed(() =>
+  fileHeaders.value.map(h => ({ title: h, key: h, ellipsis: { tooltip: true }, width: 150 }))
+)
+
+const previewData = computed(() => {
+  if (!fileData.value) return []
+  return fileData.value.rows.slice(0, 5).map(row => {
+    const obj: Record<string, any> = {}
+    fileHeaders.value.forEach((h, i) => { obj[h] = row[i] ?? '' })
+    return obj
+  })
+})
+
+function parseCSVLine(line: string): string[] {
+  const result: string[] = []
+  let current = ''
+  let inQuotes = false
+  let i = 0
+  while (i < line.length) {
+    const ch = line[i]
+    if (inQuotes) {
+      if (ch === '"') {
+        if (i + 1 < line.length && line[i + 1] === '"') {
+          current += '"'
+          i += 2
+        } else {
+          inQuotes = false
+          i++
+        }
+      } else {
+        current += ch
+        i++
+      }
+    } else {
+      if (ch === '"') {
+        inQuotes = true
+        i++
+      } else if (ch === ',') {
+        result.push(current.trim())
+        current = ''
+        i++
+      } else {
+        current += ch
+        i++
+      }
+    }
+  }
+  result.push(current.trim())
+  return result
+}
 
 async function handleFileUpload(opts: UploadCustomRequestOptions) {
   const rawFile: globalThis.File = (opts.file as any).file
   if (!rawFile) { message.error('无法读取文件'); opts.onError(); return }
   try {
     const XLSX = await import('xlsx')
-    let headers: string[] = []; let rows: any[][] = []
+    let headers: string[] = []
+    let rows: any[][] = []
 
     if (rawFile.name.endsWith('.csv')) {
       const text = await rawFile.text()
       const lines = text.split(/\r?\n/).filter(r => r.trim())
-      const parseCSV = (l: string) => { const r: string[] = []; let c = '', q = false; for (const ch of l) { if (ch === '"') q = !q; else if (ch === ',' && !q) { r.push(c.trim()); c = '' } else c += ch }; r.push(c.trim()); return r }
-      headers = parseCSV(lines[0]).map(h => h.replace(/^"|"$/g, ''))
-      rows = lines.slice(1).map(parseCSV)
+      if (lines.length < 2) { message.error('文件中没有数据行'); opts.onError(); return }
+      headers = parseCSVLine(lines[0]).map(h => h.replace(/^"|"$/g, ''))
+      rows = lines.slice(1).map(parseCSVLine)
     } else {
       const buf = await rawFile.arrayBuffer()
       const wb = XLSX.read(buf, { type: 'buffer' })
-      const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 }) as any[][]
+      const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: null }) as any[][]
+      if (data.length <= 1) { message.error('文件中没有数据行'); opts.onError(); return }
       headers = data[0].map((h: any) => String(h || '').trim())
       rows = data.slice(1)
     }
 
-    fileName.value = file.name; fileHeaders.value = headers; previewRows.value = rows.length; previewCols.value = headers.length
+    fileName.value = rawFile.name
+    rawFileRef.value = rawFile
+    fileHeaders.value = headers
+    previewRows.value = rows.length
+    previewColCount.value = headers.length
     fileData.value = { headers, rows }
+
     for (const k of Object.keys(columnMap)) delete columnMap[k]
     for (const k of Object.keys(autoMatched)) delete autoMatched[k]
     importResult.value = null
@@ -124,7 +193,10 @@ async function handleFileUpload(opts: UploadCustomRequestOptions) {
 
     if (selectedTemplateId.value) handleAutoMap()
     opts.onFinish()
-  } catch (e: any) { message.error('解析失败: ' + e.message); opts.onError() }
+  } catch (e: any) {
+    message.error('解析失败: ' + e.message)
+    opts.onError()
+  }
 }
 
 async function handleTemplateSelect() {
@@ -136,43 +208,72 @@ async function handleTemplateSelect() {
   } catch (e) { console.error(e) }
 }
 
+function normalizeStr(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]/g, '')
+}
+
 function handleAutoMap() {
   if (!fileHeaders.value.length || !templateFields.value.length) return
   for (const tf of templateFields.value) {
-    let matched = null
+    let matched: string | null = null
+    let bestScore = 0
+    const tfLabelNorm = normalizeStr(tf.fieldLabel)
+    const tfKeyNorm = normalizeStr(tf.fieldKey)
+
     for (const fh of fileHeaders.value) {
-      if (fh === tf.fieldLabel || fh.includes(tf.fieldLabel) || tf.fieldLabel.includes(fh) ||
-          fh.toLowerCase().replace(/[^a-z]/g, '') === tf.fieldKey.toLowerCase().replace(/[^a-z]/g, '')) {
-        matched = fh; break
+      const fhNorm = normalizeStr(fh)
+      let score = 0
+
+      if (fh === tf.fieldLabel) score = 100
+      else if (fhNorm === tfLabelNorm) score = 95
+      else if (fhNorm === tfKeyNorm) score = 90
+      else if (fh.includes(tf.fieldLabel) || tf.fieldLabel.includes(fh)) score = 70
+      else if (fhNorm.includes(tfLabelNorm) || tfLabelNorm.includes(fhNorm)) score = 60
+      else if (fhNorm.includes(tfKeyNorm) || tfKeyNorm.includes(fhNorm)) score = 50
+
+      if (score > bestScore) {
+        bestScore = score
+        matched = fh
       }
     }
-    columnMap[tf.fieldKey] = matched
-    autoMatched[tf.fieldKey] = !!matched
+
+    columnMap[tf.fieldKey] = bestScore >= 50 ? matched : null
+    autoMatched[tf.fieldKey] = bestScore >= 50
   }
 }
 
 async function handleImport() {
-  if (!fileData.value) { message.error('未选择文件'); return }
+  if (!rawFileRef.value) { message.error('未选择文件'); return }
   if (!selectedTemplateId.value) { message.error('未选择模板'); return }
 
   importing.value = true
   try {
-    // Build actual file from parsed data
-    const csvContent = fileData.value.headers.join(',') + '\n' + fileData.value.rows.map(r => r.map(c => `"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n')
-    const blob = new Blob([csvContent], { type: 'text/csv' })
-
     const fd = new FormData()
-    fd.append('file', blob, fileName.value || 'data.csv')
+    fd.append('file', rawFileRef.value)
     fd.append('templateId', String(selectedTemplateId.value))
     fd.append('columnMap', JSON.stringify(columnMap))
 
-    const resp = await $fetch('/api/complaints/import-to-template', { method: 'POST', body: fd, headers: authStore.getAuthHeaders() }) as any
-    if (resp.success) { importResult.value = resp.data; message.success(resp.message) }
-  } catch (e: any) { message.error(e.data?.statusMessage || '导入失败') }
-  finally { importing.value = false }
+    const resp = await $fetch('/api/complaints/import-to-template', {
+      method: 'POST',
+      body: fd,
+      headers: authStore.getAuthHeaders()
+    }) as any
+
+    if (resp.success) {
+      importResult.value = resp.data
+      message.success(resp.message)
+    }
+  } catch (e: any) {
+    message.error(e.data?.statusMessage || '导入失败')
+  } finally {
+    importing.value = false
+  }
 }
 
 onMounted(async () => {
-  try { const resp = await $fetch('/api/templates') as any; if (resp.success) templates.value = resp.data } catch (e) { console.error(e) }
+  try {
+    const resp = await $fetch('/api/templates') as any
+    if (resp.success) templates.value = resp.data
+  } catch (e) { console.error(e) }
 })
 </script>

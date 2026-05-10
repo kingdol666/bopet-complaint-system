@@ -79,7 +79,7 @@ export default defineNuxtConfig({
   // Nitro config
   nitro: {
     externals: {
-      inline: ['naive-ui', 'vueuc', 'xlsx']
+      inline: ['naive-ui', 'vueuc', 'xlsx', 'unhead']
     },
     experimental: {
       wasm: false
