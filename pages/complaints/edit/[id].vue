@@ -15,34 +15,20 @@
       <n-spin size="large" />
     </div>
 
-    <n-form
-      v-else
-      ref="formRef"
-      :model="templateData"
-      label-placement="left"
-      label-width="120"
-    >
+    <n-form v-else ref="formRef" :model="templateData" label-placement="left" label-width="120">
       <!-- Template info -->
       <div v-if="selectedTemplateIds.length > 0" class="card mb-6">
         <h2 class="section-title">表单模板</h2>
         <n-form-item label="关联模板">
-          <n-select
-            v-model:value="selectedTemplateIds"
-            :options="templateOptions"
-            placeholder="表单模板"
-            multiple
-            disabled
-          />
+          <n-select v-model:value="selectedTemplateIds" :options="templateOptions" placeholder="表单模板" multiple
+            disabled />
         </n-form-item>
       </div>
 
       <!-- Dynamic fields from templates -->
       <div v-if="selectedTemplateIds.length > 0" class="card mb-6">
         <h2 class="section-title">客诉表单</h2>
-        <DynamicFormFields
-          v-model="templateData"
-          :template-ids="selectedTemplateIds"
-        />
+        <DynamicFormFields v-model="templateData" :template-ids="selectedTemplateIds" />
       </div>
 
       <div class="flex justify-end gap-2">
@@ -118,7 +104,7 @@ function buildTemplateDataFromRecord(record: any): Record<string, any> {
         ? JSON.parse(record.templateData)
         : record.templateData
       Object.assign(data, custom)
-    } catch {}
+    } catch { }
   }
 
   return data
@@ -170,7 +156,7 @@ onMounted(async () => {
     // Load available templates
     try {
       await configStore.loadConfig()
-      const tplResp = await $fetch('/api/templates')
+      const tplResp = await $fetch('/api/templates', { headers: authStore.getAuthHeaders() }) as any
       if (tplResp.success) {
         templates.value = tplResp.data
       }
@@ -189,7 +175,7 @@ onMounted(async () => {
 })
 
 async function loadComplaint() {
-  const response = await $fetch(`/api/complaints/${complaintId.value}`) as { success?: boolean; data?: any }
+  const response = await $fetch(`/api/complaints/${complaintId.value}`, { headers: authStore.getAuthHeaders() }) as { success?: boolean; data?: any }
 
   if (!response?.success || !response.data) {
     throw new Error('Complaint not found')
@@ -244,7 +230,7 @@ async function handleSubmit() {
     message.success('客诉信息已更新')
     await navigateTo(`/complaints/${complaintId.value}`)
   } catch (error: any) {
-    message.error(error.data?.statusMessage || '保存失败')
+    message.error(error.data?.message || error.data?.statusMessage || '保存失败')
   } finally {
     submitting.value = false
   }
