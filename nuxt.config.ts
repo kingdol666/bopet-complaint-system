@@ -15,6 +15,13 @@ export default defineNuxtConfig({
     appManifest: false
   },
 
+  // Ignore sw.js requests (browser extensions / devtools noise)
+  ignore: ['/sw.js'],
+
+  routeRules: {
+    '/sw.js': { prerender: false }
+  },
+
   modules: [
     '@pinia/nuxt',
     '@nuxtjs/tailwindcss'
