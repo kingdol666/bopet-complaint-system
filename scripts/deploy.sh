@@ -135,13 +135,18 @@ install_deps() {
 # ── 构建项目 ──────────────────────────────────────────────
 build_project() {
   info "构建项目..."
+
+  # Ensure data directory exists before any DB operations
+  info "  0) 创建数据目录..."
+  mkdir -p "$PROJECT_DIR/data"
+
   info "  1) 准备 Prisma Schema..."
   npm run prisma:prepare
 
   info "  2) 生成 Prisma Client..."
   npx prisma generate
 
-  info "  3) 推送数据库 Schema..."
+  info "  3) 推送数据库 Schema (自动创建 data/bopet.db)..."
   npx prisma db push
 
   info "  4) 写入种子数据..."

@@ -40,7 +40,7 @@ export default defineNuxtConfig({
     // Server-side only
     databaseUrl: ['postgres', 'postgresql'].includes(process.env.PRISMA_DB_PROVIDER || '')
       ? process.env.POSTGRES_PRISMA_URL || process.env.DATABASE_URL || ''
-      : process.env.DATABASE_URL || 'file:./data/dev/bopet.db',
+      : process.env.DATABASE_URL || 'file:./data/bopet.db',
     jwtSecret: process.env.JWT_SECRET || '',
     // Public
     public: {
