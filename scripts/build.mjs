@@ -11,8 +11,8 @@ const rootDir = resolve(__dirname, '..')
 
 const heapSize = process.env.NODE_HEAP_MB || '4096'
 
-// nuxt binary as the script to run
-const nuxtBin = resolve(rootDir, 'node_modules', '.bin', 'nuxt')
+// nuxt CLI entry point (cross-platform, works on Windows + Linux)
+const nuxtBin = resolve(rootDir, 'node_modules', 'nuxt', 'bin', 'nuxt.mjs')
 
 // Default command is 'build'; extra args from CLI override or extend
 const extraArgs = process.argv.slice(2)
