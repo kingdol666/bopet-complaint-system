@@ -21,41 +21,29 @@
       <div class="flex flex-wrap gap-4 items-end">
         <div class="flex-1 min-w-[200px]">
           <label class="block text-xs font-medium text-corporate-500 mb-1.5">搜索</label>
-          <n-input
-            v-model:value="filters.keyword"
-            placeholder="搜索客户表述/关键词/内部名称..."
-            clearable
-            @keyup.enter="handleSearch"
-          />
+          <n-input v-model:value="filters.keyword" placeholder="搜索客户表述/关键词/内部名称..." clearable
+            @keyup.enter="handleSearch" />
         </div>
 
         <div class="w-48">
           <label class="block text-xs font-medium text-corporate-500 mb-1.5">问题大类</label>
-          <n-select
-            v-model:value="filters.problemCategoryId"
-            :options="problemCategoryOptionsWithAll"
-            placeholder="问题大类"
-            clearable
-            @update:value="handleSearch"
-          />
+          <n-select v-model:value="filters.problemCategoryId" :options="problemCategoryOptionsWithAll"
+            placeholder="问题大类" clearable @update:value="handleSearch" />
         </div>
 
         <div class="w-32">
           <label class="block text-xs font-medium text-corporate-500 mb-1.5">状态</label>
-          <n-select
-            v-model:value="filters.enabled"
-            :options="enabledOptions"
-            placeholder="状态"
-            clearable
-            @update:value="handleSearch"
-          />
+          <n-select v-model:value="filters.enabled" :options="enabledOptions" placeholder="状态" clearable
+            @update:value="handleSearch" />
         </div>
 
         <div class="flex gap-2">
           <n-button type="default" @click="handleSearch">
             <template #icon>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </template>
             搜索
@@ -67,27 +55,16 @@
 
     <!-- Table -->
     <div class="card overflow-hidden">
-      <n-data-table
-        :columns="columns"
-        :data="tableData"
-        :loading="loading"
-        :pagination="false"
-        :row-key="(row: any) => row.id"
-      />
+      <n-data-table :columns="columns" :data="tableData" :loading="loading" :pagination="false"
+        :row-key="(row: any) => row.id" />
 
       <div class="flex items-center justify-between mt-4 pt-4 border-t border-corporate-100">
         <p class="text-sm text-corporate-500">
           共 <span class="font-medium text-corporate-900">{{ pagination.total }}</span> 条记录
         </p>
-        <n-pagination
-          v-model:page="pagination.page"
-          :page-count="pagination.totalPages"
-          :page-size="pagination.pageSize"
-          show-size-picker
-          :page-sizes="[10, 20, 50]"
-          @update:page="loadData"
-          @update:page-size="handlePageSizeChange"
-        />
+        <n-pagination v-model:page="pagination.page" :page-count="pagination.totalPages"
+          :page-size="pagination.pageSize" show-size-picker :page-sizes="[10, 20, 50]" @update:page="loadData"
+          @update:page-size="handlePageSizeChange" />
       </div>
     </div>
 
@@ -107,22 +84,13 @@
         </n-form-item>
 
         <n-form-item label="问题大类" path="problemCategoryId">
-          <n-select
-            v-model:value="formData.problemCategoryId"
-            :options="problemCategoryOptions"
-            placeholder="选择问题大类"
-            clearable
-          />
+          <n-select v-model:value="formData.problemCategoryId" :options="problemCategoryOptions" placeholder="选择问题大类"
+            clearable />
         </n-form-item>
 
         <n-form-item label="问题小类" path="problemSubcategoryId">
-          <n-select
-            v-model:value="formData.problemSubcategoryId"
-            :options="filteredSubcategoryOptions"
-            placeholder="选择问题小类"
-            clearable
-            :disabled="!formData.problemCategoryId"
-          />
+          <n-select v-model:value="formData.problemSubcategoryId" :options="filteredSubcategoryOptions"
+            placeholder="选择问题小类" clearable :disabled="!formData.problemCategoryId" />
         </n-form-item>
 
         <n-form-item label="是否启用" path="enabled">

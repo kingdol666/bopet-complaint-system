@@ -1,4 +1,4 @@
-import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
+import { createHmac, randomBytes, timingSafeEqual, scryptSync } from 'node:crypto'
 import type { H3Event } from 'h3'
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
@@ -96,7 +96,7 @@ function extractBearerToken(event: H3Event): string | null {
 export function hashPassword(password: string): string {
   // Per-user random salt using Node.js built-in scrypt (memory-hard KDF)
   const salt = randomBytes(16).toString('hex')
-  const key = crypto.scryptSync(password, salt, 64, { N: 16384, r: 8, p: 1 })
+  const key = scryptSync(password, salt, 64, { N: 16384, r: 8, p: 1 })
   return salt + ':' + key.toString('hex')
 }
 
@@ -108,7 +108,7 @@ export function verifyPassword(password: string, hash: string): boolean {
   }
   const [salt, key] = hash.split(':')
   if (!salt || !key) return false
-  const derived = crypto.scryptSync(password, salt, 64, { N: 16384, r: 8, p: 1 })
+  const derived = scryptSync(password, salt, 64, { N: 16384, r: 8, p: 1 })
   return derived.toString('hex') === key
 }
 

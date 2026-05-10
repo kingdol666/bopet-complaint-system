@@ -5,7 +5,8 @@
       <div>
         <h1 class="page-title mb-1">自定义分析</h1>
         <p class="page-subtitle">
-          <template v-if="currentDashboard">看板：<span class="font-semibold text-primary-600">{{ currentDashboard.name }}</span>（{{ panels.length }} 个面板）</template>
+          <template v-if="currentDashboard">看板：<span class="font-semibold text-primary-600">{{ currentDashboard.name
+          }}</span>（{{ panels.length }} 个面板）</template>
           <template v-else>拖拽排列面板，保存为看板组合，一键加载完整分析</template>
         </p>
       </div>
@@ -21,11 +22,18 @@
         <!-- Action buttons -->
         <div class="flex flex-col gap-2">
           <n-button type="primary" block @click="addPanel()">
-            <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg></template>
+            <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg></template>
             新建分析面板
           </n-button>
           <n-button v-if="panels.length" block secondary @click="openDashboardSaveModal">
-            <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 8a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zm12 0a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg></template>
+            <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 8a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zm12 0a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+              </svg></template>
             保存为看板
           </n-button>
         </div>
@@ -39,18 +47,26 @@
           <div class="space-y-1">
             <div v-for="db in dashboards" :key="db.id"
               class="group flex items-center justify-between p-2 rounded-lg hover:bg-blue-50 cursor-pointer transition-colors border border-transparent hover:border-blue-200"
-              :class="{ 'bg-blue-50 border-blue-200': currentDashboard?.id === db.id }"
-              @click="loadDashboard(db)">
+              :class="{ 'bg-blue-50 border-blue-200': currentDashboard?.id === db.id }" @click="loadDashboard(db)">
               <div class="min-w-0 flex-1">
                 <p class="text-sm font-medium text-gray-700 truncate">{{ db.name }}</p>
-                <p class="text-xs text-gray-400">{{ db._count?.analyses || 0 }} 面板 · {{ dayjs(db.updatedAt).format('MM-DD HH:mm') }}</p>
+                <p class="text-xs text-gray-400">{{ db._count?.analyses || 0 }} 面板 · {{
+                  dayjs(db.updatedAt).format('MM-DD-YYYY HH:mm') }}</p>
               </div>
               <div class="hidden group-hover:flex items-center gap-0.5 shrink-0">
                 <n-button size="tiny" quaternary @click.stop="renameDashboard(db)">
-                  <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></template>
+                  <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none"
+                      viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg></template>
                 </n-button>
                 <n-button size="tiny" quaternary type="error" @click.stop="deleteDashboard(db.id)">
-                  <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></template>
+                  <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none"
+                      viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg></template>
                 </n-button>
               </div>
             </div>
@@ -70,18 +86,31 @@
               </div>
               <div class="hidden group-hover:flex items-center gap-0.5 shrink-0">
                 <n-button size="tiny" quaternary @click.stop="renameSaved(sa)">
-                  <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></template>
+                  <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none"
+                      viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg></template>
                 </n-button>
                 <n-button size="tiny" quaternary type="error" @click.stop="deleteSaved(sa.id)">
-                  <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></template>
+                  <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none"
+                      viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg></template>
                 </n-button>
               </div>
             </div>
           </div>
         </div>
 
-        <div v-if="!dashboards.length && !independentAnalyses.length" class="card p-6 text-center flex flex-col items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+        <div v-if="!dashboards.length && !independentAnalyses.length"
+          class="card p-6 text-center flex flex-col items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-300 mb-2" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+          </svg>
           <p class="text-xs text-gray-400">还没有保存的分析</p>
           <p class="text-xs text-gray-400 mt-1">运行分析后点击「保存配置」</p>
         </div>
@@ -91,16 +120,20 @@
       <div class="flex-1 min-w-0 overflow-y-auto">
         <div v-if="panels.length">
           <ClientOnly>
-            <VueDraggableNext v-model="panels" :animation="200" handle=".drag-handle" ghost-class="ghost-panel" @end="onDragEnd" :class="gridColumns === 1 ? 'panels-grid-1' : 'panels-grid-2'">
+            <VueDraggableNext v-model="panels" :animation="200" handle=".drag-handle" ghost-class="ghost-panel"
+              @end="onDragEnd" :class="gridColumns === 1 ? 'panels-grid-1' : 'panels-grid-2'">
               <div v-for="p in panels" :key="p.key" :class="gridSpanClass(p.gridW)">
                 <div class="relative h-full">
                   <!-- Drag handle overlay -->
-                  <div class="drag-handle absolute -left-1 top-1/2 -translate-y-1/2 w-6 h-12 flex items-center justify-center cursor-grab opacity-0 hover:opacity-100 group-hover:opacity-60 transition-opacity z-10 rounded hover:bg-gray-100">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" /></svg>
+                  <div
+                    class="drag-handle absolute -left-1 top-1/2 -translate-y-1/2 w-6 h-12 flex items-center justify-center cursor-grab opacity-0 hover:opacity-100 group-hover:opacity-60 transition-opacity z-10 rounded hover:bg-gray-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none"
+                      viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+                    </svg>
                   </div>
-                  <AnalysisPanel :panel-id="p.key" :title="p.title"
-                    :saved-analysis-id="p.savedAnalysisId" :initial-config="p.config"
-                    :grid-w="p.gridW"
+                  <AnalysisPanel :panel-id="p.key" :title="p.title" :saved-analysis-id="p.savedAnalysisId"
+                    :initial-config="p.config" :grid-w="p.gridW"
                     @delete="(panelId: number) => handleRemovePanel(panelId)"
                     @save="(cfg: any) => handleSaveConfig(p, cfg)"
                     @resize="(w: number) => { p.gridW = w; onPanelChange() }" />
@@ -113,10 +146,18 @@
         <!-- Empty state -->
         <div v-else class="card py-20 text-center flex flex-col items-center justify-center">
           <div class="w-20 h-20 rounded-2xl bg-primary-50 flex items-center justify-center mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-primary-400" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+            </svg>
           </div>
           <h3 class="text-lg font-semibold text-gray-700 mb-1">开始自定义分析</h3>
-          <p class="text-sm text-gray-400 max-w-md">点击左侧「新建分析面板」按钮，选择模板和字段，系统将自动生成可视化图表和统计表格。拖拽面板左侧手柄可调整排列顺序，支持保存为看板组合一键加载。</p>
+          <p class="text-sm text-gray-400 max-w-md">
+            点击左侧「新建分析面板」按钮，选择模板和字段，系统将自动生成可视化图表和统计表格。拖拽面板左侧手柄可调整排列顺序，支持保存为看板组合一键加载。
+          </p>
         </div>
       </div>
     </div>
@@ -140,12 +181,14 @@
     </n-modal>
 
     <!-- Dashboard save modal -->
-    <n-modal v-model:show="dashboardSaveModal" preset="card" :title="currentDashboard ? '更新看板' : '保存为看板'" style="width:500px">
+    <n-modal v-model:show="dashboardSaveModal" preset="card" :title="currentDashboard ? '更新看板' : '保存为看板'"
+      style="width:500px">
       <n-form-item label="看板名称" required>
         <n-input v-model:value="dashboardName" placeholder="例如：月度质量分析看板" />
       </n-form-item>
       <n-form-item label="描述（可选）">
-        <n-input v-model:value="dashboardDesc" type="textarea" placeholder="看板用途说明" :autosize="{ minRows: 2, maxRows: 4 }" />
+        <n-input v-model:value="dashboardDesc" type="textarea" placeholder="看板用途说明"
+          :autosize="{ minRows: 2, maxRows: 4 }" />
       </n-form-item>
       <div class="mb-4 p-3 bg-gray-50 rounded-lg">
         <p class="text-xs text-gray-500 mb-1">将保存以下 {{ panels.length }} 个面板到看板：</p>
@@ -635,6 +678,7 @@ onMounted(async () => {
 :deep(.drag-handle) {
   cursor: grab;
 }
+
 :deep(.drag-handle:active) {
   cursor: grabbing;
 }
@@ -672,6 +716,7 @@ onMounted(async () => {
 }
 
 @media (max-width: 1280px) {
+
   .custom-analysis-page .panel-span-1,
   .custom-analysis-page .panel-span-2,
   .custom-analysis-page .panel-span-3 {

@@ -402,9 +402,10 @@ onMounted(async () => {
 
   try {
     // Load complaint and templates in parallel
+    const complaintUrl = '/api/complaints/' + id
     const [complaintResp, templatesResp] = await Promise.all([
-      $fetch(`/api/complaints/${id}`) as Promise<any>,
-      $fetch('/api/templates') as Promise<any>
+      $fetch<any>(complaintUrl) as Promise<any>,
+      $fetch<any>('/api/templates') as Promise<any>
     ])
 
     if (complaintResp.success) {
@@ -419,7 +420,7 @@ onMounted(async () => {
     const ids = parseTemplateIds()
     if (ids.length > 0) {
       const fieldResults = await Promise.all(
-        ids.map(tid => $fetch(`/api/templates/${tid}`) as Promise<any>)
+        ids.map(tid => $fetch<any>('/api/templates/' + tid) as Promise<any>)
       )
       const allFields: any[] = []
       const seenKeys = new Set<string>()

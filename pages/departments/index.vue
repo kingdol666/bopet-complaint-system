@@ -11,31 +11,40 @@
         <div class="flex items-center justify-between mb-3">
           <h3 class="section-title mb-0">部门架构</h3>
           <n-button v-if="isSuperAdmin" size="small" type="primary" @click="openDeptModal()">
-            <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg></template>
+            <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg></template>
             新增
           </n-button>
         </div>
         <n-spin :show="deptLoading">
           <div class="space-y-1 max-h-[600px] overflow-y-auto">
-            <div
-              v-for="d in departments"
-              :key="d.id"
+            <div v-for="d in departments" :key="d.id"
               class="flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition-colors border"
               :class="selectedDeptId === d.id ? 'border-primary-300 bg-primary-50' : 'border-transparent hover:bg-gray-50'"
-              @click="selectDept(d)"
-            >
+              @click="selectDept(d)">
               <div class="min-w-0">
                 <p class="text-sm font-medium text-gray-800">{{ d.name }}</p>
-                <p class="text-xs text-gray-400">{{ d._count?.userDepartments || 0 }}人 · {{ d._count?.complaints || 0 }}客诉</p>
+                <p class="text-xs text-gray-400">{{ d._count?.userDepartments || 0 }}人 · {{ d._count?.complaints || 0
+                  }}客诉</p>
               </div>
               <div v-if="isSuperAdmin" class="flex gap-0.5 shrink-0 ml-2">
                 <n-button size="tiny" quaternary @click.stop="openDeptModal(d)">
-                  <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></template>
+                  <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none"
+                      viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg></template>
                 </n-button>
                 <n-popconfirm @positive-click="deleteDept(d.id)">
                   <template #trigger>
                     <n-button size="tiny" quaternary type="error">
-                      <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></template>
+                      <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none"
+                          viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg></template>
                     </n-button>
                   </template>
                   确认删除部门「{{ d.name }}」？
@@ -54,26 +63,29 @@
         <div class="flex items-center justify-between mb-3">
           <h3 class="section-title mb-0">{{ selectedDept ? selectedDept.name + ' - 人员' : '选择部门查看人员' }}</h3>
           <n-button v-if="isSuperAdmin && selectedDept" size="small" type="primary" @click="openUserModal()">
-            <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg></template>
+            <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+              </svg></template>
             添加人员
           </n-button>
         </div>
 
         <template v-if="selectedDept">
           <n-spin :show="userLoading">
-            <n-data-table
-              :columns="userCols"
-              :data="deptUsers"
-              size="small"
-              :bordered="false"
-            />
+            <n-data-table :columns="userCols" :data="deptUsers" size="small" :bordered="false" />
             <div v-if="!deptUsers.length && !userLoading" class="text-center py-8 text-gray-400 text-sm">
               该部门暂无人员
             </div>
           </n-spin>
         </template>
         <div v-else class="text-center py-12 text-gray-400">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-3 opacity-30" fill="none"
+            viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
           <p>点击左侧部门查看人员架构</p>
         </div>
       </div>
@@ -142,10 +154,12 @@ const assignUserId = ref<number | null>(null)
 const userCols = [
   { title: '用户名', key: 'username', width: 110 },
   { title: '姓名', key: 'name', width: 130 },
-  { title: '角色', key: 'role', width: 100, render: (row: any) => {
-    const m: Record<string,string> = { superadmin:'超级管理员', admin:'部门管理员', normal:'普通用户' }
-    return m[row.role] || row.role
-  }},
+  {
+    title: '角色', key: 'role', width: 100, render: (row: any) => {
+      const m: Record<string, string> = { superadmin: '超级管理员', admin: '部门管理员', normal: '普通用户' }
+      return m[row.role] || row.role
+    }
+  },
   { title: '状态', key: 'enabled', width: 70, render: (row: any) => row.enabled ? '启用' : '禁用' },
   {
     title: '操作', key: 'actions', width: 80,

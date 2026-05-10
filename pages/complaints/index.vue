@@ -374,41 +374,6 @@ const filters = reactive({
 
 const dateRange = ref<[number, number] | null>(null)
 
-const statusOptions = [
-  { label: '待分析', value: 'pending' },
-  { label: '处理中', value: 'processing' },
-  { label: '已处理', value: 'closed' }
-]
-
-const complaintCategoryOptions = [
-  { label: '成品外观', value: '成品外观' },
-  { label: '膜面平整性', value: '膜面平整性' },
-  { label: '涂布表观', value: '涂布表观' },
-  { label: '点弊病', value: '点弊病' },
-  { label: '轴身平整性', value: '轴身平整性' },
-  { label: '划伤', value: '划伤' },
-  { label: '管理不良', value: '管理不良' },
-  { label: '包装运输', value: '包装运输' },
-  { label: '物理特性', value: '物理特性' },
-  { label: '匹配性不良', value: '匹配性不良' },
-  { label: '客户匹配性不良', value: '客户匹配性不良' }
-]
-
-const defectSourceOptions = [
-  { label: '原材料', value: '原材料' },
-  { label: '配方', value: '配方' },
-  { label: '挤出工序', value: '挤出工序' },
-  { label: '纵拉工序', value: '纵拉工序' },
-  { label: '横拉工序', value: '横拉工序' },
-  { label: '涂布工序', value: '涂布工序' },
-  { label: '收卷工序', value: '收卷工序' },
-  { label: '分切工序', value: '分切工序' },
-  { label: '包装运输', value: '包装运输' },
-  { label: '环境管理', value: '环境管理' },
-  { label: '人员管理', value: '人员管理' },
-  { label: '设备异常', value: '设备异常' }
-]
-
 // Resolve template names from templateIds JSON string
 function resolveTemplateNames(templateIds: string | null): string {
   if (!templateIds) return '-'

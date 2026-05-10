@@ -17,37 +17,21 @@
     </div>
 
     <div class="card">
-      <n-data-table
-        :columns="columns"
-        :data="tableData"
-        :loading="loading"
-        :pagination="false"
-        :row-key="(row: any) => row.id"
-      />
+      <n-data-table :columns="columns" :data="tableData" :loading="loading" :pagination="false"
+        :row-key="(row: any) => row.id" />
 
       <div class="flex items-center justify-between mt-4 pt-4 border-t border-corporate-100">
         <p class="text-sm text-corporate-500">
           共 <span class="font-medium text-corporate-900">{{ pagination.total }}</span> 条记录
         </p>
-        <n-pagination
-          v-model:page="pagination.page"
-          :page-count="pagination.totalPages"
-          :page-size="pagination.pageSize"
-          show-size-picker
-          :page-sizes="[10, 20, 50]"
-          @update:page="loadData"
-          @update:page-size="handlePageSizeChange"
-        />
+        <n-pagination v-model:page="pagination.page" :page-count="pagination.totalPages"
+          :page-size="pagination.pageSize" show-size-picker :page-sizes="[10, 20, 50]" @update:page="loadData"
+          @update:page-size="handlePageSizeChange" />
       </div>
     </div>
 
     <!-- Create/Edit Modal -->
-    <n-modal
-      v-model:show="showModal"
-      :title="editingUser ? '编辑用户' : '新增用户'"
-      preset="card"
-      style="width: 560px"
-    >
+    <n-modal v-model:show="showModal" :title="editingUser ? '编辑用户' : '新增用户'" preset="card" style="width: 560px">
       <n-form ref="formRef" :model="formData" :rules="formRules" label-placement="left" label-width="80" class="mt-4">
         <n-form-item label="用户名" path="username">
           <n-input v-model:value="formData.username" placeholder="请输入用户名" :disabled="!!editingUser" />
@@ -56,18 +40,15 @@
           <n-input v-model:value="formData.name" placeholder="请输入姓名" />
         </n-form-item>
         <n-form-item label="密码" path="password">
-          <n-input v-model:value="formData.password" type="password" show-password-on="click" :placeholder="editingUser ? '不修改请留空' : '请输入密码'" />
+          <n-input v-model:value="formData.password" type="password" show-password-on="click"
+            :placeholder="editingUser ? '不修改请留空' : '请输入密码'" />
         </n-form-item>
         <n-form-item label="角色" path="role">
           <n-select v-model:value="formData.role" :options="roleOptions" placeholder="请选择角色" />
         </n-form-item>
         <n-form-item label="所属部门" path="departmentIds">
-          <n-select
-            v-model:value="formData.departmentIds"
-            :options="departmentOptions"
-            multiple
-            placeholder="请选择所属部门（可多选）"
-          />
+          <n-select v-model:value="formData.departmentIds" :options="departmentOptions" multiple
+            placeholder="请选择所属部门（可多选）" />
         </n-form-item>
         <n-form-item v-if="editingUser" label="启用状态" path="enabled">
           <n-switch v-model:value="formData.enabled" />

@@ -175,10 +175,11 @@ onMounted(async () => {
 })
 
 async function loadComplaint() {
-  const response = await $fetch(`/api/complaints/${complaintId.value}`, { headers: authStore.getAuthHeaders() }) as { success?: boolean; data?: any }
+  const url = '/api/complaints/' + complaintId.value
+  const response = await $fetch<{ success: boolean; data: any }>(url, { headers: authStore.getAuthHeaders() })
 
   if (!response?.success || !response.data) {
-    throw new Error('Complaint not found')
+    throw new Error('客诉记录不存在')
   }
 
   const record = response.data
@@ -217,11 +218,12 @@ async function handleSubmit() {
   try {
     const payload = buildPayload(templateData.value)
 
-    const response = await $fetch(`/api/complaints/${complaintId.value}`, {
+    const url = '/api/complaints/' + complaintId.value
+    const response = await $fetch<{ success: boolean }>(url, {
       method: 'PUT',
       body: payload,
       headers: authStore.getAuthHeaders()
-    }) as { success?: boolean }
+    })
 
     if (!response?.success) {
       throw new Error('Update failed')
