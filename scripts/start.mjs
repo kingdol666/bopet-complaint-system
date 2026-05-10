@@ -21,10 +21,15 @@ if (!existsSync(dataDir)) {
 }
 const dbPath = resolve(dataDir, 'bopet.db')
 
-// Set absolute DATABASE_URL so Prisma resolves it correctly regardless of cwd
+// Resolve absolute DATABASE_URL
 process.env.DATABASE_URL = `file:${dbPath}`
 
+// Bind to all interfaces on configured port (public access)
+process.env.HOST = process.env.HOST || '0.0.0.0'
+process.env.PORT = process.env.PORT || '3001'
+
 console.log(`[start] DATABASE_URL = ${process.env.DATABASE_URL}`)
+console.log(`[start] Listening on ${process.env.HOST}:${process.env.PORT}`)
 
 // Launch the Nitro server
 const serverEntry = resolve(rootDir, '.output', 'server', 'index.mjs')
