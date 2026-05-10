@@ -92,12 +92,21 @@
 
     <!-- User Assignment Modal -->
     <n-modal v-model:show="userModal" preset="card" title="添加人员到部门" style="width:500px">
-      <n-form-item label="选择用户">
-        <n-select v-model:value="assignUserId" :options="availableUserOpts" placeholder="搜索用户..." filterable />
-      </n-form-item>
+      <div class="space-y-4">
+        <div>
+          <p class="text-sm font-medium text-gray-700 mb-1.5">选择用户</p>
+          <n-spin :show="userListLoading" size="small">
+            <n-select v-model:value="assignUserId" :options="availableUserOpts" placeholder="搜索用户..." filterable
+              :loading="userListLoading" />
+          </n-spin>
+          <p v-if="!userListLoading && !availableUserOpts.length" class="text-xs text-gray-400 mt-1">
+            暂无可添加的用户（所有启用用户已在此部门中）
+          </p>
+        </div>
+      </div>
       <template #footer>
         <n-button @click="userModal = false">取消</n-button>
-        <n-button type="primary" :loading="userSaving" @click="assignUser">确认添加</n-button>
+        <n-button type="primary" :loading="userSaving" :disabled="!assignUserId" @click="assignUser">确认添加</n-button>
       </template>
     </n-modal>
   </div>
@@ -127,6 +136,7 @@ const deptForm = reactive({ code: '', name: '', sortOrder: 0 })
 // User modal
 const userModal = ref(false)
 const userSaving = ref(false)
+const userListLoading = ref(false)
 const assignUserId = ref<number | null>(null)
 
 const userCols = [
@@ -160,7 +170,7 @@ const availableUserOpts = computed(() => {
 async function loadDepartments() {
   deptLoading.value = true
   try {
-    const r = await $fetch('/api/departments') as any
+    const r = await $fetch('/api/departments', { headers: authStore.getAuthHeaders() }) as any
     if (r.success) departments.value = r.data
   } catch (e) { console.error(e) }
   deptLoading.value = false
@@ -170,7 +180,7 @@ async function selectDept(d: any) {
   selectedDeptId.value = d.id
   userLoading.value = true
   try {
-    const r = await $fetch(`/api/departments/${d.id}`) as any
+    const r = await $fetch(`/api/departments/${d.id}`, { headers: authStore.getAuthHeaders() }) as any
     if (r.success) {
       selectedDept.value = r.data
       deptUsers.value = (r.data.userDepartments || []).map((ud: any) => ({
@@ -194,10 +204,10 @@ async function saveDept() {
   deptSaving.value = true
   try {
     if (editingDept.value) {
-      await $fetch(`/api/departments/${editingDept.value.id}`, { method: 'PUT', body: deptForm }) as any
+      await $fetch(`/api/departments/${editingDept.value.id}`, { method: 'PUT', headers: authStore.getAuthHeaders(), body: deptForm }) as any
       message.success('更新成功')
     } else {
-      await $fetch('/api/departments', { method: 'POST', body: deptForm }) as any
+      await $fetch('/api/departments', { method: 'POST', headers: authStore.getAuthHeaders(), body: deptForm }) as any
       message.success('创建成功')
     }
     deptModal.value = false
@@ -208,7 +218,7 @@ async function saveDept() {
 
 async function deleteDept(id: number) {
   try {
-    await $fetch(`/api/departments/${id}`, { method: 'DELETE' }) as any
+    await $fetch(`/api/departments/${id}`, { method: 'DELETE', headers: authStore.getAuthHeaders() }) as any
     message.success('已删除')
     selectedDeptId.value = null
     selectedDept.value = null
@@ -218,21 +228,45 @@ async function deleteDept(id: number) {
 }
 
 async function openUserModal() {
-  try {
-    const r = await $fetch('/api/users') as any
-    if (r.success) allUsers.value = r.data
-  } catch (e) { console.error(e) }
+  // Always open modal first for responsive UX
   assignUserId.value = null
   userModal.value = true
+  userListLoading.value = true
+  // Then load users
+  try {
+    const r = await $fetch('/api/users', {
+      headers: authStore.getAuthHeaders()
+    }) as any
+    if (r.success) {
+      allUsers.value = r.data.records || r.data
+    } else {
+      message.error('获取用户列表失败')
+    }
+  } catch (e: any) {
+    console.error('获取用户列表失败:', e)
+    message.error('获取用户列表失败，请确认您有超级管理员权限')
+  } finally {
+    userListLoading.value = false
+  }
 }
 
 async function assignUser() {
   if (!assignUserId.value || !selectedDeptId.value) return
   userSaving.value = true
   try {
+    // Fetch user's current departments to preserve them
+    const userResp = await $fetch(`/api/users/${assignUserId.value}`, {
+      headers: authStore.getAuthHeaders()
+    }) as any
+    const currentDeptIds: number[] = userResp.success
+      ? (userResp.data.departments || []).map((d: any) => d.id || d.departmentId)
+      : []
+    // Add new department without removing existing ones
+    const newDeptIds = [...new Set([...currentDeptIds, selectedDeptId.value])]
     await $fetch(`/api/users/${assignUserId.value}`, {
       method: 'PUT',
-      body: { departmentIds: [selectedDeptId.value] }
+      headers: authStore.getAuthHeaders(),
+      body: { departmentIds: newDeptIds }
     }) as any
     message.success('已添加')
     userModal.value = false
@@ -244,9 +278,19 @@ async function assignUser() {
 async function removeUser(userId: number) {
   if (!selectedDeptId.value) return
   try {
+    // Fetch user's current departments
+    const userResp = await $fetch(`/api/users/${userId}`, {
+      headers: authStore.getAuthHeaders()
+    }) as any
+    const currentDeptIds: number[] = userResp.success
+      ? (userResp.data.departments || []).map((d: any) => d.id || d.departmentId)
+      : []
+    // Remove only the current department
+    const newDeptIds = currentDeptIds.filter(id => id !== selectedDeptId.value)
     await $fetch(`/api/users/${userId}`, {
       method: 'PUT',
-      body: { departmentIds: [] }
+      headers: authStore.getAuthHeaders(),
+      body: { departmentIds: newDeptIds }
     }) as any
     message.success('已移除')
     await selectDept(selectedDept.value!)

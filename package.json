@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "prisma:prepare": "node scripts/prepare-prisma-schema.mjs",
-    "build": "npm run prisma:prepare && prisma generate && nuxt build",
+    "build": "npm run prisma:prepare && prisma generate && prisma db push && npm run db:seed && nuxt build",
     "dev": "npm run prisma:prepare && prisma generate && nuxt dev --port 3100",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
@@ -23,7 +23,8 @@
     "deploy:vercel": "npm install && npx vercel --prod",
     "deploy:local": "npm install && npm run build && npm run preview",
     "postbuild": "node scripts/fix-unhead.mjs",
-    "start": "node --env-file=.env.production .output/server/index.mjs"
+    "start": "node --env-file=.env.production scripts/start.mjs",
+    "start:prod": "node --env-file=.env.production scripts/start.mjs"
   },
   "dependencies": {
     "@pinia/nuxt": "^0.5.1",

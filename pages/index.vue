@@ -2,45 +2,45 @@
   <div class="animate-fade-in">
     <!-- Page header -->
     <div class="mb-8">
-      <h1 class="page-title">仪表盘</h1>
-      <p class="page-subtitle">实时监控客诉数据，掌握业务动态</p>
+      <h1 class="page-title">数据概览</h1>
+      <p class="page-subtitle">实时监控业务数据，掌握运营动态</p>
     </div>
 
     <!-- Stats cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <!-- Total complaints -->
-      <div class="stat-card primary">
+      <!-- Total records -->
+      <div class="stat-card primary hover-lift">
         <div class="flex items-start justify-between">
           <div>
-            <p class="text-sm text-corporate-500 font-medium">客诉总数</p>
-            <p class="text-3xl font-bold text-corporate-900 mt-2">{{ stats.total }}</p>
-            <p class="text-xs text-corporate-400 mt-1">累计全部客诉记录</p>
+            <p class="text-sm text-slate-500 font-medium">数据总量</p>
+            <p class="text-3xl font-bold text-slate-900 mt-2">{{ stats.total }}</p>
+            <p class="text-xs text-slate-400 mt-1">累计全部记录</p>
           </div>
-          <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-50 text-primary-600">
+          <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
             </svg>
           </div>
         </div>
       </div>
 
       <!-- This month -->
-      <div class="stat-card info">
+      <div class="stat-card info hover-lift">
         <div class="flex items-start justify-between">
           <div>
-            <p class="text-sm text-corporate-500 font-medium">本月客诉</p>
-            <p class="text-3xl font-bold text-corporate-900 mt-2">{{ stats.thisMonth }}</p>
+            <p class="text-sm text-slate-500 font-medium">本月新增</p>
+            <p class="text-3xl font-bold text-slate-900 mt-2">{{ stats.thisMonth }}</p>
             <div class="flex items-center gap-1 mt-1">
               <span
                 class="text-xs font-medium"
-                :class="parseFloat(stats.momChange) >= 0 ? 'text-rose-500' : 'text-emerald-500'"
+                :class="parseFloat(stats.momChange) >= 0 ? 'text-red-500' : 'text-emerald-500'"
               >
                 {{ parseFloat(stats.momChange) >= 0 ? '↑' : '↓' }} {{ Math.abs(parseFloat(stats.momChange)) }}%
               </span>
-              <span class="text-xs text-corporate-400">环比上月</span>
+              <span class="text-xs text-slate-400">环比上月</span>
             </div>
           </div>
-          <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+          <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-50 text-cyan-600">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
@@ -49,12 +49,12 @@
       </div>
 
       <!-- Pending -->
-      <div class="stat-card warning">
+      <div class="stat-card warning hover-lift">
         <div class="flex items-start justify-between">
           <div>
-            <p class="text-sm text-corporate-500 font-medium">待处理</p>
-            <p class="text-3xl font-bold text-corporate-900 mt-2">{{ (stats.byStatus?.pending || 0) + (stats.byStatus?.processing || 0) }}</p>
-            <p class="text-xs text-corporate-400 mt-1">待分析 + 处理中</p>
+            <p class="text-sm text-slate-500 font-medium">待处理</p>
+            <p class="text-3xl font-bold text-slate-900 mt-2">{{ (stats.byStatus?.pending || 0) + (stats.byStatus?.processing || 0) }}</p>
+            <p class="text-xs text-slate-400 mt-1">待分析 + 处理中</p>
           </div>
           <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -65,14 +65,14 @@
       </div>
 
       <!-- Closed -->
-      <div class="stat-card success">
+      <div class="stat-card success hover-lift">
         <div class="flex items-start justify-between">
           <div>
-            <p class="text-sm text-corporate-500 font-medium">已结案</p>
-            <p class="text-3xl font-bold text-corporate-900 mt-2">{{ stats.byStatus?.closed || 0 }}</p>
+            <p class="text-sm text-slate-500 font-medium">已结案</p>
+            <p class="text-3xl font-bold text-slate-900 mt-2">{{ stats.byStatus?.closed || 0 }}</p>
             <div class="flex items-center gap-1 mt-1">
               <span class="text-xs font-medium text-emerald-600">{{ closedRate }}%</span>
-              <span class="text-xs text-corporate-400">闭环率</span>
+              <span class="text-xs text-slate-400">闭环率</span>
             </div>
           </div>
           <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
@@ -129,10 +129,10 @@
         </div>
       </div>
 
-      <!-- Recent complaints -->
+      <!-- Recent records -->
       <div class="card lg:col-span-2">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="section-title mb-0">最近客诉</h2>
+          <h2 class="section-title mb-0">最近记录</h2>
           <n-button text size="small" @click="navigateTo('/complaints')">
             查看全部
             <template #icon>
@@ -146,18 +146,18 @@
           <div
             v-for="item in recentComplaints"
             :key="item.id"
-            class="flex items-center justify-between p-4 rounded-xl bg-corporate-50 hover:bg-corporate-100 cursor-pointer transition-colors group"
+            class="flex items-center justify-between p-4 rounded-xl bg-slate-50 hover:bg-blue-50/50 cursor-pointer transition-colors group border border-slate-100 hover:border-blue-200"
             @click="navigateTo(`/complaints/${item.id}`)"
           >
             <div class="flex items-center gap-4">
-              <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-corporate-500 group-hover:text-primary-600 shadow-sm">
+              <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-slate-500 group-hover:text-blue-600 shadow-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
               <div>
-                <p class="font-medium text-corporate-900">{{ item.complaintNo }}</p>
-                <p class="text-sm text-corporate-500">{{ item.customer?.name || '-' }} · {{ item.internalComplaintName || '-' }}</p>
+                <p class="font-medium text-slate-900">{{ item.complaintNo }}</p>
+                <p class="text-sm text-slate-500">{{ item.customer?.name || '-' }} · {{ item.internalComplaintName || '-' }}</p>
               </div>
             </div>
             <n-tag :type="getStatusType(item.closureStatus)" size="small">
@@ -166,21 +166,21 @@
           </div>
           <div v-if="recentComplaints.length === 0" class="empty-state py-8">
             <div class="empty-state-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-corporate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
             <p class="empty-state-title">暂无数据</p>
-            <p class="empty-state-desc">暂无客诉记录</p>
+            <p class="empty-state-desc">暂无记录</p>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Pending complaints -->
+    <!-- Pending records -->
     <div class="card" v-if="pendingComplaints.length > 0">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="section-title mb-0">待处理客诉</h2>
+        <h2 class="section-title mb-0">待处理记录</h2>
         <n-button text size="small" @click="navigateTo('/complaints?closureStatus=pending')">
           查看全部
           <template #icon>
@@ -194,15 +194,15 @@
         <div
           v-for="item in pendingComplaints"
           :key="item.id"
-          class="p-4 rounded-xl bg-amber-50 border border-amber-100 hover:bg-amber-100 cursor-pointer transition-colors"
+          class="p-4 rounded-xl bg-amber-50 border border-amber-200 hover:bg-amber-100 cursor-pointer transition-colors"
           @click="navigateTo(`/complaints/${item.id}`)"
         >
           <div class="flex items-start justify-between mb-2">
-            <span class="font-medium text-corporate-900">{{ item.complaintNo }}</span>
+            <span class="font-medium text-slate-900">{{ item.complaintNo }}</span>
             <n-tag type="warning" size="small">{{ getStatusLabel(item.closureStatus) }}</n-tag>
           </div>
-          <p class="text-sm text-corporate-600 mb-1">{{ item.customer?.name || '-' }}</p>
-          <p class="text-xs text-corporate-400">反馈日期: {{ item.feedbackDate ? formatDate(item.feedbackDate) : '-' }}</p>
+          <p class="text-sm text-slate-600 mb-1">{{ item.customer?.name || '-' }}</p>
+          <p class="text-xs text-slate-400">反馈日期: {{ item.feedbackDate ? formatDate(item.feedbackDate) : '-' }}</p>
         </div>
       </div>
     </div>
@@ -225,7 +225,7 @@ import dayjs from 'dayjs'
 
 // Page meta
 definePageMeta({
-  title: '仪表盘'
+  title: '数据概览'
 })
 
 // Register ECharts components
@@ -255,7 +255,7 @@ const stats = ref<any>({
   }
 })
 
-// Recent complaints
+// Recent records
 const recentComplaints = ref<any[]>([])
 const pendingComplaints = ref<any[]>([])
 
@@ -484,7 +484,7 @@ async function loadRecentComplaints() {
       recentComplaints.value = response.data.records
     }
 
-    // Load pending complaints
+    // Load pending records
     const pendingResponse = await $fetch('/api/complaints', {
       params: {
         page: 1,
@@ -496,7 +496,7 @@ async function loadRecentComplaints() {
       pendingComplaints.value = pendingResponse.data.records
     }
   } catch (e) {
-    console.error('Failed to load complaints:', e)
+    console.error('Failed to load records:', e)
   }
 }
 

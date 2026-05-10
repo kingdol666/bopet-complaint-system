@@ -1,11 +1,13 @@
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
+import { requireSessionUser } from '~/server/utils/auth'
 
 const suggestSchema = z.object({
   text: z.string().min(1)
 })
 
 export default defineEventHandler(async (event) => {
+  await requireSessionUser(event)
   try {
     const body = await readBody(event)
     const { text } = suggestSchema.parse(body)

@@ -9,30 +9,35 @@
     <div class="relative w-full max-w-5xl grid lg:grid-cols-2 gap-8 items-center">
       <!-- Left side - Branding -->
       <div class="hidden lg:block text-center lg:text-left">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 text-white text-2xl font-bold shadow-lg shadow-primary-500/25 mb-6">
+        <div
+          class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 text-white text-2xl font-bold shadow-lg shadow-blue-500/25 mb-6">
           BP
         </div>
         <h1 class="text-4xl font-bold text-corporate-900 mb-4">
-          BOPET 客诉管理系统
+          BOPET EDA 数据平台
         </h1>
         <p class="text-lg text-corporate-500 mb-8">
-          企业级客诉处理平台，实现客诉全生命周期管理
+          企业级数据存储、管理与分析平台，实现数据全生命周期管理
         </p>
 
         <div class="grid grid-cols-3 gap-4">
           <div class="p-4 rounded-xl bg-white border border-corporate-200 shadow-sm">
-            <div class="w-10 h-10 rounded-lg bg-primary-50 flex items-center justify-center text-primary-600 mb-3">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 mb-3">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                  d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
               </svg>
             </div>
-            <p class="text-sm font-medium text-corporate-900">高效处理</p>
-            <p class="text-xs text-corporate-500 mt-1">快速响应客诉</p>
+            <p class="text-sm font-medium text-corporate-900">灵活存储</p>
+            <p class="text-xs text-corporate-500 mt-1">自定义表单</p>
           </div>
           <div class="p-4 rounded-xl bg-white border border-corporate-200 shadow-sm">
-            <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 mb-3">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            <div class="w-10 h-10 rounded-lg bg-cyan-50 flex items-center justify-center text-cyan-600 mb-3">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
             </div>
             <p class="text-sm font-medium text-corporate-900">数据分析</p>
@@ -40,8 +45,10 @@
           </div>
           <div class="p-4 rounded-xl bg-white border border-corporate-200 shadow-sm">
             <div class="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 mb-3">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
             <p class="text-sm font-medium text-corporate-900">安全可靠</p>
@@ -54,7 +61,8 @@
       <div class="w-full max-w-md mx-auto">
         <div class="card-elevated p-8">
           <div class="text-center mb-8">
-            <div class="lg:hidden inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-white text-xl font-bold shadow-lg shadow-primary-500/25 mb-4">
+            <div
+              class="lg:hidden inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 text-white text-xl font-bold shadow-lg shadow-blue-500/25 mb-4">
               BP
             </div>
             <h2 class="text-2xl font-bold text-corporate-900">欢迎回来</h2>
@@ -63,45 +71,36 @@
 
           <n-form ref="formRef" :model="formData" :rules="rules" size="large">
             <n-form-item path="username" label="用户名">
-              <n-input
-                v-model:value="formData.username"
-                placeholder="请输入用户名"
-                @keyup.enter="handleLogin"
-              >
+              <n-input v-model:value="formData.username" placeholder="请输入用户名" @keyup.enter="handleLogin">
                 <template #prefix>
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-corporate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-corporate-400" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 </template>
               </n-input>
             </n-form-item>
 
             <n-form-item path="password" label="密码">
-              <n-input
-                v-model:value="formData.password"
-                type="password"
-                placeholder="请输入密码"
-                show-password-on="click"
-                @keyup.enter="handleLogin"
-              >
+              <n-input v-model:value="formData.password" type="password" placeholder="请输入密码" show-password-on="click"
+                @keyup.enter="handleLogin">
                 <template #prefix>
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-corporate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-corporate-400" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                 </template>
               </n-input>
             </n-form-item>
 
-            <n-button
-              type="primary"
-              block
-              size="large"
-              :loading="loading"
-              @click="handleLogin"
-            >
+            <n-button type="primary" block size="large" :loading="loading" @click="handleLogin">
               <template #icon>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                    d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                 </svg>
               </template>
               登录系统
@@ -117,14 +116,15 @@
               </div>
               <div class="flex items-center justify-between">
                 <span class="text-corporate-600">操作员</span>
-                <code class="px-2 py-1 rounded bg-white text-corporate-700 text-xs font-mono">operator / operator123</code>
+                <code
+                  class="px-2 py-1 rounded bg-white text-corporate-700 text-xs font-mono">operator / operator123</code>
               </div>
             </div>
           </div>
         </div>
 
         <p class="mt-6 text-center text-sm text-corporate-400">
-          &copy; {{ new Date().getFullYear() }} BOPET 客诉管理系统 · 企业级客诉处理平台
+          &copy; {{ new Date().getFullYear() }} BOPET EDA 数据平台 · 企业级数据存储与分析平台
         </p>
       </div>
     </div>

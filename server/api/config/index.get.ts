@@ -1,7 +1,9 @@
 import { prisma } from '~/server/utils/prisma'
+import { requireSessionUser } from '~/server/utils/auth'
 
 // Get all config data for dropdowns
 export default defineEventHandler(async (event) => {
+  await requireSessionUser(event)
   try {
     const [
       productionLines,

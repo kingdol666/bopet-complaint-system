@@ -4,7 +4,7 @@
     <div class="flex items-center justify-between mb-6">
       <div>
         <h1 class="page-title">表单模板管理</h1>
-        <p class="page-subtitle">配置客诉表单模板和字段</p>
+        <p class="page-subtitle">配置数据表单模板和字段</p>
       </div>
       <div class="flex items-center gap-2">
         <n-button v-if="authStore.canWrite" type="default" @click="navigateTo('/templates/create-from-file')">
