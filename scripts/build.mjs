@@ -10,19 +10,19 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const rootDir = resolve(__dirname, '..')
 
 const heapSize = process.env.NODE_HEAP_MB || '4096'
-const args = ['--max-old-space-size=' + heapSize]
 
-// Pass through any additional arguments (e.g. from nuxt CLI)
-const childArgs = process.argv.slice(2)
-if (childArgs.length > 0) {
-  args.push(...childArgs)
-}
+// nuxt binary as the script to run
+const nuxtBin = resolve(rootDir, 'node_modules', '.bin', 'nuxt')
+
+// Default command is 'build'; extra args from CLI override or extend
+const extraArgs = process.argv.slice(2)
+const nuxtArgs = extraArgs.length > 0 ? extraArgs : ['build']
+
+const args = ['--max-old-space-size=' + heapSize, nuxtBin, ...nuxtArgs]
 
 console.log(`[build] Node heap: ${heapSize}MB`)
 console.log(`[build] Running: node ${args.join(' ')}`)
 
-// Run nuxt build
-const nuxtBin = resolve(rootDir, 'node_modules', '.bin', 'nuxt')
 const child = spawn('node', args, {
   stdio: 'inherit',
   cwd: rootDir,
