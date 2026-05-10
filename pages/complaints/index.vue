@@ -397,7 +397,7 @@ const columns: DataTableColumn<any>[] = [
     fixed: 'left'
   },
   {
-    title: '客诉编号',
+    title: '记录编号',
     key: 'complaintNo',
     width: 140,
     fixed: 'left',
@@ -591,7 +591,7 @@ function handlePageSizeChange(pageSize: number) {
 function handleDelete(row: any) {
   dialog.warning({
     title: '确认删除',
-    content: `确定要删除客诉记录 "${row.complaintNo}" 吗？此操作不可撤销。`,
+    content: `确定要删除数据记录 "${row.complaintNo}" 吗？此操作不可撤销。`,
     positiveText: '删除',
     negativeText: '取消',
     onPositiveClick: async () => {
@@ -656,7 +656,7 @@ function batchDelete() {
   if (checkedRowKeys.value.length === 0) return
   dialog.warning({
     title: '确认批量删除',
-    content: `确定要删除选中的 ${checkedRowKeys.value.length} 条客诉记录吗？此操作不可撤销。`,
+    content: `确定要删除选中的 ${checkedRowKeys.value.length} 条数据记录吗？此操作不可撤销。`,
     positiveText: '删除',
     negativeText: '取消',
     onPositiveClick: async () => {
@@ -703,7 +703,7 @@ async function handleExport() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `客诉数据_${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `数据导出_${new Date().toISOString().slice(0, 10)}.csv`
     a.click()
     URL.revokeObjectURL(url)
     message.success('导出成功')

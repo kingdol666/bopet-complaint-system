@@ -39,7 +39,7 @@
       <n-form ref="formRef" :model="formData" :rules="formRules" label-placement="left" label-width="100">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <n-form-item label="模板名称" path="name">
-            <n-input v-model:value="formData.name" placeholder="如：包装客诉表单" />
+            <n-input v-model:value="formData.name" placeholder="如：产品质检表单" />
           </n-form-item>
 
           <n-form-item label="所属部门" path="departmentId">

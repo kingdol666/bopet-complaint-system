@@ -102,8 +102,8 @@ async function main() {
   console.log('创建表单模板数据...')
   const template1 = await prisma.formTemplate.create({
     data: {
-      name: '标准客诉处理单',
-      description: '用于记录和处理一般客诉问题的标准模板',
+      name: '标准数据处理模板',
+      description: '用于记录和处理一般数据记录的标准模板',
       createdById: superadminUser.id,
       enabled: true,
       isDefault: true,
@@ -113,8 +113,8 @@ async function main() {
 
   const excelTemplate = await prisma.formTemplate.create({
     data: {
-      name: '客诉台账-对外版',
-      description: '对应客诉台账-对外版1(1).xlsx的表单模板，包含18列完整字段',
+      name: '数据台账-模板',
+      description: '对应Excel导入的数据台账模板，包含18列完整字段',
       createdById: superadminUser.id,
       enabled: true,
       isDefault: false,
@@ -125,7 +125,7 @@ async function main() {
   // 模板字段
   await prisma.formTemplateField.createMany({
     data: [
-      // 标准客诉处理单字段
+      // 标准数据处理模板字段
       { templateId: template1.id, fieldKey: 'customerContact', fieldLabel: '客户联系人', fieldType: 'text', required: false, sortOrder: 1 },
       { templateId: template1.id, fieldKey: 'contactPhone', fieldLabel: '联系电话', fieldType: 'text', required: false, sortOrder: 2 },
       { templateId: template1.id, fieldKey: 'urgencyLevel', fieldLabel: '紧急程度', fieldType: 'select', required: true, sortOrder: 3, options: '["一般","紧急","特急"]' },

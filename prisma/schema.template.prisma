@@ -1,4 +1,4 @@
-// Prisma schema for BOPET客诉闭环管理系统
+// Prisma schema for BOPET EDA 数据平台
 // Database: __PRISMA_DB_LABEL__
 
 generator client {
@@ -256,7 +256,7 @@ model ComplaintProblemMapping {
   @@map("complaint_problem_mappings")
 }
 
-// ==================== 客诉记录主表 ====================
+// ==================== 数据记录主表 ====================
 model ComplaintRecord {
   id                      Int      @id @default(autoincrement())
   complaintNo             String   @unique // 客诉编号
@@ -408,7 +408,7 @@ model FormTemplateField {
   @@map("form_template_fields")
 }
 
-// ==================== 客诉附件表 ====================
+// ==================== 数据附件表 ====================
 model ComplaintAttachment {
   id           Int      @id @default(autoincrement())
   complaintId  Int

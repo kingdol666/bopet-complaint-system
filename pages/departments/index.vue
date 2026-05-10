@@ -27,7 +27,7 @@
               <div class="min-w-0">
                 <p class="text-sm font-medium text-gray-800">{{ d.name }}</p>
                 <p class="text-xs text-gray-400">{{ d._count?.userDepartments || 0 }}人 · {{ d._count?.complaints || 0
-                  }}客诉</p>
+                  }}条记录</p>
               </div>
               <div v-if="isSuperAdmin" class="flex gap-0.5 shrink-0 ml-2">
                 <n-button size="tiny" quaternary @click.stop="openDeptModal(d)">

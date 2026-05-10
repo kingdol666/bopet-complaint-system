@@ -165,7 +165,7 @@
     <!-- Save analysis modal -->
     <n-modal v-model:show="saveModal" preset="card" title="保存分析配置" style="width:500px">
       <n-form-item label="分析名称" required>
-        <n-input v-model:value="saveName" placeholder="例如：客诉分类月度分析" />
+        <n-input v-model:value="saveName" placeholder="例如：数据分类月度分析" />
       </n-form-item>
       <template #footer>
         <div class="flex justify-end gap-2">

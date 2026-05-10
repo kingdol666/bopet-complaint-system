@@ -8,7 +8,7 @@
           </svg>
         </template>
       </n-button>
-      <h1 class="page-title mb-0">编辑客诉{{ complaintNo ? ` - ${complaintNo}` : '' }}</h1>
+      <h1 class="page-title mb-0">编辑记录{{ complaintNo ? ` - ${complaintNo}` : '' }}</h1>
     </div>
 
     <div v-if="loading" class="flex justify-center py-12">
@@ -27,7 +27,7 @@
 
       <!-- Dynamic fields from templates -->
       <div v-if="selectedTemplateIds.length > 0" class="card mb-6">
-        <h2 class="section-title">客诉表单</h2>
+        <h2 class="section-title">记录表单</h2>
         <DynamicFormFields v-model="templateData" :template-ids="selectedTemplateIds" />
       </div>
 
@@ -141,7 +141,7 @@ function buildPayload(data: Record<string, any>) {
 
 onMounted(async () => {
   if (!complaintId.value) {
-    message.error('无效的客诉 ID')
+    message.error('无效的记录 ID')
     await navigateTo('/complaints')
     return
   }
@@ -167,7 +167,7 @@ onMounted(async () => {
     await loadComplaint()
   } catch (error) {
     console.error('Failed to load complaint for edit:', error)
-    message.error('加载客诉信息失败')
+    message.error('加载记录信息失败')
     await navigateTo('/complaints')
   } finally {
     loading.value = false
@@ -179,7 +179,7 @@ async function loadComplaint() {
   const response = await $fetch<{ success: boolean; data: any }>(url, { headers: authStore.getAuthHeaders() })
 
   if (!response?.success || !response.data) {
-    throw new Error('客诉记录不存在')
+    throw new Error('记录记录不存在')
   }
 
   const record = response.data
@@ -202,7 +202,7 @@ async function loadComplaint() {
 
 async function handleSubmit() {
   if (!complaintId.value) {
-    message.error('无效的客诉 ID')
+    message.error('无效的记录 ID')
     return
   }
 
@@ -229,7 +229,7 @@ async function handleSubmit() {
       throw new Error('Update failed')
     }
 
-    message.success('客诉信息已更新')
+    message.success('记录信息已更新')
     await navigateTo(`/complaints/${complaintId.value}`)
   } catch (error: any) {
     message.error(error.data?.message || error.data?.statusMessage || '保存失败')

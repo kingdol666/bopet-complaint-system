@@ -63,7 +63,7 @@
               <div class="flex items-center gap-3">
                 <span
                   class="w-6 h-6 rounded bg-primary-100 text-xs font-bold text-primary-600 flex items-center justify-center">{{
-                  i + 1 }}</span>
+                    i + 1 }}</span>
                 <span class="text-sm font-medium">{{ f.fieldLabel }}</span>
                 <n-tag :type="tagType(f.fieldType)" size="tiny">{{ typeLabel(f.fieldType) }}</n-tag>
                 <span v-if="f.suggestedType !== f.fieldType" class="text-xs text-amber-500">已修改</span>
@@ -96,7 +96,7 @@
       <div class="flex justify-end gap-2 mb-6">
         <n-button @click="resetAll">重新选择文件</n-button>
         <n-button type="primary" size="large" :loading="creating" @click="handleCreate">创建模板 ({{ fields.length
-          }}字段)</n-button>
+        }}字段)</n-button>
       </div>
     </template>
 
@@ -145,7 +145,7 @@ const config = reactive({ templateName: '', departmentId: null as number | null,
 
 const deptOptions = computed(() => {
   const opts = configStore.responsibleDepartmentOptions || []
-  if (!authStore.isSuperAdmin) { const ids = authStore.user?.departmentIds || []; return opts.filter((o: any) => ids.includes(o.value)) }
+  if (!authStore.isSuperAdmin) { const ids = authStore.user?.departments?.map((d: any) => d.id) || []; return opts.filter((o: any) => ids.includes(o.value)) }
   return opts
 })
 

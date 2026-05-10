@@ -11,8 +11,8 @@
           </template>
         </n-button>
         <div>
-          <h1 class="page-title">{{ complaint?.complaintNo || '客诉详情' }}</h1>
-          <p class="page-subtitle">查看客诉详细信息</p>
+          <h1 class="page-title">{{ complaint?.complaintNo || '记录详情' }}</h1>
+          <p class="page-subtitle">查看记录详细信息</p>
         </div>
       </div>
       <div class="flex gap-3 no-print">
@@ -188,17 +188,17 @@ const SECTION_MAP: Record<string, string> = {
   machineNo: '基础信息',
   batchNo: '基础信息',
   productUsage: '基础信息',
-  feedbackContent: '客诉内容',
-  customerComplaintText: '客诉内容',
-  internalComplaintName: '客诉内容',
-  defectSource: '客诉内容',
-  specificDefect: '客诉内容',
-  complaintCategory: '客诉内容',
-  problemCategoryId: '客诉内容',
-  problemSubcategoryId: '客诉内容',
-  severityLevelId: '客诉内容',
-  repeatedIssue: '客诉内容',
-  attachments: '客诉内容',
+  feedbackContent: '记录内容',
+  customerComplaintText: '记录内容',
+  internalComplaintName: '记录内容',
+  defectSource: '记录内容',
+  specificDefect: '记录内容',
+  complaintCategory: '记录内容',
+  problemCategoryId: '记录内容',
+  problemSubcategoryId: '记录内容',
+  severityLevelId: '记录内容',
+  repeatedIssue: '记录内容',
+  attachments: '记录内容',
   customerDemandId: '诉求与处置',
   compensationTypeId: '诉求与处置',
   closureStatus: '诉求与处置',
@@ -218,7 +218,7 @@ const SECTION_MAP: Record<string, string> = {
 const STANDARD_FIELD_KEYS = new Set(Object.keys(SECTION_MAP))
 
 // Section display order
-const SECTION_ORDER = ['基础信息', '客诉内容', '诉求与处置', '原因与改善', '附加信息']
+const SECTION_ORDER = ['基础信息', '记录内容', '诉求与处置', '原因与改善', '附加信息']
 
 // Computed properties
 const statusLabel = computed(() => {
@@ -365,7 +365,7 @@ function buildFallbackFields() {
     machineNo: '机台', batchNo: '批次号', productUsage: '产品用途',
     feedbackContent: '反馈内容', customerComplaintText: '客户投诉描述',
     internalComplaintName: '内部问题名称', defectSource: '弊病源',
-    specificDefect: '具体不良点', complaintCategory: '客诉分类',
+    specificDefect: '具体不良点', complaintCategory: '数据分类',
     problemCategoryId: '问题大类', problemSubcategoryId: '问题小类',
     severityLevelId: '严重等级', repeatedIssue: '是否重复',
     customerDemandId: '客户诉求', compensationTypeId: '赔偿方式',
@@ -468,7 +468,7 @@ function escapeHtml(value: string) {
 
 function handlePrint() {
   if (!complaint.value) {
-    message.warning('当前没有可打印的客诉信息')
+    message.warning('当前没有可打印的记录信息')
     return
   }
 
@@ -503,7 +503,7 @@ function handlePrint() {
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>${escapeHtml(current.complaintNo || '客诉详情打印')}</title>
+        <title>${escapeHtml(current.complaintNo || '记录详情打印')}</title>
         <style>
           @page { size: A4 portrait; margin: 12mm; }
           * { box-sizing: border-box; }
@@ -521,7 +521,7 @@ function handlePrint() {
       </head>
       <body>
         <div class="print-header">
-          <h1>${escapeHtml(current.complaintNo || '客诉详情')}</h1>
+          <h1>${escapeHtml(current.complaintNo || '记录详情')}</h1>
           <div class="print-meta">打印时间：${escapeHtml(formatDateTime(new Date()))}</div>
         </div>
         ${sections}${auditSection}

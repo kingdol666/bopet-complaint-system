@@ -193,7 +193,7 @@ async function handleSubmit() {
       if (response.warning) {
         message.warning(response.warning)
       } else {
-        message.success('客诉记录创建成功')
+        message.success('数据记录创建成功')
       }
       router.push('/complaints')
     }

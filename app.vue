@@ -93,10 +93,10 @@ const themeOverrides = {
 
 // Add page meta
 useHead({
-  titleTemplate: (title) => title ? `${title} - BOPET客诉系统` : 'BOPET客诉管理系统',
+  titleTemplate: (title) => title ? `${title} - BOPET EDA` : 'BOPET EDA 数据平台',
   meta: [
     { name: 'viewport', content: 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' },
-    { name: 'description', content: 'BOPET客诉管理系统 - 企业级客诉处理平台' }
+    { name: 'description', content: 'BOPET EDA 数据平台 - 企业级数据存储与分析平台' }
   ],
   link: [
     { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
