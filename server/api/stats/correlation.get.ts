@@ -1,16 +1,17 @@
 import { prisma } from '~/server/utils/prisma'
-import { requireSessionUser } from '~/server/utils/auth'
+import { requireSessionUser, buildDepartmentFilter } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   try {
-    await requireSessionUser(event)
+    const user = await requireSessionUser(event)
     const query = getQuery(event)
     const defectSource = query.defectSource as string
+    const deptFilter = buildDepartmentFilter(user)
 
     // Get all distinct defect sources
     const allSources = await prisma.complaintRecord.groupBy({
       by: ['defectSource'],
-      where: { defectSource: { not: null } },
+      where: { defectSource: { not: null }, ...deptFilter },
       _count: true
     })
 
@@ -24,7 +25,7 @@ export default defineEventHandler(async (event) => {
     if (defectSource) {
       const raw = await prisma.complaintRecord.groupBy({
         by: ['specificDefect'],
-        where: { defectSource, specificDefect: { not: null } },
+        where: { defectSource, specificDefect: { not: null }, ...deptFilter },
         _count: true
       })
       correlation = raw

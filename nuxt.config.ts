@@ -8,7 +8,7 @@ const tailwindModuleConfig = {
 
 export default defineNuxtConfig({
   compatibilityDate: '2024-04-03',
-  devtools: { enabled: true },
+  devtools: { enabled: process.env.NODE_ENV !== 'production' },
 
   // Disable app manifest to fix Windows ESM loader issue
   experimental: {

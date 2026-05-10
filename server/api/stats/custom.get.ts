@@ -1,5 +1,5 @@
 import { prisma } from '~/server/utils/prisma'
-import { requireSessionUser } from '~/server/utils/auth'
+import { requireSessionUser, buildDepartmentFilter } from '~/server/utils/auth'
 
 // Direct string columns on ComplaintRecord that can be grouped
 const COLUMN_FIELDS = new Set([
@@ -17,7 +17,9 @@ const FK_META: Record<string, { prismaModel: string; sqlTable: string; fkColumn:
 
 export default defineEventHandler(async (event) => {
   try {
-    await requireSessionUser(event)
+    const user = await requireSessionUser(event)
+    const deptFilter = buildDepartmentFilter(user)
+    const deptIds = user.role === 'superadmin' ? null : user.departmentIds
     const query = getQuery(event)
 
     const groupByRaw = (query.groupBy as string) || ''
@@ -55,7 +57,7 @@ export default defineEventHandler(async (event) => {
       if (endDate) { dateFilter.push('feedbackDate <= ?'); dateParams.push(endDate) }
 
       if (isColumnField) {
-        const where: any = {}
+        const where: any = { ...deptFilter }
         if (startDate || endDate) {
           where.feedbackDate = {}
           if (startDate) where.feedbackDate.gte = startDate
@@ -86,7 +88,7 @@ export default defineEventHandler(async (event) => {
 
       if (isFKField) {
         const meta = FK_META[templateField.configType]
-        const where: any = {}
+        const where: any = { ...deptFilter }
         if (startDate || endDate) {
           where.feedbackDate = {}
           if (startDate) where.feedbackDate.gte = startDate
@@ -157,6 +159,12 @@ export default defineEventHandler(async (event) => {
     const joinClauses: string[] = []
     const whereParts: string[] = ['1=1']
 
+    // Department filter (data isolation for non-superadmin)
+    if (deptIds && deptIds.length > 0) {
+      whereParts.push(`cr.responsibleDeptId IN (${deptIds.join(',')})`)
+    } else if (deptIds && deptIds.length === 0) {
+      whereParts.push('cr.responsibleDeptId = -1')
+    }
     // Date filter
     if (startDate) {
       whereParts.push(`cr.feedbackDate >= '${startDate.toISOString().split('T')[0]}'`)

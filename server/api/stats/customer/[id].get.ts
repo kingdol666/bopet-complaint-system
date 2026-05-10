@@ -1,15 +1,16 @@
 import { prisma } from '~/server/utils/prisma'
-import { requireSessionUser } from '~/server/utils/auth'
+import { requireSessionUser, buildDepartmentFilter } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   try {
-    await requireSessionUser(event)
+    const user = await requireSessionUser(event)
     const id = Number.parseInt(getRouterParam(event, 'id') || '0', 10)
     const query = getQuery(event)
     const startDate = query.startDate ? new Date(query.startDate as string) : undefined
     const endDate = query.endDate ? new Date(query.endDate as string) : undefined
     const complaintCategory = query.complaintCategory as string | undefined
     const defectSource = query.defectSource as string | undefined
+    const deptFilter = buildDepartmentFilter(user)
 
     // Get customer
     const customer = await prisma.customer.findUnique({ where: { id } })
@@ -18,7 +19,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Build where filter
-    const where: any = { customerId: id }
+    const where: any = { customerId: id, ...deptFilter }
     if (startDate || endDate) {
       where.feedbackDate = {}
       if (startDate) where.feedbackDate.gte = startDate

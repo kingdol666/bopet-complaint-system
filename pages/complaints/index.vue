@@ -721,7 +721,6 @@ function batchDelete() {
 
 async function handleExport() {
   exporting.value = true
-
   try {
     const params: any = { ...filters }
     Object.keys(params).forEach(key => {
@@ -729,11 +728,20 @@ async function handleExport() {
         delete params[key]
       }
     })
-
-    // Add token to query string for window.open (can't set headers)
-    params.token = authStore.token
     const queryString = new URLSearchParams(params).toString()
-    window.open(`/api/complaints/export?${queryString}`, '_blank')
+    // Use fetch + blob to avoid exposing token in URL
+    const resp = await fetch(`/api/complaints/export?${queryString}`, {
+      headers: authStore.getAuthHeaders()
+    })
+    if (!resp.ok) throw new Error('Export failed')
+    const blob = await resp.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `客诉数据_${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+    message.success('导出成功')
   } catch (e) {
     message.error('导出失败')
   } finally {

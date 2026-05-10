@@ -1,5 +1,5 @@
 import { prisma } from '~/server/utils/prisma'
-import { requireSessionUser } from '~/server/utils/auth'
+import { requireSessionUser, buildDepartmentFilter } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -8,8 +8,9 @@ export default defineEventHandler(async (event) => {
     const startDate = query.startDate ? new Date(query.startDate as string) : undefined
     const endDate = query.endDate ? new Date(query.endDate as string) : undefined
     const customerId = query.customerId ? Number(query.customerId) : undefined
+    const deptFilter = buildDepartmentFilter(currentUser)
 
-    const where: any = { specificDefect: { not: null } }
+    const where: any = { specificDefect: { not: null }, ...deptFilter }
     if (startDate || endDate) {
       where.feedbackDate = {}
       if (startDate) where.feedbackDate.gte = startDate

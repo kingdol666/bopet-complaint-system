@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
-import { requireSessionUser } from '~/server/utils/auth'
+import { requireSessionUser, requireWritePermission } from '~/server/utils/auth'
 
 const updateSchema = z.object({
   customerExpression: z.string().max(500).optional(),
@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Handle GET
+  // Handle GET — any logged-in user can read
   if (event.method === 'GET') {
     const record = await prisma.complaintProblemMapping.findUnique({
       where: { id },
@@ -33,17 +33,14 @@ export default defineEventHandler(async (event) => {
     })
 
     if (!record) {
-      throw createError({
-        statusCode: 404,
-        message: '记录不存在'
-      })
+      throw createError({ statusCode: 404, message: '记录不存在' })
     }
 
-    return {
-      success: true,
-      data: record
-    }
+    return { success: true, data: record }
   }
+
+  // PUT / DELETE — require write permission
+  await requireWritePermission(event)
 
   // Handle PUT
   if (event.method === 'PUT') {

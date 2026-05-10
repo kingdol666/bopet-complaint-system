@@ -94,12 +94,22 @@ function extractBearerToken(event: H3Event): string | null {
 }
 
 export function hashPassword(password: string): string {
-  const salt = 'bopet-complaint-system-salt-2024'
-  return createHmac('sha256', salt).update(password).digest('hex')
+  // Per-user random salt using Node.js built-in scrypt (memory-hard KDF)
+  const salt = randomBytes(16).toString('hex')
+  const key = crypto.scryptSync(password, salt, 64, { N: 16384, r: 8, p: 1 })
+  return salt + ':' + key.toString('hex')
 }
 
 export function verifyPassword(password: string, hash: string): boolean {
-  return hashPassword(password) === hash
+  // Backward compat: old HMAC-SHA256 hashes (no colon separator)
+  if (!hash.includes(':')) {
+    const oldHash = createHmac('sha256', 'bopet-complaint-system-salt-2024').update(password).digest('hex')
+    return oldHash === hash
+  }
+  const [salt, key] = hash.split(':')
+  if (!salt || !key) return false
+  const derived = crypto.scryptSync(password, salt, 64, { N: 16384, r: 8, p: 1 })
+  return derived.toString('hex') === key
 }
 
 export function generateToken(userId: number, username: string, role: string): string {

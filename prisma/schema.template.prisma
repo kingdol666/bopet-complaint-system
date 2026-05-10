@@ -339,19 +339,23 @@ model ComplaintRecord {
   @@index([problemCategoryId])
   @@index([closureStatus])
   @@index([responsibleDeptId])
+  @@index([complaintCategory])
+  @@index([defectSource])
+  @@index([specificDefect])
+  @@index([responsibleDeptId, feedbackDate])
   @@map("complaint_records")
 }
 
 // ==================== 操作日志表 ====================
 model OperationLog {
   id          Int      @id @default(autoincrement())
-  userId      Int
-  user        User     @relation(fields: [userId], references: [id])
-  action      String // create, update, delete
-  module      String // complaint, config, mapping
+  userId      Int?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action      String   // create, update, delete
+  module      String   // complaint, config, mapping
   targetId    Int?     // 操作对象ID
-  targetName  String? // 操作对象名称
-  detail      String? // 操作详情JSON
+  targetName  String?  // 操作对象名称
+  detail      String?  // 操作详情JSON
   ip          String?
   createdAt   DateTime @default(now())
 
@@ -367,7 +371,7 @@ model FormTemplate {
   name         String
   description  String?
   departmentId Int?      // null = 全局模板，所有部门可用
-  createdById  Int
+  createdById  Int?
   enabled      Boolean   @default(true)
   isDefault    Boolean   @default(false) // 是否为系统默认模板
   isPublic     Boolean   @default(false) // 是否为公开模板（部门模板可设为公开供查看）
@@ -376,7 +380,7 @@ model FormTemplate {
   updatedAt    DateTime  @updatedAt
 
   department   ResponsibleDepartment? @relation(fields: [departmentId], references: [id])
-  createdBy    User                   @relation(fields: [createdById], references: [id])
+  createdBy    User?                  @relation(fields: [createdById], references: [id], onDelete: SetNull)
   fields       FormTemplateField[]
 
   @@index([departmentId, enabled, sortOrder])
@@ -429,13 +433,13 @@ model FieldOptionConfig {
   configKey    String   @unique // 唯一键，如"defect_source_options"
   options      String   // JSON数组字符串: '["选项1","选项2"]'
   departmentId Int?     // null = 全局配置；非null = 部门级配置
-  createdById  Int
+  createdById  Int?
   enabled      Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   department   ResponsibleDepartment? @relation(fields: [departmentId], references: [id])
-  createdBy    User                   @relation(fields: [createdById], references: [id])
+  createdBy    User?                  @relation(fields: [createdById], references: [id], onDelete: SetNull)
 
   @@index([departmentId, enabled])
   @@index([configKey])
