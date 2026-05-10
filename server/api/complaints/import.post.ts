@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
 
     // Column mapping (Excel Chinese headers -> DB fields)
     const columnMap: Record<string, string> = {
-      '投诉日期': 'feedbackDate',
+      '反馈日期': 'feedbackDate',
       '客户': 'customerName',
       '责任部门': 'deptName',
       '型号': 'modelName',
@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
       '数量': 'quantityInvolved',
       '反馈轴生产日期': 'productionTime',
       '具体不良点': 'specificDefect',
-      '客诉分类': 'complaintCategory',
+      '数据分类': 'complaintCategory',
       '技术类': 'technicalType',
       '可插入8D报告': 'report8d',
       '产品用途': 'productUsage',

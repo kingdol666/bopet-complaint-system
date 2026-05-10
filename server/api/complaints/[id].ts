@@ -90,7 +90,7 @@ export default defineEventHandler(async (event) => {
     if (!record) {
       throw createError({
         statusCode: 404,
-        message: '客诉记录不存在'
+        message: '数据记录不存在'
       })
     }
 
@@ -121,7 +121,7 @@ export default defineEventHandler(async (event) => {
       if (!existing) {
         throw createError({
           statusCode: 404,
-          message: '客诉记录不存在'
+          message: '数据记录不存在'
         })
       }
 
@@ -199,7 +199,7 @@ export default defineEventHandler(async (event) => {
       return {
         success: true,
         data: record,
-        message: '客诉记录更新成功'
+        message: '数据记录更新成功'
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -223,7 +223,7 @@ export default defineEventHandler(async (event) => {
     if (!existing) {
       throw createError({
         statusCode: 404,
-        message: '客诉记录不存在'
+        message: '数据记录不存在'
       })
     }
 
@@ -260,7 +260,7 @@ export default defineEventHandler(async (event) => {
 
     return {
       success: true,
-      message: '客诉记录已删除'
+      message: '数据记录已删除'
     }
   }
 

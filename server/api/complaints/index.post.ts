@@ -208,8 +208,8 @@ export default defineEventHandler(async (event) => {
         return {
           success: true,
           data: record,
-          warning: duplicateCount > 0 ? `疑似重复客诉：同一客户/型号/不良点在90天内已有${duplicateCount}条记录` : undefined,
-          message: '客诉记录创建成功'
+          warning: duplicateCount > 0 ? `疑似重复数据：同一客户/型号/不良点在90天内已有${duplicateCount}条记录` : undefined,
+          message: '数据记录创建成功'
         }
       } catch (error) {
         if (isComplaintNoConflict(error) && attempt < 4) {
@@ -222,7 +222,7 @@ export default defineEventHandler(async (event) => {
 
     throw createError({
       statusCode: 500,
-      message: '客诉编号生成失败，请重试'
+      message: '记录编号生成失败，请重试'
     })
   } catch (error) {
     if (error instanceof z.ZodError) {

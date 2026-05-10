@@ -131,8 +131,8 @@ async function main() {
       { templateId: template1.id, fieldKey: 'urgencyLevel', fieldLabel: '紧急程度', fieldType: 'select', required: true, sortOrder: 3, options: '["一般","紧急","特急"]' },
       { templateId: template1.id, fieldKey: 'preliminaryAnalysis', fieldLabel: '初步分析', fieldType: 'textarea', required: false, sortOrder: 4 },
 
-      // 客诉台账-对外版 18个字段
-      { templateId: excelTemplate.id, fieldKey: 'feedbackDate', fieldLabel: '投诉日期', fieldType: 'date', required: true, sortOrder: 1 },
+      // 数据台账模板 18个字段
+      { templateId: excelTemplate.id, fieldKey: 'feedbackDate', fieldLabel: '反馈日期', fieldType: 'date', required: true, sortOrder: 1 },
       { templateId: excelTemplate.id, fieldKey: 'customerId', fieldLabel: '客户', fieldType: 'text', required: false, sortOrder: 2 },
       { templateId: excelTemplate.id, fieldKey: 'responsibleDeptId', fieldLabel: '责任部门', fieldType: 'text', required: false, sortOrder: 3 },
       { templateId: excelTemplate.id, fieldKey: 'productModelId', fieldLabel: '型号', fieldType: 'text', required: false, sortOrder: 4 },
@@ -144,7 +144,7 @@ async function main() {
       { templateId: excelTemplate.id, fieldKey: 'quantityInvolved', fieldLabel: '数量(轴)', fieldType: 'number', required: false, sortOrder: 10 },
       { templateId: excelTemplate.id, fieldKey: 'productionTime', fieldLabel: '反馈轴生产日期', fieldType: 'date', required: false, sortOrder: 11 },
       { templateId: excelTemplate.id, fieldKey: 'specificDefect', fieldLabel: '具体不良点', fieldType: 'text', required: false, sortOrder: 12 },
-      { templateId: excelTemplate.id, fieldKey: 'complaintCategory', fieldLabel: '客诉分类', fieldType: 'select', required: false, sortOrder: 13, options: '["成品外观","膜面平整性","涂布表观","点弊病","轴身平整性","划伤","管理不良","包装运输","物理特性","匹配性不良","客户匹配性不良"]' },
+      { templateId: excelTemplate.id, fieldKey: 'complaintCategory', fieldLabel: '数据分类', fieldType: 'select', required: false, sortOrder: 13, options: '["成品外观","膜面平整性","涂布表观","点弊病","轴身平整性","划伤","管理不良","包装运输","物理特性","匹配性不良","客户匹配性不良"]' },
       { templateId: excelTemplate.id, fieldKey: 'technicalType', fieldLabel: '技术/管理分类', fieldType: 'select', required: false, sortOrder: 14, options: '["技术类","管理类"]' },
       { templateId: excelTemplate.id, fieldKey: 'report8d', fieldLabel: '8D报告', fieldType: 'upload', required: false, sortOrder: 15 },
       { templateId: excelTemplate.id, fieldKey: 'productUsage', fieldLabel: '产品用途', fieldType: 'text', required: false, sortOrder: 16 },

@@ -125,7 +125,7 @@ export default defineEventHandler(async (event) => {
 
     // Build CSV content
     const headers = [
-      '客诉编号',
+      '记录编号',
       '反馈日期',
       '生产日期',
       '客户编码',
@@ -142,11 +142,11 @@ export default defineEventHandler(async (event) => {
       '机台',
       '批次号',
       '反馈内容',
-      '客户投诉描述',
+      '客户问题描述',
       '内部问题名称',
       '弊病源',
       '具体不良点',
-      '客诉分类',
+      '数据分类',
       '问题大类',
       '问题小类',
       '严重等级',

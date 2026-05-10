@@ -363,7 +363,7 @@ function buildFallbackFields() {
     rollNo: '轴号', specification: '规格', quantityInvolved: '涉及数量',
     application: '用途', productionLineId: '产线', shiftTeam: '班组',
     machineNo: '机台', batchNo: '批次号', productUsage: '产品用途',
-    feedbackContent: '反馈内容', customerComplaintText: '客户投诉描述',
+    feedbackContent: '反馈内容', customerComplaintText: '客户问题描述',
     internalComplaintName: '内部问题名称', defectSource: '弊病源',
     specificDefect: '具体不良点', complaintCategory: '数据分类',
     problemCategoryId: '问题大类', problemSubcategoryId: '问题小类',
