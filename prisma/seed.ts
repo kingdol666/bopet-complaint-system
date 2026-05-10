@@ -11,29 +11,15 @@ function hashPassword(password: string): string {
 async function main() {
   console.log('开始种子数据初始化...')
 
-  // ==================== 清理现有数据 ====================
-  console.log('清理现有数据...')
-  await prisma.savedAnalysis.deleteMany()
-  await prisma.operationLog.deleteMany()
-  await prisma.complaintAttachment.deleteMany()
-  await prisma.importLog.deleteMany()
-  await prisma.complaintRecord.deleteMany()
-  await prisma.complaintProblemMapping.deleteMany()
-  await prisma.fieldOptionConfig.deleteMany()
-  await prisma.formTemplateField.deleteMany()
-  await prisma.formTemplate.deleteMany()
-  await prisma.responsibleProcess.deleteMany()
-  await prisma.userDepartment.deleteMany()
-  await prisma.responsibleDepartment.deleteMany()
-  await prisma.severityLevel.deleteMany()
-  await prisma.compensationType.deleteMany()
-  await prisma.customerDemand.deleteMany()
-  await prisma.problemSubcategory.deleteMany()
-  await prisma.problemCategory.deleteMany()
-  await prisma.productModel.deleteMany()
-  await prisma.customer.deleteMany()
-  await prisma.productionLine.deleteMany()
-  await prisma.user.deleteMany()
+  // ==================== 幂等检查：如果已有用户则跳过 ====================
+  const existingUsers = await prisma.user.count()
+  if (existingUsers > 0) {
+    console.log(`检测到已有 ${existingUsers} 个用户，跳过种子数据初始化`)
+    console.log('如需重置数据，请执行: npm run dev:fresh')
+    return
+  }
+
+  console.log('数据库为空，开始初始化基础数据...')
 
   // ==================== 用户数据 ====================
   console.log('创建用户数据...')
