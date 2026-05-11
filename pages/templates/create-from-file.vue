@@ -119,7 +119,7 @@
       </div>
       <div class="flex gap-2">
         <n-button type="primary" @click="navigateTo('/templates')">模板管理</n-button>
-        <n-button @click="navigateTo('/complaints/import')">导入数据到该模板</n-button>
+        <n-button @click="navigateTo('/datas/import')">导入数据到该模板</n-button>
       </div>
     </div>
   </div>
@@ -187,7 +187,7 @@ async function handleUpload(opts: UploadCustomRequestOptions) {
     }
     opts.onFinish()
   } catch (e: any) {
-    message.error(e.data?.statusMessage || '解析失败')
+    message.error(e.data?.message || '解析失败')
     opts.onError()
   }
 }
@@ -208,7 +208,7 @@ async function handleCreate() {
     }))))
     const resp = await $fetch('/api/templates/create-from-file', { method: 'POST', body: fd, headers: authStore.getAuthHeaders() }) as any
     if (resp.success) { result.value = resp.data; message.success(resp.message) }
-  } catch (e: any) { message.error(e.data?.statusMessage || '创建失败') }
+  } catch (e: any) { message.error(e.data?.message || '创建失败') }
   finally { creating.value = false }
 }
 

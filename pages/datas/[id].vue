@@ -3,7 +3,7 @@
     <!-- Page header -->
     <div class="flex items-center justify-between mb-6">
       <div class="flex items-center gap-4">
-        <n-button text @click="navigateTo('/complaints')" class="hover:bg-corporate-100 rounded-lg p-2 transition-colors">
+        <n-button text @click="navigateTo('/datas')" class="hover:bg-corporate-100 rounded-lg p-2 transition-colors">
           <template #icon>
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-corporate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -11,7 +11,7 @@
           </template>
         </n-button>
         <div>
-          <h1 class="page-title">{{ complaint?.complaintNo || '记录详情' }}</h1>
+          <h1 class="page-title">{{ record?.dataNo || '记录详情' }}</h1>
           <p class="page-subtitle">查看记录详细信息</p>
         </div>
       </div>
@@ -24,7 +24,7 @@
           </template>
           打印
         </n-button>
-        <n-button type="primary" @click="navigateTo(`/complaints/edit/${complaint?.id}`)">
+        <n-button type="primary" @click="navigateTo(`/datas/edit/${record?.id}`)">
           <template #icon>
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -39,7 +39,7 @@
       <n-spin size="large" />
     </div>
 
-    <template v-else-if="complaint">
+    <template v-else-if="record">
       <!-- Status banner -->
       <div class="card mb-6" :class="statusBannerClass">
         <div class="flex items-center justify-between flex-wrap gap-4">
@@ -47,37 +47,26 @@
             <n-tag :type="statusType" size="large" round>
               <template #icon>
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path v-if="complaint.closureStatus === 'pending'" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  <path v-else-if="complaint.closureStatus === 'processing'" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  <path v-if="record.closureStatus === 'pending'" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path v-else-if="record.closureStatus === 'processing'" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13 10V3L4 14h7v7l9-11h-7z" />
                   <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </template>
               {{ statusLabel }}
             </n-tag>
-            <span v-if="complaint.repeatedIssue" class="inline-flex items-center gap-1 text-amber-600 text-sm font-medium">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              重复问题
-            </span>
           </div>
           <div class="flex items-center gap-2 flex-wrap">
-            <n-tag v-for="tpl in associatedTemplates" :key="tpl.id" :type="tpl.isDefault ? 'default' : 'info'" size="small" round>
+            <n-tag v-for="tpl in associatedTemplates" :key="tpl.id" type="info" size="small" round>
               {{ tpl.name }}
             </n-tag>
-            <n-tag v-if="complaint.severityLevel" :color="{ color: complaint.severityLevel.color + '20', textColor: complaint.severityLevel.color }" round>
-              <template #icon>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </template>
-              {{ complaint.severityLevel.name }}
+            <n-tag v-if="associatedTemplates.length === 0" type="default" size="small" round>
+              未关联模板
             </n-tag>
           </div>
         </div>
       </div>
 
-      <!-- Dynamic template sections -->
+      <!-- Template-driven display sections -->
       <div v-for="section in displaySections" :key="section.title" class="card mb-6">
         <div class="flex items-center gap-2 mb-5">
           <div class="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center">
@@ -100,14 +89,6 @@
               <label class="text-sm text-corporate-500 font-medium">{{ field.fieldLabel }}</label>
               <p class="mt-2">
                 <n-tag :type="statusType" size="small" round>{{ statusLabel }}</n-tag>
-              </p>
-            </div>
-            <div v-else-if="field.fieldKey === 'severityLevelId' && complaint.severityLevel" class="field">
-              <label class="text-sm text-corporate-500 font-medium">{{ field.fieldLabel }}</label>
-              <p class="mt-2">
-                <n-tag :color="{ color: complaint.severityLevel.color + '20', textColor: complaint.severityLevel.color }" size="small" round>
-                  {{ complaint.severityLevel.name }}
-                </n-tag>
               </p>
             </div>
             <div v-else-if="field.fieldType === 'switch'" class="field">
@@ -139,19 +120,19 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           <div class="field">
             <label class="text-sm text-corporate-500 font-medium">创建时间</label>
-            <p class="mt-2 text-corporate-900 font-medium">{{ formatDateTime(complaint.createdAt) }}</p>
+            <p class="mt-2 text-corporate-900 font-medium">{{ formatDateTime(record.createdAt) }}</p>
           </div>
           <div class="field">
             <label class="text-sm text-corporate-500 font-medium">创建人</label>
-            <p class="mt-2 text-corporate-900 font-medium">{{ complaint.createdBy?.name || '-' }}</p>
+            <p class="mt-2 text-corporate-900 font-medium">{{ record.createdBy?.name || '-' }}</p>
           </div>
           <div class="field">
             <label class="text-sm text-corporate-500 font-medium">更新时间</label>
-            <p class="mt-2 text-corporate-900 font-medium">{{ formatDateTime(complaint.updatedAt) }}</p>
+            <p class="mt-2 text-corporate-900 font-medium">{{ formatDateTime(record.updatedAt) }}</p>
           </div>
           <div class="field">
             <label class="text-sm text-corporate-500 font-medium">更新人</label>
-            <p class="mt-2 text-corporate-900 font-medium">{{ complaint.updatedBy?.name || '-' }}</p>
+            <p class="mt-2 text-corporate-900 font-medium">{{ record.updatedBy?.name || '-' }}</p>
           </div>
         </div>
       </div>
@@ -167,67 +148,18 @@ const router = useRouter()
 const message = useMessage()
 
 const loading = ref(true)
-const complaint = ref<any>(null)
+const record = ref<any>(null)
 const templateFields = ref<any[]>([])
 const allTemplates = ref<any[]>([])
 
-// Section mapping for standard fields
-const SECTION_MAP: Record<string, string> = {
-  feedbackDate: '基础信息',
-  productionTime: '基础信息',
-  customerId: '基础信息',
-  productModelId: '基础信息',
-  shaftCount: '基础信息',
-  thickness: '基础信息',
-  rollNo: '基础信息',
-  specification: '基础信息',
-  quantityInvolved: '基础信息',
-  application: '基础信息',
-  productionLineId: '基础信息',
-  shiftTeam: '基础信息',
-  machineNo: '基础信息',
-  batchNo: '基础信息',
-  productUsage: '基础信息',
-  feedbackContent: '记录内容',
-  customerComplaintText: '记录内容',
-  internalComplaintName: '记录内容',
-  defectSource: '记录内容',
-  specificDefect: '记录内容',
-  complaintCategory: '记录内容',
-  problemCategoryId: '记录内容',
-  problemSubcategoryId: '记录内容',
-  severityLevelId: '记录内容',
-  repeatedIssue: '记录内容',
-  attachments: '记录内容',
-  customerDemandId: '诉求与处置',
-  compensationTypeId: '诉求与处置',
-  closureStatus: '诉求与处置',
-  responsibleDeptId: '诉求与处置',
-  responsibleProcessId: '诉求与处置',
-  disposalResult: '诉求与处置',
-  rootCauseAnalysis: '原因与改善',
-  correctiveAction: '原因与改善',
-  lessonsLearned: '原因与改善',
-  reviewConclusion: '原因与改善',
-  standardizedAction: '原因与改善',
-  improvementAction: '原因与改善',
-  remark: '原因与改善'
-}
-
-// Standard field keys
-const STANDARD_FIELD_KEYS = new Set(Object.keys(SECTION_MAP))
-
-// Section display order
-const SECTION_ORDER = ['基础信息', '记录内容', '诉求与处置', '原因与改善', '附加信息']
-
-// Computed properties
+// Computed
 const statusLabel = computed(() => {
   const map: Record<string, string> = {
-    pending: '待分析',
+    pending: '待处理',
     processing: '处理中',
-    closed: '已处理'
+    closed: '已关闭'
   }
-  return map[complaint.value?.closureStatus] || '-'
+  return map[record.value?.closureStatus] || '-'
 })
 
 const statusType = computed(() => {
@@ -236,7 +168,7 @@ const statusType = computed(() => {
     processing: 'info',
     closed: 'success'
   }
-  return map[complaint.value?.closureStatus] || 'default'
+  return map[record.value?.closureStatus] || 'default'
 })
 
 const statusBannerClass = computed(() => {
@@ -245,94 +177,80 @@ const statusBannerClass = computed(() => {
     processing: 'bg-blue-50 border-blue-200',
     closed: 'bg-emerald-50 border-emerald-200'
   }
-  return map[complaint.value?.closureStatus] || ''
+  return map[record.value?.closureStatus] || ''
 })
 
-// Associated templates
 const associatedTemplates = computed(() => {
   const ids = parseTemplateIds()
   if (!ids.length) return []
   return allTemplates.value.filter(t => ids.includes(t.id))
 })
 
-// Build display sections from template fields + complaint data
+// Build display sections from template fields only
 const displaySections = computed(() => {
-  if (!complaint.value) return []
+  if (!record.value) return []
 
   const fields = templateFields.value.length > 0
-    ? templateFields.value
-    : buildFallbackFields()
+    ? [...templateFields.value].sort((a, b) => a.sortOrder - b.sortOrder)
+    : []
 
-  // Group fields into sections
+  if (fields.length === 0) return []
+
+  // Group by template, one section per template
   const sectionMap = new Map<string, any[]>()
-
   for (const field of fields) {
-    const sectionName = SECTION_MAP[field.fieldKey] || '附加信息'
-    const displayValue = resolveDisplayValue(field, complaint.value)
+    const tpl = allTemplates.value.find(t => t.id === field.templateId)
+    const sectionName = tpl?.name || '其他字段'
+    const displayValue = resolveDisplayValue(field, record.value)
 
     if (!sectionMap.has(sectionName)) sectionMap.set(sectionName, [])
-    sectionMap.get(sectionName)!.push({
-      ...field,
-      displayValue
-    })
+    sectionMap.get(sectionName)!.push({ ...field, displayValue })
   }
 
-  // Sort sections by defined order
-  return SECTION_ORDER
-    .filter(name => sectionMap.has(name))
-    .map(name => ({ title: name, fields: sectionMap.get(name)! }))
+  return Array.from(sectionMap.entries()).map(([title, fields]) => ({ title, fields }))
 })
 
-// Parse template IDs from complaint
 function parseTemplateIds(): number[] {
-  if (!complaint.value?.templateIds) return []
+  if (!record.value?.templateIds) return []
   try {
-    return typeof complaint.value.templateIds === 'string'
-      ? JSON.parse(complaint.value.templateIds)
-      : complaint.value.templateIds
+    return typeof record.value.templateIds === 'string'
+      ? JSON.parse(record.value.templateIds)
+      : record.value.templateIds
   } catch {
     return []
   }
 }
 
-// Parse templateData from complaint
 function parseTemplateData(): Record<string, any> {
-  if (!complaint.value?.templateData) return {}
+  if (!record.value?.templateData) return {}
   try {
-    return typeof complaint.value.templateData === 'string'
-      ? JSON.parse(complaint.value.templateData)
-      : complaint.value.templateData
+    return typeof record.value.templateData === 'string'
+      ? JSON.parse(record.value.templateData)
+      : record.value.templateData
   } catch {
     return {}
   }
 }
 
-// Resolve display value for a field
-function resolveDisplayValue(field: any, record: any): string {
-  // Get value: first try standard column, then templateData
-  let value = record[field.fieldKey]
-  if ((value === null || value === undefined) && !STANDARD_FIELD_KEYS.has(field.fieldKey)) {
+function resolveDisplayValue(field: any, rec: any): string {
+  // Get value from record column or templateData
+  let value = rec[field.fieldKey]
+  if (value === null || value === undefined) {
     const data = parseTemplateData()
     value = data[field.fieldKey]
   }
 
   if (value === null || value === undefined || value === '') return '-'
 
-  // Resolve relation-based fields
-  const relationMap: Record<string, any> = {
-    customerId: record.customer?.name,
-    productModelId: record.productModel?.name,
-    productionLineId: record.productionLine?.name,
-    problemCategoryId: record.problemCategory?.name,
-    problemSubcategoryId: record.problemSubcategory?.name,
-    severityLevelId: record.severityLevel?.name,
-    customerDemandId: record.customerDemand?.name,
-    compensationTypeId: record.compensationType?.name,
-    responsibleDeptId: record.responsibleDept?.name,
-    responsibleProcessId: record.responsibleProcess?.name
+  // FK name resolution
+  const fkMap: Record<string, any> = {
+    customerId: rec.customer?.name,
+    productModelId: rec.productModel?.name,
+    productionLineId: rec.productionLine?.name,
+    responsibleDeptId: rec.responsibleDept?.name,
+    responsibleProcessId: rec.responsibleProcess?.name
   }
-
-  if (relationMap[field.fieldKey]) return relationMap[field.fieldKey]
+  if (fkMap[field.fieldKey]) return fkMap[field.fieldKey]
 
   // Type-based formatting
   if (field.fieldType === 'date') {
@@ -342,11 +260,10 @@ function resolveDisplayValue(field: any, record: any): string {
     return value ? '是' : '否'
   }
   if (field.fieldKey === 'closureStatus') {
-    const map: Record<string, string> = { pending: '待分析', processing: '处理中', closed: '已处理' }
-    return map[value] || value
+    return statusLabel.value
   }
   if (field.fieldType === 'upload' || field.fieldKey === 'attachments') {
-    const attachments = record.attachments || []
+    const attachments = rec.attachments || []
     if (attachments.length === 0) return '无附件'
     return attachments.map((a: any) => a.fileName).join(', ')
   }
@@ -354,73 +271,34 @@ function resolveDisplayValue(field: any, record: any): string {
   return String(value)
 }
 
-// Build fallback fields when no template is loaded
-function buildFallbackFields() {
-  const fields: any[] = []
-  const standardFieldLabels: Record<string, string> = {
-    feedbackDate: '反馈日期', productionTime: '生产时间', customerId: '客户',
-    productModelId: '产品型号', shaftCount: '轴数', thickness: '厚度',
-    rollNo: '轴号', specification: '规格', quantityInvolved: '涉及数量',
-    application: '用途', productionLineId: '产线', shiftTeam: '班组',
-    machineNo: '机台', batchNo: '批次号', productUsage: '产品用途',
-    feedbackContent: '反馈内容', customerComplaintText: '客户问题描述',
-    internalComplaintName: '内部问题名称', defectSource: '弊病源',
-    specificDefect: '具体不良点', complaintCategory: '数据分类',
-    problemCategoryId: '问题大类', problemSubcategoryId: '问题小类',
-    severityLevelId: '严重等级', repeatedIssue: '是否重复',
-    customerDemandId: '客户诉求', compensationTypeId: '赔偿方式',
-    closureStatus: '闭环状态', responsibleDeptId: '责任部门',
-    responsibleProcessId: '责任工序', disposalResult: '处置结果',
-    rootCauseAnalysis: '问题分析', correctiveAction: '纠正措施',
-    lessonsLearned: '启示', reviewConclusion: '复盘结论',
-    standardizedAction: '标准化措施', improvementAction: '改善措施',
-    remark: '备注', attachments: '附件/8D报告'
-  }
-
-  for (const [key, label] of Object.entries(standardFieldLabels)) {
-    const isTextarea = ['feedbackContent', 'customerComplaintText', 'disposalResult',
-      'rootCauseAnalysis', 'correctiveAction', 'lessonsLearned', 'reviewConclusion', 'remark'].includes(key)
-    const isSwitch = ['repeatedIssue', 'standardizedAction'].includes(key)
-    const isDate = ['feedbackDate', 'productionTime'].includes(key)
-    fields.push({
-      fieldKey: key,
-      fieldLabel: label,
-      fieldType: isTextarea ? 'textarea' : isSwitch ? 'switch' : isDate ? 'date' : 'text'
-    })
-  }
-  return fields
-}
-
 // Load data
 onMounted(async () => {
   const id = route.params.id
   if (!id) {
     message.error('无效的ID')
-    router.push('/complaints')
+    router.push('/datas')
     return
   }
 
   try {
-    // Load complaint and templates in parallel
-    const complaintUrl = '/api/complaints/' + id
-    const [complaintResp, templatesResp] = await Promise.all([
-      $fetch<any>(complaintUrl) as Promise<any>,
-      $fetch<any>('/api/templates') as Promise<any>
+    const [recordResp, templatesResp] = await Promise.all([
+      $fetch<any>('/api/datas/' + id),
+      $fetch<any>('/api/templates')
     ])
 
-    if (complaintResp.success) {
-      complaint.value = complaintResp.data
+    if (recordResp.success) {
+      record.value = recordResp.data
     }
 
     if (templatesResp.success) {
       allTemplates.value = templatesResp.data
     }
 
-    // Load template field definitions for this complaint's templates
+    // Load template field definitions for associated templates
     const ids = parseTemplateIds()
     if (ids.length > 0) {
       const fieldResults = await Promise.all(
-        ids.map(tid => $fetch<any>('/api/templates/' + tid) as Promise<any>)
+        ids.map(tid => $fetch<any>('/api/templates/' + tid))
       )
       const allFields: any[] = []
       const seenKeys = new Set<string>()
@@ -439,13 +317,12 @@ onMounted(async () => {
     }
   } catch (e) {
     message.error('加载失败')
-    router.push('/complaints')
+    router.push('/datas')
   } finally {
     loading.value = false
   }
 })
 
-// Helper functions
 function formatDateTime(date: string | Date) {
   if (!date) return '-'
   return dayjs(date).format('YYYY-MM-DD HH:mm')
@@ -467,12 +344,12 @@ function escapeHtml(value: string) {
 }
 
 function handlePrint() {
-  if (!complaint.value) {
+  if (!record.value) {
     message.warning('当前没有可打印的记录信息')
     return
   }
 
-  const current = complaint.value
+  const current = record.value
   const sections = displaySections.value.map(section => {
     const rows: Array<[string, unknown, string?, unknown?]> = []
     const nonTextareaFields = section.fields.filter(f => f.fieldType !== 'textarea')
@@ -491,7 +368,6 @@ function handlePrint() {
     return renderPrintTable(section.title, rows)
   }).join('')
 
-  // Audit section
   const auditSection = renderPrintTable('审计信息', [
     ['创建时间', formatDateTime(current.createdAt), '创建人', current.createdBy?.name],
     ['更新时间', formatDateTime(current.updatedAt), '更新人', current.updatedBy?.name]
@@ -503,7 +379,7 @@ function handlePrint() {
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>${escapeHtml(current.complaintNo || '记录详情打印')}</title>
+        <title>${escapeHtml(current.dataNo || '记录详情打印')}</title>
         <style>
           @page { size: A4 portrait; margin: 12mm; }
           * { box-sizing: border-box; }
@@ -521,7 +397,7 @@ function handlePrint() {
       </head>
       <body>
         <div class="print-header">
-          <h1>${escapeHtml(current.complaintNo || '记录详情')}</h1>
+          <h1>${escapeHtml(current.dataNo || '记录详情')}</h1>
           <div class="print-meta">打印时间：${escapeHtml(formatDateTime(new Date()))}</div>
         </div>
         ${sections}${auditSection}

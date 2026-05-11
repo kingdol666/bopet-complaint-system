@@ -26,7 +26,7 @@
               @click="selectDept(d)">
               <div class="min-w-0">
                 <p class="text-sm font-medium text-gray-800">{{ d.name }}</p>
-                <p class="text-xs text-gray-400">{{ d._count?.userDepartments || 0 }}人 · {{ d._count?.complaints || 0
+                <p class="text-xs text-gray-400">{{ d._count?.userDepartments || 0 }}人 · {{ d._count?.datas || 0
                   }}条记录</p>
               </div>
               <div v-if="isSuperAdmin" class="flex gap-0.5 shrink-0 ml-2">
@@ -226,7 +226,7 @@ async function saveDept() {
     }
     deptModal.value = false
     await loadDepartments()
-  } catch (e: any) { message.error(e.data?.statusMessage || '操作失败') }
+  } catch (e: any) { message.error(e.data?.message || '操作失败') }
   deptSaving.value = false
 }
 
@@ -238,7 +238,7 @@ async function deleteDept(id: number) {
     selectedDept.value = null
     deptUsers.value = []
     await loadDepartments()
-  } catch (e: any) { message.error(e.data?.statusMessage || '操作失败') }
+  } catch (e: any) { message.error(e.data?.message || '操作失败') }
 }
 
 async function openUserModal() {
@@ -285,7 +285,7 @@ async function assignUser() {
     message.success('已添加')
     userModal.value = false
     await selectDept(selectedDept.value!)
-  } catch (e: any) { message.error(e.data?.statusMessage || '操作失败') }
+  } catch (e: any) { message.error(e.data?.message || '操作失败') }
   userSaving.value = false
 }
 
@@ -308,7 +308,7 @@ async function removeUser(userId: number) {
     }) as any
     message.success('已移除')
     await selectDept(selectedDept.value!)
-  } catch (e: any) { message.error(e.data?.statusMessage || '操作失败') }
+  } catch (e: any) { message.error(e.data?.message || '操作失败') }
 }
 
 onMounted(async () => {

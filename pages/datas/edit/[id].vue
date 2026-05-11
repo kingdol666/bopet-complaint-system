@@ -1,14 +1,14 @@
 <template>
   <div>
     <div class="mb-6 flex items-center">
-      <n-button text class="mr-4" @click="navigateTo('/complaints')">
+      <n-button text class="mr-4" @click="navigateTo('/datas')">
         <template #icon>
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
         </template>
       </n-button>
-      <h1 class="page-title mb-0">编辑记录{{ complaintNo ? ` - ${complaintNo}` : '' }}</h1>
+      <h1 class="page-title mb-0">编辑记录{{ dataNo ? ` - ${dataNo}` : '' }}</h1>
     </div>
 
     <div v-if="loading" class="flex justify-center py-12">
@@ -32,7 +32,7 @@
       </div>
 
       <div class="flex justify-end gap-2">
-        <n-button type="default" @click="navigateTo(`/complaints/${complaintId}`)">取消</n-button>
+        <n-button type="default" @click="navigateTo(`/datas/${dataId}`)">取消</n-button>
         <n-button type="primary" :loading="submitting" @click="handleSubmit">
           保存
         </n-button>
@@ -58,7 +58,7 @@ const submitting = ref(false)
 const selectedTemplateIds = ref<number[]>([])
 const templateData = ref<Record<string, any>>({})
 const templates = ref<any[]>([])
-const complaintNo = ref('')
+const dataNo = ref('')
 
 const templateOptions = computed(() =>
   templates.value.map(t => ({
@@ -67,18 +67,16 @@ const templateOptions = computed(() =>
   }))
 )
 
-const complaintId = computed(() => Number.parseInt(String(route.params.id || '0'), 10))
+const dataId = computed(() => Number.parseInt(String(route.params.id || '0'), 10))
 
-// Standard field keys that map directly to ComplaintRecord columns
+// Standard field keys that map directly to DataRecord columns
 const STANDARD_FIELD_KEYS = new Set([
   'feedbackDate', 'productionTime', 'customerId', 'productModelId', 'thickness',
   'rollNo', 'quantityInvolved', 'application', 'productionLineId', 'shiftTeam',
-  'machineNo', 'batchNo', 'feedbackContent', 'customerComplaintText',
-  'internalComplaintName', 'problemCategoryId', 'problemSubcategoryId',
-  'severityLevelId', 'repeatedIssue', 'customerDemandId', 'disposalResult',
-  'compensationTypeId', 'closureStatus', 'responsibleDeptId',
+  'machineNo', 'batchNo', 'feedbackContent',
+  'closureStatus', 'responsibleDeptId',
   'responsibleProcessId', 'rootCauseAnalysis', 'correctiveAction',
-  'lessonsLearned', 'reviewConclusion', 'standardizedAction', 'remark'
+  'lessonsLearned', 'reviewConclusion', 'remark'
 ])
 
 const DATE_FIELDS = new Set(['feedbackDate', 'productionTime'])
@@ -140,9 +138,9 @@ function buildPayload(data: Record<string, any>) {
 }
 
 onMounted(async () => {
-  if (!complaintId.value) {
+  if (!dataId.value) {
     message.error('无效的记录 ID')
-    await navigateTo('/complaints')
+    await navigateTo('/datas')
     return
   }
 
@@ -164,18 +162,18 @@ onMounted(async () => {
       console.error('Failed to load templates:', e)
     }
 
-    await loadComplaint()
+    await loadRecord()
   } catch (error) {
-    console.error('Failed to load complaint for edit:', error)
+    console.error('Failed to load record for edit:', error)
     message.error('加载记录信息失败')
-    await navigateTo('/complaints')
+    await navigateTo('/datas')
   } finally {
     loading.value = false
   }
 })
 
-async function loadComplaint() {
-  const url = '/api/complaints/' + complaintId.value
+async function loadRecord() {
+  const url = '/api/datas/' + dataId.value
   const response = await $fetch<{ success: boolean; data: any }>(url, { headers: authStore.getAuthHeaders() })
 
   if (!response?.success || !response.data) {
@@ -183,7 +181,7 @@ async function loadComplaint() {
   }
 
   const record = response.data
-  complaintNo.value = record.complaintNo || ''
+  dataNo.value = record.dataNo || ''
 
   // Restore template IDs
   if (record.templateIds) {
@@ -201,7 +199,7 @@ async function loadComplaint() {
 }
 
 async function handleSubmit() {
-  if (!complaintId.value) {
+  if (!dataId.value) {
     message.error('无效的记录 ID')
     return
   }
@@ -218,7 +216,7 @@ async function handleSubmit() {
   try {
     const payload = buildPayload(templateData.value)
 
-    const url = '/api/complaints/' + complaintId.value
+    const url = '/api/datas/' + dataId.value
     const response = await $fetch<{ success: boolean }>(url, {
       method: 'PUT',
       body: payload,
@@ -230,7 +228,7 @@ async function handleSubmit() {
     }
 
     message.success('记录信息已更新')
-    await navigateTo(`/complaints/${complaintId.value}`)
+    await navigateTo(`/datas/${dataId.value}`)
   } catch (error: any) {
     message.error(error.data?.message || error.data?.statusMessage || '保存失败')
   } finally {

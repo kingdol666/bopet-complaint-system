@@ -138,11 +138,6 @@ const configGetterMap: Record<string, string> = {
   customers: 'customerOptions',
   productModels: 'productModelOptions',
   productionLines: 'productionLineOptions',
-  problemCategories: 'problemCategoryOptions',
-  problemSubcategories: 'problemSubcategoryOptions',
-  customerDemands: 'customerDemandOptions',
-  compensationTypes: 'compensationTypeOptions',
-  severityLevels: 'severityLevelOptions',
   responsibleDepartments: 'responsibleDepartmentOptions',
   responsibleProcesses: 'responsibleProcessOptions'
 }
@@ -150,7 +145,6 @@ const configGetterMap: Record<string, string> = {
 // Stored options for auto-complete from server data
 const autoCompleteData = reactive<Record<string, string[]>>({
   rollNos: [],
-  specificDefects: [],
   productModels: []
 })
 
@@ -210,9 +204,6 @@ function getAutoCompleteOptions(configType: string | null | undefined) {
   }
   if (configType === 'rollNos') {
     return (autoCompleteData.rollNos || []).map((v: string) => ({ label: v, value: v }))
-  }
-  if (configType === 'specificDefects') {
-    return (autoCompleteData.specificDefects || []).map((v: string) => ({ label: v, value: v }))
   }
   return []
 }
@@ -311,15 +302,13 @@ async function loadFields() {
 
     // Check if any auto-complete fields need data loaded
     const needsRollNos = allFields.some(f => f.fieldType === 'auto-complete' && f.configType === 'rollNos')
-    const needsSpecificDefects = allFields.some(f => f.fieldType === 'auto-complete' && f.configType === 'specificDefects')
     const needsProductModels = allFields.some(f => f.fieldType === 'auto-complete' && f.configType === 'productModels')
 
-    if (needsRollNos || needsSpecificDefects) {
+    if (needsRollNos) {
       try {
-        const resp = await $fetch('/api/complaints/autocomplete-data')
+        const resp = await $fetch('/api/datas/autocomplete-data')
         if ((resp as any).success) {
           if (needsRollNos) autoCompleteData.rollNos = (resp as any).data.rollNos || []
-          if (needsSpecificDefects) autoCompleteData.specificDefects = (resp as any).data.specificDefects || []
         }
       } catch (e) {
         console.error('Failed to load autocomplete data:', e)

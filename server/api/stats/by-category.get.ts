@@ -19,31 +19,8 @@ export default defineEventHandler(async (event) => {
       if (endDate) dateFilter.feedbackDate.lte = endDate
     }
 
-    // By problem category
-    const byCategory = await prisma.complaintRecord.groupBy({
-      by: ['problemCategoryId'],
-      where: {
-        ...dateFilter,
-        problemCategoryId: { not: null }
-      },
-      _count: true
-    })
-
-    // Get category names
-    const categories = await prisma.problemCategory.findMany()
-    const categoryMap = new Map(categories.map(c => [c.id, c.name]))
-
-    const categoryStats = byCategory
-      .filter(item => item.problemCategoryId !== null)
-      .map(item => ({
-        categoryId: item.problemCategoryId,
-        categoryName: categoryMap.get(item.problemCategoryId!) || '未知',
-        count: item._count
-      }))
-      .sort((a, b) => b.count - a.count)
-
     // By customer
-    const byCustomer = await prisma.complaintRecord.groupBy({
+    const byCustomer = await prisma.dataRecord.groupBy({
       by: ['customerId'],
       where: {
         ...dateFilter,
@@ -67,7 +44,7 @@ export default defineEventHandler(async (event) => {
       .slice(0, 10)
 
     // By production line
-    const byProductionLine = await prisma.complaintRecord.groupBy({
+    const byProductionLine = await prisma.dataRecord.groupBy({
       by: ['productionLineId'],
       where: {
         ...dateFilter,
@@ -89,7 +66,7 @@ export default defineEventHandler(async (event) => {
       .sort((a, b) => b.count - a.count)
 
     // By product model
-    const byProductModel = await prisma.complaintRecord.groupBy({
+    const byProductModel = await prisma.dataRecord.groupBy({
       by: ['productModelId'],
       where: {
         ...dateFilter,
@@ -111,103 +88,8 @@ export default defineEventHandler(async (event) => {
       .sort((a, b) => b.count - a.count)
       .slice(0, 10)
 
-    // By problem subcategory
-    const bySubcategory = await prisma.complaintRecord.groupBy({
-      by: ['problemSubcategoryId'],
-      where: {
-        ...dateFilter,
-        problemSubcategoryId: { not: null }
-      },
-      _count: true
-    })
-
-    const subcategories = await prisma.problemSubcategory.findMany()
-    const subcategoryMap = new Map(subcategories.map(s => [s.id, s.name]))
-
-    const subcategoryStats = bySubcategory
-      .filter(item => item.problemSubcategoryId !== null)
-      .map(item => ({
-        subcategoryId: item.problemSubcategoryId,
-        subcategoryName: subcategoryMap.get(item.problemSubcategoryId!) || '未知',
-        count: item._count
-      }))
-      .sort((a, b) => b.count - a.count)
-
-    // By customer demand
-    const byCustomerDemand = await prisma.complaintRecord.groupBy({
-      by: ['customerDemandId'],
-      where: {
-        ...dateFilter,
-        customerDemandId: { not: null }
-      },
-      _count: true
-    })
-
-    const customerDemands = await prisma.customerDemand.findMany()
-    const customerDemandMap = new Map(customerDemands.map(d => [d.id, d.name]))
-
-    const customerDemandStats = byCustomerDemand
-      .filter(item => item.customerDemandId !== null)
-      .map(item => ({
-        customerDemandId: item.customerDemandId,
-        customerDemandName: customerDemandMap.get(item.customerDemandId!) || '未知',
-        count: item._count
-      }))
-      .sort((a, b) => b.count - a.count)
-
-    // By compensation type
-    const byCompensationType = await prisma.complaintRecord.groupBy({
-      by: ['compensationTypeId'],
-      where: {
-        ...dateFilter,
-        compensationTypeId: { not: null }
-      },
-      _count: true
-    })
-
-    const compensationTypes = await prisma.compensationType.findMany()
-    const compensationTypeMap = new Map(compensationTypes.map(c => [c.id, c.name]))
-
-    const compensationTypeStats = byCompensationType
-      .filter(item => item.compensationTypeId !== null)
-      .map(item => ({
-        compensationTypeId: item.compensationTypeId,
-        compensationTypeName: compensationTypeMap.get(item.compensationTypeId!) || '未知',
-        count: item._count
-      }))
-      .sort((a, b) => b.count - a.count)
-
-    // By severity level
-    const bySeverityLevel = await prisma.complaintRecord.groupBy({
-      by: ['severityLevelId'],
-      where: {
-        ...dateFilter,
-        severityLevelId: { not: null }
-      },
-      _count: true
-    })
-
-    const severityLevels = await prisma.severityLevel.findMany({
-      orderBy: { level: 'asc' }
-    })
-    const severityLevelMap = new Map(severityLevels.map(s => [s.id, { name: s.name, level: s.level, color: s.color }]))
-
-    const severityLevelStats = bySeverityLevel
-      .filter(item => item.severityLevelId !== null)
-      .map(item => {
-        const info = severityLevelMap.get(item.severityLevelId!) || { name: '未知', level: 0, color: null }
-        return {
-          severityLevelId: item.severityLevelId,
-          severityLevelName: info.name,
-          level: info.level,
-          color: info.color,
-          count: item._count
-        }
-      })
-      .sort((a, b) => a.level - b.level)
-
     // By responsible department
-    const byDepartment = await prisma.complaintRecord.groupBy({
+    const byDepartment = await prisma.dataRecord.groupBy({
       by: ['responsibleDeptId'],
       where: {
         ...dateFilter,
@@ -229,7 +111,7 @@ export default defineEventHandler(async (event) => {
       .sort((a, b) => b.count - a.count)
 
     // By responsible process
-    const byProcess = await prisma.complaintRecord.groupBy({
+    const byProcess = await prisma.dataRecord.groupBy({
       by: ['responsibleProcessId'],
       where: {
         ...dateFilter,
@@ -253,14 +135,9 @@ export default defineEventHandler(async (event) => {
     return {
       success: true,
       data: {
-        byCategory: categoryStats,
         byCustomer: customerStats,
         byProductionLine: productionLineStats,
         byProductModel: productModelStats,
-        bySubcategory: subcategoryStats,
-        byCustomerDemand: customerDemandStats,
-        byCompensationType: compensationTypeStats,
-        bySeverityLevel: severityLevelStats,
         byDepartment: departmentStats,
         byProcess: processStats
       }

@@ -96,7 +96,7 @@
 <script setup lang="ts">
 import { useAuthStore } from '~/stores/auth'
 
-type MenuIcon = 'dashboard' | 'list' | 'add' | 'mapping' | 'chart' | 'users' | 'template'
+type MenuIcon = 'dashboard' | 'list' | 'add' | 'users' | 'template'
 interface MenuItem { path: string; label: string; icon: MenuIcon }
 
 const authStore = useAuthStore()
@@ -109,8 +109,6 @@ const iconPaths: Record<MenuIcon, string[]> = {
   dashboard: ['M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'],
   list: ['M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2', 'M9 5a2 2 0 002 2h2a2 2 0 002-2', 'M9 5a2 2 0 012-2h2a2 2 0 012 2', 'M9 12h6', 'M9 16h6'],
   add: ['M12 4v16', 'M20 12H4'],
-  mapping: ['M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101', 'M10.344 13.656a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1'],
-  chart: ['M9 17v-6', 'M12 17V9', 'M15 17v-3', 'M5 19h14', 'M7 17V13a1 1 0 011-1h2v5', 'M11 17V9a1 1 0 011-1h2v9', 'M15 17v-3a1 1 0 011-1h2v4'],
   users: ['M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z'],
   template: ['M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z', 'M15 12a3 3 0 11-6 0 3 3 0 016 0z'],
 }
@@ -118,10 +116,8 @@ const iconPaths: Record<MenuIcon, string[]> = {
 const menuItems = computed<MenuItem[]>(() => {
   const items: MenuItem[] = [
     { path: '/', label: '数据概览', icon: 'dashboard' },
-    { path: '/complaints', label: '数据管理', icon: 'list' },
-    { path: '/complaints/new', label: '新增记录', icon: 'add' },
-    { path: '/mappings', label: '数据映射', icon: 'mapping' },
-    { path: '/stats/custom', label: '数据分析', icon: 'chart' },
+    { path: '/datas', label: '数据管理', icon: 'list' },
+    { path: '/datas/new', label: '新增记录', icon: 'add' },
     { path: '/departments', label: '部门管理', icon: 'users' },
   ]
   if (authStore.isSuperAdmin) items.push({ path: '/users', label: '用户管理', icon: 'users' })

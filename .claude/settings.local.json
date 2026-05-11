@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git mv *)",
+      "Bash(git rm *)",
+      "Bash(npx prisma *)",
+      "Bash(Remove-Item -Force prisma/data/bopet.db, data/bopet.db -ErrorAction SilentlyContinue)",
+      "Bash(Write-Output \"Database files deleted\")",
+      "Bash(npm run *)",
+      "PowerShell($bytes = [System.IO.File]::ReadAllBytes\\(\"prisma/schema.template.prisma\"\\); if \\($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF\\) { Write-Output \"TEMPLATE HAS BOM\"; $newBytes = $bytes[3..\\($bytes.Length-1\\)]; [System.IO.File]::WriteAllBytes\\(\"prisma/schema.template.prisma\", $newBytes\\); Write-Output \"BOM removed from template\" } else { Write-Output \"Template has no BOM\" })",
+      "Bash(npx tsx *)",
+      "Bash(curl -s http://localhost:3100/api/auth/login -X POST -H \"Content-Type: application/json\" -d \"{\\\\\"username\\\\\":\\\\\"admin\\\\\",\\\\\"password\\\\\":\\\\\"admin123\\\\\"}\" -w \"\\\\nHTTP %{http_code}\")",
+      "Bash(curl *)",
+      "PowerShell(Get-NetTCPConnection *)",
+      "PowerShell(Get-Process *)"
+    ]
+  }
+}

@@ -103,7 +103,7 @@ export function hashPassword(password: string): string {
 export function verifyPassword(password: string, hash: string): boolean {
   // Backward compat: old HMAC-SHA256 hashes (no colon separator)
   if (!hash.includes(':')) {
-    const oldHash = createHmac('sha256', 'bopet-complaint-system-salt-2024').update(password).digest('hex')
+    const oldHash = createHmac('sha256', 'bopet-eda-platform-salt-2024').update(password).digest('hex')
     return oldHash === hash
   }
   const [salt, key] = hash.split(':')
@@ -271,7 +271,7 @@ export function getVisibleDepartmentIds(user: SessionUser): number[] | null {
 /**
  * 构建部门过滤的 where 条件。
  * superadmin 不加过滤条件，admin/normal 只能看自己部门的数据。
- * 字段名默认为 responsibleDeptId（客诉记录的责任部门）。
+ * 字段名默认为 responsibleDeptId（数据记录的责任部门）。
  */
 export function buildDepartmentFilter(user: SessionUser, fieldName = 'responsibleDeptId'): Record<string, any> {
   const deptIds = getVisibleDepartmentIds(user)

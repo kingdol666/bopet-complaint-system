@@ -14,12 +14,12 @@ import { existsSync, mkdirSync } from "node:fs";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = resolve(__dirname, "..");
 
-// Resolve database path relative to project root
-const dataDir = resolve(rootDir, "data");
-if (!existsSync(dataDir)) {
-  mkdirSync(dataDir, { recursive: true });
+// Resolve database path relative to project root (prisma/data/)
+const dbDir = resolve(rootDir, "prisma", "data");
+if (!existsSync(dbDir)) {
+  mkdirSync(dbDir, { recursive: true });
 }
-const dbPath = resolve(dataDir, "bopet.db");
+const dbPath = resolve(dbDir, "data.db");
 
 // Resolve absolute DATABASE_URL
 process.env.DATABASE_URL = `file:${dbPath}`;

@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
     const deptFilter = buildDepartmentFilter(currentUser)
 
     // Get monthly counts for the specified year
-    const records = await prisma.complaintRecord.findMany({
+    const records = await prisma.dataRecord.findMany({
       where: {
         ...deptFilter,
         feedbackDate: {

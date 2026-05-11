@@ -17,7 +17,7 @@
           </template>
           导出CSV
         </n-button>
-        <n-button type="default" @click="navigateTo('/complaints/import')">
+        <n-button type="default" @click="navigateTo('/datas/import')">
           <template #icon>
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
               stroke="currentColor">
@@ -27,7 +27,7 @@
           </template>
           批量导入
         </n-button>
-        <n-button type="primary" @click="navigateTo('/complaints/new')">
+        <n-button type="primary" @click="navigateTo('/datas/new')">
           <template #icon>
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
               stroke="currentColor">
@@ -60,7 +60,7 @@
         <n-select v-model:value="selectedTemplateId" :options="templateFilterOptions" placeholder="选择表单模板（加载自定义字段）"
           clearable filterable @update:value="handleTemplateChange" />
 
-        <n-input v-model:value="filters.keyword" placeholder="全局搜索：编号/内容/不良点..." clearable @clear="handleSearch"
+        <n-input v-model:value="filters.keyword" placeholder="全局搜索：编号/内容..." clearable @clear="handleSearch"
           @keyup.enter="handleSearch">
           <template #prefix>
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-corporate-400" fill="none" viewBox="0 0 24 24"
@@ -365,9 +365,7 @@ const filters = reactive({
   customerId: null as number | null,
   productionLineId: null as number | null,
   productModelId: null as number | null,
-  problemCategoryId: null as number | null,
-  complaintCategory: null as string | null,
-  defectSource: null as string | null,
+  category: null as string | null,
   closureStatus: null as string | null,
   templateId: null as number | null
 })
@@ -398,13 +396,13 @@ const columns: DataTableColumn<any>[] = [
   },
   {
     title: '记录编号',
-    key: 'complaintNo',
+    key: 'dataNo',
     width: 140,
     fixed: 'left',
     render: (row) => h('a', {
       class: 'text-primary-600 hover:text-primary-800 cursor-pointer font-medium',
-      onClick: () => router.push(`/complaints/${row.id}`)
-    }, row.complaintNo)
+      onClick: () => router.push(`/datas/${row.id}`)
+    }, row.dataNo)
   },
   {
     title: '反馈日期',
@@ -442,7 +440,7 @@ const columns: DataTableColumn<any>[] = [
         h(NButton, {
           size: 'small',
           type: 'default',
-          onClick: () => router.push(`/complaints/${row.id}`)
+          onClick: () => router.push(`/datas/${row.id}`)
         }, () => '查看')
       ]
       if (authStore.canWrite) {
@@ -450,7 +448,7 @@ const columns: DataTableColumn<any>[] = [
           h(NButton, {
             size: 'small',
             type: 'default',
-            onClick: () => router.push(`/complaints/edit/${row.id}`)
+            onClick: () => router.push(`/datas/edit/${row.id}`)
           }, () => '编辑'),
           h(NButton, {
             size: 'small',
@@ -524,7 +522,7 @@ async function loadData() {
       }
     })
 
-    const response = await $fetch('/api/complaints', { params })
+    const response = await $fetch('/api/datas', { params })
 
     if (response.success) {
       tableData.value = response.data.records
@@ -562,9 +560,7 @@ function handleReset() {
   filters.customerId = null
   filters.productionLineId = null
   filters.productModelId = null
-  filters.problemCategoryId = null
-  filters.complaintCategory = null
-  filters.defectSource = null
+  filters.category = null
   filters.closureStatus = null
   filters.templateId = null
   dateRange.value = null
@@ -591,12 +587,12 @@ function handlePageSizeChange(pageSize: number) {
 function handleDelete(row: any) {
   dialog.warning({
     title: '确认删除',
-    content: `确定要删除数据记录 "${row.complaintNo}" 吗？此操作不可撤销。`,
+    content: `确定要删除数据记录 "${row.dataNo}" 吗？此操作不可撤销。`,
     positiveText: '删除',
     negativeText: '取消',
     onPositiveClick: async () => {
       try {
-        await $fetch(`/api/complaints/${row.id}`, {
+        await $fetch(`/api/datas/${row.id}`, {
           method: 'DELETE',
           headers: authStore.getAuthHeaders()
         })
@@ -611,7 +607,7 @@ function handleDelete(row: any) {
 
 async function handleProcessedChange(row: any, value: string) {
   try {
-    await $fetch(`/api/complaints/${row.id}`, {
+    await $fetch(`/api/datas/${row.id}`, {
       method: 'PUT',
       headers: authStore.getAuthHeaders(),
       body: { closureStatus: value }
@@ -632,7 +628,7 @@ async function batchMarkProcessed() {
   try {
     for (const id of checkedRowKeys.value) {
       try {
-        await $fetch(`/api/complaints/${id}`, {
+        await $fetch(`/api/datas/${id}`, {
           method: 'PUT',
           headers: authStore.getAuthHeaders(),
           body: { closureStatus: 'closed' }
@@ -665,7 +661,7 @@ function batchDelete() {
       try {
         for (const id of checkedRowKeys.value) {
           try {
-            await $fetch(`/api/complaints/${id}`, {
+            await $fetch(`/api/datas/${id}`, {
               method: 'DELETE',
               headers: authStore.getAuthHeaders()
             })
@@ -695,7 +691,7 @@ async function handleExport() {
     })
     const queryString = new URLSearchParams(params).toString()
     // Use fetch + blob to avoid exposing token in URL
-    const resp = await fetch(`/api/complaints/export?${queryString}`, {
+    const resp = await fetch(`/api/datas/export?${queryString}`, {
       headers: authStore.getAuthHeaders()
     })
     if (!resp.ok) throw new Error('Export failed')

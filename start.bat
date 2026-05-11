@@ -1,6 +1,6 @@
 @echo off
 echo ============================================================
-echo BOPET Complaint System - Production Mode
+echo BOPET EDA Platform - Production Mode
 echo ============================================================
 echo.
 
@@ -34,12 +34,12 @@ if not exist .output\server\index.mjs (
     echo [OK] Production build found
 )
 
-if not exist data\bopet.db (
-    echo [ERROR] Production database not found. Please run init.bat first.
+if not exist prisma\data\data.db (
+    echo [ERROR] Database not found. Please run init.bat first.
     pause
     exit /b 1
 ) else (
-    echo [OK] Production database found
+    echo [OK] Database found
 )
 echo.
 
@@ -47,12 +47,11 @@ echo [2/2] Starting production server...
 echo ============================================================
 echo Server URL: http://localhost:3000
 echo Mode: Production
-echo Database: %CD%\data\bopet.db
+echo Database: %CD%\prisma\data\data.db
 echo Press Ctrl+C to stop the server
 echo ============================================================
 echo.
 
-REM Set production database absolute path
-set DATABASE_URL=file:%CD%\data\bopet.db
+set DATABASE_URL=file:%CD%\prisma\data\data.db
 
 call npm run start

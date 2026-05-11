@@ -15,19 +15,19 @@ export default defineEventHandler(async (event) => {
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
     const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0)
 
-    // Total complaints
-    const total = await prisma.complaintRecord.count({ where: baseWhere })
+    // Total data records
+    const total = await prisma.dataRecord.count({ where: baseWhere })
 
-    // This month's complaints
-    const thisMonth = await prisma.complaintRecord.count({
+    // This month's records
+    const thisMonth = await prisma.dataRecord.count({
       where: {
         ...baseWhere,
         feedbackDate: { gte: startOfMonth }
       }
     })
 
-    // Last month's complaints
-    const lastMonth = await prisma.complaintRecord.count({
+    // Last month's records
+    const lastMonth = await prisma.dataRecord.count({
       where: {
         ...baseWhere,
         feedbackDate: {
@@ -38,21 +38,16 @@ export default defineEventHandler(async (event) => {
     })
 
     // By status
-    const pending = await prisma.complaintRecord.count({
+    const pending = await prisma.dataRecord.count({
       where: { ...baseWhere, closureStatus: 'pending' }
     })
 
-    const processing = await prisma.complaintRecord.count({
+    const processing = await prisma.dataRecord.count({
       where: { ...baseWhere, closureStatus: 'processing' }
     })
 
-    const closed = await prisma.complaintRecord.count({
+    const closed = await prisma.dataRecord.count({
       where: { ...baseWhere, closureStatus: 'closed' }
-    })
-
-    // Repeated issues
-    const repeatedIssues = await prisma.complaintRecord.count({
-      where: { ...baseWhere, repeatedIssue: true }
     })
 
     // Calculate month-over-month change
@@ -61,7 +56,7 @@ export default defineEventHandler(async (event) => {
       : '0'
 
     // Template distribution - parse templateIds from all records
-    const allRecords = await prisma.complaintRecord.findMany({
+    const allRecords = await prisma.dataRecord.findMany({
       where: baseWhere,
       select: { templateIds: true }
     })
@@ -109,7 +104,6 @@ export default defineEventHandler(async (event) => {
           processing,
           closed
         },
-        repeatedIssues,
         byTemplate
       }
     }

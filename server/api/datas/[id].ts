@@ -18,18 +18,7 @@ const updateSchema = z.object({
   machineNo: z.string().max(50).nullable().optional(),
   batchNo: z.string().max(100).nullable().optional(),
   feedbackContent: z.string().nullable().optional(),
-  customerComplaintText: z.string().nullable().optional(),
-  internalComplaintName: z.string().max(200).nullable().optional(),
-  defectSource: z.string().max(100).nullable().optional(),
-  specificDefect: z.string().max(200).nullable().optional(),
-  complaintCategory: z.string().max(100).nullable().optional(),
-  problemCategoryId: z.number().int().nullable().optional(),
-  problemSubcategoryId: z.number().int().nullable().optional(),
-  severityLevelId: z.number().int().nullable().optional(),
-  repeatedIssue: z.boolean().optional(),
-  customerDemandId: z.number().int().nullable().optional(),
-  disposalResult: z.string().nullable().optional(),
-  compensationTypeId: z.number().int().nullable().optional(),
+  category: z.string().max(100).nullable().optional(),
   closureStatus: z.enum(['pending', 'processing', 'closed']).optional(),
   responsibleDeptId: z.number().int().nullable().optional(),
   responsibleProcessId: z.number().int().nullable().optional(),
@@ -37,7 +26,6 @@ const updateSchema = z.object({
   correctiveAction: z.string().nullable().optional(),
   lessonsLearned: z.string().nullable().optional(),
   reviewConclusion: z.string().nullable().optional(),
-  standardizedAction: z.boolean().optional(),
   productUsage: z.string().max(200).nullable().optional(),
   improvementAction: z.string().nullable().optional(),
   remark: z.string().nullable().optional(),
@@ -51,15 +39,10 @@ const updateSchema = z.object({
   })).optional().nullable()
 })
 
-const complaintInclude = {
+const dataInclude = {
   customer: true,
   productModel: true,
   productionLine: true,
-  problemCategory: true,
-  problemSubcategory: true,
-  severityLevel: true,
-  customerDemand: true,
-  compensationType: true,
   responsibleDept: true,
   responsibleProcess: true,
   attachments: true
@@ -78,10 +61,10 @@ export default defineEventHandler(async (event) => {
   if (event.method === 'GET') {
     const currentUser = await requireSessionUser(event)
 
-    const record = await prisma.complaintRecord.findUnique({
+    const record = await prisma.dataRecord.findUnique({
       where: { id },
       include: {
-        ...complaintInclude,
+        ...dataInclude,
         createdBy: { select: { id: true, name: true, username: true } },
         updatedBy: { select: { id: true, name: true, username: true } }
       }
@@ -114,7 +97,7 @@ export default defineEventHandler(async (event) => {
       const body = await readBody(event)
       const data = updateSchema.parse(body)
 
-      const existing = await prisma.complaintRecord.findUnique({
+      const existing = await prisma.dataRecord.findUnique({
         where: { id }
       })
 
@@ -151,7 +134,7 @@ export default defineEventHandler(async (event) => {
 
       const { attachments, ...updateFields } = data
 
-      const record = await prisma.complaintRecord.update({
+      const record = await prisma.dataRecord.update({
         where: { id },
         data: {
           ...updateFields,
@@ -163,18 +146,18 @@ export default defineEventHandler(async (event) => {
             : undefined,
           updatedById: currentUser.id
         },
-        include: complaintInclude
+        include: dataInclude
       })
 
       // Handle attachments: delete old, create new
       if (attachments !== undefined) {
-        // Delete existing attachments for this complaint
-        await prisma.complaintAttachment.deleteMany({ where: { complaintId: id } })
+        // Delete existing attachments for this data record
+        await prisma.dataAttachment.deleteMany({ where: { dataId: id } })
         // Create new attachments
         if (attachments && attachments.length > 0) {
-          await prisma.complaintAttachment.createMany({
+          await prisma.dataAttachment.createMany({
             data: attachments.map(a => ({
-              complaintId: record.id,
+              dataId: record.id,
               fileName: a.fileName,
               fileUrl: a.fileUrl,
               fileType: a.fileType,
@@ -189,9 +172,9 @@ export default defineEventHandler(async (event) => {
         data: {
           userId: currentUser.id,
           action: 'update',
-          module: 'complaint',
+          module: 'data',
           targetId: record.id,
-          targetName: record.complaintNo,
+          targetName: record.dataNo,
           detail: JSON.stringify({ updatedFields: Object.keys(data) })
         }
       })
@@ -216,7 +199,7 @@ export default defineEventHandler(async (event) => {
   if (event.method === 'DELETE') {
     const currentUser = await requireWritePermission(event)
 
-    const existing = await prisma.complaintRecord.findUnique({
+    const existing = await prisma.dataRecord.findUnique({
       where: { id }
     })
 
@@ -243,7 +226,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    await prisma.complaintRecord.delete({
+    await prisma.dataRecord.delete({
       where: { id }
     })
 
@@ -251,10 +234,10 @@ export default defineEventHandler(async (event) => {
       data: {
         userId: currentUser.id,
         action: 'delete',
-        module: 'complaint',
+        module: 'data',
         targetId: existing.id,
-        targetName: existing.complaintNo,
-        detail: JSON.stringify({ complaintNo: existing.complaintNo })
+        targetName: existing.dataNo,
+        detail: JSON.stringify({ dataNo: existing.dataNo })
       }
     })
 

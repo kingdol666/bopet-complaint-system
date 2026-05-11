@@ -26,39 +26,8 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, message: 'Excel文件中没有数据' })
     }
 
-    // Column mapping (Excel Chinese headers -> DB fields)
-    const columnMap: Record<string, string> = {
-      '反馈日期': 'feedbackDate',
-      '客户': 'customerName',
-      '责任部门': 'deptName',
-      '型号': 'modelName',
-      '轴号': 'rollNo',
-      '规格': 'specification',
-      '反馈内容': 'feedbackContent',
-      '弊病源': 'defectSource',
-      '图片信息': 'imageInfo',
-      '数量': 'quantityInvolved',
-      '反馈轴生产日期': 'productionTime',
-      '具体不良点': 'specificDefect',
-      '数据分类': 'complaintCategory',
-      '技术类': 'technicalType',
-      '可插入8D报告': 'report8d',
-      '产品用途': 'productUsage',
-      '改善措施': 'improvementAction'
-    }
-
-    // Map columns from header row
-    const firstRow = jsonData[0]
-    const fieldMapping: Record<string, string> = {}
-    for (const [key, value] of Object.entries(columnMap)) {
-      // Try exact match first, then contains
-      const colKey = Object.keys(firstRow).find(k =>
-        k === key || k.includes(key) || key.includes(k)
-      )
-      if (colKey) {
-        fieldMapping[colKey] = value
-      }
-    }
+    // Get original headers from first row
+    const originalHeaders = Object.keys(jsonData[0])
 
     // Pre-load lookup data
     const [customers, models, depts] = await Promise.all([
@@ -102,50 +71,47 @@ export default defineEventHandler(async (event) => {
     let errorCount = 0
     const errors: any[] = []
 
-    // Generate complaint numbers
+    // Generate data numbers
     const year = new Date().getFullYear()
-    const prefix = `CP-${year}-`
-    const existingRecords = await prisma.complaintRecord.findMany({
-      where: { complaintNo: { startsWith: prefix } },
-      select: { complaintNo: true }
+    const prefix = `DR-${year}-`
+    const existingRecords = await prisma.dataRecord.findMany({
+      where: { dataNo: { startsWith: prefix } },
+      select: { dataNo: true }
     })
     let nextSeq = existingRecords.reduce((max, r) => {
-      const seq = parseInt(r.complaintNo.slice(prefix.length), 10)
+      const seq = parseInt(r.dataNo.slice(prefix.length), 10)
       return isNaN(seq) ? max : Math.max(max, seq)
     }, 0) + 1
 
     for (let i = 0; i < jsonData.length; i++) {
       try {
         const row = jsonData[i]
-        const mapped: Record<string, any> = {}
-        for (const [colKey, field] of Object.entries(fieldMapping)) {
-          mapped[field] = row[colKey]
-        }
+        const feedbackDate = parseDate(row['反馈日期']) || new Date()
+        const customerId = findCustomer(row['客户'])
 
-        const feedbackDate = parseDate(mapped.feedbackDate) || new Date()
-        const customerId = findCustomer(mapped.customerName)
+        const dataNo = `${prefix}${String(nextSeq++).padStart(4, '0')}`
 
-        const complaintNo = `${prefix}${String(nextSeq++).padStart(4, '0')}`
-
-        await prisma.complaintRecord.create({
+        await prisma.dataRecord.create({
           data: {
-            complaintNo,
+            dataNo,
             feedbackDate,
             customerId,
-            productModelId: findModel(mapped.modelName),
-            responsibleDeptId: findDept(mapped.deptName),
-            rollNo: String(mapped.rollNo || ''),
-            specification: String(mapped.specification || ''),
-            feedbackContent: String(mapped.feedbackContent || ''),
-            defectSource: String(mapped.defectSource || ''),
-            specificDefect: String(mapped.specificDefect || ''),
-            complaintCategory: String(mapped.complaintCategory || ''),
-            quantityInvolved: parseInt(mapped.quantityInvolved) || null,
-            productionTime: parseDate(mapped.productionTime),
-            productUsage: String(mapped.productUsage || ''),
-            improvementAction: String(mapped.improvementAction || ''),
+            productModelId: findModel(row['型号']),
+            responsibleDeptId: findDept(row['责任部门']),
+            rollNo: String(row['轴号'] || ''),
+            specification: String(row['规格'] || ''),
+            feedbackContent: String(row['反馈内容'] || ''),
+            category: String(row['数据分类'] || ''),
+            quantityInvolved: parseInt(row['数量']) || null,
+            productionTime: parseDate(row['反馈轴生产日期']),
+            productUsage: String(row['产品用途'] || ''),
+            improvementAction: String(row['改善措施'] || ''),
             createdById: currentUser.id,
-            updatedById: currentUser.id
+            updatedById: currentUser.id,
+            templateData: JSON.stringify({
+              headers: originalHeaders,
+              rawData: row
+            })
           }
         })
         successCount++

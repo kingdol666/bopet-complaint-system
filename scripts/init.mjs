@@ -3,7 +3,7 @@
  * 执行顺序：
  * 1. 准备 Prisma Schema
  * 2. 生成 Prisma Client
- * 3. 推送数据库 Schema（创建 data/bopet.db）
+ * 3. 推送数据库 Schema（创建 data/data.db）
  * 4. 写入种子数据
  *
  * 使用方法: npm run init
@@ -17,7 +17,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = resolve(__dirname, "..");
-const dataDir = resolve(rootDir, "data");
+const dataDir = resolve(rootDir, "prisma", "data");
 
 // 颜色输出
 const colors = {
@@ -68,7 +68,7 @@ async function main() {
   run("npx prisma db push", "步骤 3/4: 推送数据库 Schema");
 
   // 检查数据库文件是否创建
-  const dbPath = resolve(dataDir, "bopet.db");
+  const dbPath = resolve(dataDir, "data.db");
   if (existsSync(dbPath)) {
     log(`  ✓ 数据库文件已创建: ${dbPath}`, "green");
   }

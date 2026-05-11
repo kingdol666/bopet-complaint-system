@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
     const departments = await prisma.responsibleDepartment.findMany({
       where,
       include: {
-        _count: { select: { userDepartments: true, complaints: true } }
+        _count: { select: { userDepartments: true, dataRecords: true } }
       },
       orderBy: { sortOrder: 'asc' }
     })

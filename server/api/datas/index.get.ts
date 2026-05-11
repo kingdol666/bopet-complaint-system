@@ -1,20 +1,17 @@
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
-import { booleanQueryParam } from '~/server/utils/query'
 import { requireSessionUser, buildDepartmentFilter } from '~/server/utils/auth'
 
-// All known DB columns on ComplaintRecord
+// All known DB columns on DataRecord
 const DB_COLUMNS = new Set([
-  'complaintNo', 'feedbackDate', 'productionTime', 'customerId', 'productModelId', 'shaftCount',
+  'dataNo', 'feedbackDate', 'productionTime', 'customerId', 'productModelId', 'shaftCount',
   'thickness', 'rollNo', 'specification', 'quantityInvolved', 'application',
   'productionLineId', 'shiftTeam', 'machineNo', 'batchNo',
-  'feedbackContent', 'customerComplaintText', 'internalComplaintName',
-  'defectSource', 'specificDefect', 'complaintCategory',
-  'problemCategoryId', 'problemSubcategoryId', 'severityLevelId', 'repeatedIssue',
-  'customerDemandId', 'disposalResult', 'compensationTypeId', 'closureStatus',
+  'feedbackContent', 'category',
+  'closureStatus',
   'responsibleDeptId', 'responsibleProcessId',
   'rootCauseAnalysis', 'correctiveAction', 'lessonsLearned', 'reviewConclusion',
-  'standardizedAction', 'productUsage', 'improvementAction', 'remark'
+  'productUsage', 'improvementAction', 'remark'
 ])
 
 // Query schema for filtering and pagination
@@ -30,13 +27,9 @@ const querySchema = z.object({
   customerId: z.coerce.number().int().optional(),
   productModelId: z.coerce.number().int().optional(),
   productionLineId: z.coerce.number().int().optional(),
-  problemCategoryId: z.coerce.number().int().optional(),
-  complaintCategory: z.string().optional(),
-  defectSource: z.string().optional(),
+  category: z.string().optional(),
   closureStatus: z.enum(['pending', 'processing', 'closed']).optional(),
   responsibleDeptId: z.coerce.number().int().optional(),
-  severityLevelId: z.coerce.number().int().optional(),
-  repeatedIssue: booleanQueryParam,
   templateId: z.coerce.number().int().optional(),
   // Dynamic filters: JSON string of [{field, operator, value}]
   filters: z.string().optional()
@@ -52,13 +45,10 @@ function applyDynamicFilter(where: any, fieldName: string, operator: string, val
     switch (operator) {
       case 'eq':
         if (['shaftCount', 'quantityInvolved', 'productModelId', 'customerId', 'productionLineId',
-             'problemCategoryId', 'problemSubcategoryId', 'severityLevelId', 'customerDemandId',
-             'compensationTypeId', 'responsibleDeptId', 'responsibleProcessId'].includes(fieldName)) {
+             'responsibleDeptId', 'responsibleProcessId'].includes(fieldName)) {
           where[fieldName] = Number(val)
         } else if (fieldName === 'closureStatus') {
           where[fieldName] = val
-        } else if (fieldName === 'repeatedIssue') {
-          where[fieldName] = ['是', 'yes', 'true', '1', 'y', true].includes(String(val).toLowerCase())
         } else if (fieldName === 'feedbackDate' || fieldName === 'productionTime') {
           where[fieldName] = {
             gte: new Date(val),
@@ -125,13 +115,9 @@ export default defineEventHandler(async (event) => {
     if (params.keyword) {
       const keyword = params.keyword
       where.OR = [
-        { complaintNo: { contains: keyword } },
+        { dataNo: { contains: keyword } },
         { feedbackContent: { contains: keyword } },
-        { customerComplaintText: { contains: keyword } },
-        { internalComplaintName: { contains: keyword } },
-        { specificDefect: { contains: keyword } },
-        { defectSource: { contains: keyword } },
-        { complaintCategory: { contains: keyword } },
+        { category: { contains: keyword } },
         { rootCauseAnalysis: { contains: keyword } },
         { correctiveAction: { contains: keyword } },
         { rollNo: { contains: keyword } },
@@ -154,13 +140,9 @@ export default defineEventHandler(async (event) => {
     if (params.customerId) where.customerId = params.customerId
     if (params.productModelId) where.productModelId = params.productModelId
     if (params.productionLineId) where.productionLineId = params.productionLineId
-    if (params.problemCategoryId) where.problemCategoryId = params.problemCategoryId
-    if (params.complaintCategory) where.complaintCategory = params.complaintCategory
-    if (params.defectSource) where.defectSource = params.defectSource
+    if (params.category) where.category = params.category
     if (params.closureStatus) where.closureStatus = params.closureStatus
     if (params.responsibleDeptId) where.responsibleDeptId = params.responsibleDeptId
-    if (params.severityLevelId) where.severityLevelId = params.severityLevelId
-    if (params.repeatedIssue !== undefined) where.repeatedIssue = params.repeatedIssue
 
     // Template filter: search templateIds JSON string for the given templateId
     if (params.templateId) {
@@ -191,17 +173,12 @@ export default defineEventHandler(async (event) => {
 
     if (customFilters.length > 0) {
       // Get all records matching DB filters (no pagination limit initially)
-      const allRecords = await prisma.complaintRecord.findMany({
+      const allRecords = await prisma.dataRecord.findMany({
         where,
         include: {
           customer: true,
           productModel: true,
           productionLine: true,
-          problemCategory: true,
-          problemSubcategory: true,
-          severityLevel: true,
-          customerDemand: true,
-          compensationType: true,
           responsibleDept: true,
           responsibleProcess: true,
           createdBy: { select: { id: true, name: true } },
@@ -271,19 +248,14 @@ export default defineEventHandler(async (event) => {
       records = filtered.slice(start, start + pageSize)
     } else {
       // No custom filters, use normal pagination
-      total = await prisma.complaintRecord.count({ where })
+      total = await prisma.dataRecord.count({ where })
 
-      records = await prisma.complaintRecord.findMany({
+      records = await prisma.dataRecord.findMany({
         where,
         include: {
           customer: true,
           productModel: true,
           productionLine: true,
-          problemCategory: true,
-          problemSubcategory: true,
-          severityLevel: true,
-          customerDemand: true,
-          compensationType: true,
           responsibleDept: true,
           responsibleProcess: true,
           createdBy: { select: { id: true, name: true } },

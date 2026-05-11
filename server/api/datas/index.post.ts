@@ -19,18 +19,7 @@ const createSchema = z.object({
   machineNo: z.string().max(50).optional().nullable(),
   batchNo: z.string().max(100).optional().nullable(),
   feedbackContent: z.string().optional().nullable(),
-  customerComplaintText: z.string().optional().nullable(),
-  internalComplaintName: z.string().max(200).optional().nullable(),
-  defectSource: z.string().max(100).optional().nullable(),
-  specificDefect: z.string().max(200).optional().nullable(),
-  complaintCategory: z.string().max(100).optional().nullable(),
-  problemCategoryId: z.number().int().optional().nullable(),
-  problemSubcategoryId: z.number().int().optional().nullable(),
-  severityLevelId: z.number().int().optional().nullable(),
-  repeatedIssue: z.boolean().default(false),
-  customerDemandId: z.number().int().optional().nullable(),
-  disposalResult: z.string().optional().nullable(),
-  compensationTypeId: z.number().int().optional().nullable(),
+  category: z.string().max(100).optional().nullable(),
   closureStatus: z.enum(['pending', 'processing', 'closed']).default('pending'),
   responsibleDeptId: z.number().int().optional().nullable(),
   responsibleProcessId: z.number().int().optional().nullable(),
@@ -38,7 +27,6 @@ const createSchema = z.object({
   correctiveAction: z.string().optional().nullable(),
   lessonsLearned: z.string().optional().nullable(),
   reviewConclusion: z.string().optional().nullable(),
-  standardizedAction: z.boolean().default(false),
   productUsage: z.string().max(200).optional().nullable(),
   improvementAction: z.string().optional().nullable(),
   remark: z.string().optional().nullable(),
@@ -52,36 +40,31 @@ const createSchema = z.object({
   })).optional().nullable()
 })
 
-const complaintInclude = {
+const dataInclude = {
   customer: true,
   productModel: true,
   productionLine: true,
-  problemCategory: true,
-  problemSubcategory: true,
-  severityLevel: true,
-  customerDemand: true,
-  compensationType: true,
   responsibleDept: true,
   responsibleProcess: true
 } as const
 
-async function generateComplaintNo(): Promise<string> {
+async function generateDataNo(): Promise<string> {
   const year = new Date().getFullYear()
-  const prefix = `CP-${year}-`
+  const prefix = `DR-${year}-`
 
-  const existingNumbers = await prisma.complaintRecord.findMany({
+  const existingNumbers = await prisma.dataRecord.findMany({
     where: {
-      complaintNo: {
+      dataNo: {
         startsWith: prefix
       }
     },
     select: {
-      complaintNo: true
+      dataNo: true
     }
   })
 
   const maxSequence = existingNumbers.reduce((maxValue, record) => {
-    const sequence = Number.parseInt(record.complaintNo.slice(prefix.length), 10)
+    const sequence = Number.parseInt(record.dataNo.slice(prefix.length), 10)
     if (Number.isNaN(sequence)) {
       return maxValue
     }
@@ -92,7 +75,7 @@ async function generateComplaintNo(): Promise<string> {
   return `${prefix}${String(maxSequence + 1).padStart(4, '0')}`
 }
 
-function isComplaintNoConflict(error: unknown): error is Prisma.PrismaClientKnownRequestError {
+function isDataNoConflict(error: unknown): error is Prisma.PrismaClientKnownRequestError {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002'
 }
 
@@ -111,25 +94,10 @@ export default defineEventHandler(async (event) => {
     }
 
     for (let attempt = 0; attempt < 5; attempt += 1) {
-      const complaintNo = await generateComplaintNo()
+      const dataNo = await generateDataNo()
 
-      // Duplicate detection: same customer + same model + same defect within 90 days
-      let duplicateCount = 0
-      if (data.customerId && data.productModelId && data.specificDefect) {
-        const ninetyDaysAgo = new Date()
-        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
-        duplicateCount = await prisma.complaintRecord.count({
-          where: {
-            customerId: data.customerId,
-            productModelId: data.productModelId,
-            specificDefect: data.specificDefect,
-            feedbackDate: { gte: ninetyDaysAgo }
-          }
-        })
-      }
-
-      const createData: Prisma.ComplaintRecordUncheckedCreateInput = {
-        complaintNo,
+      const createData: Prisma.DataRecordUncheckedCreateInput = {
+        dataNo,
         feedbackDate: data.feedbackDate,
         productionTime: data.productionTime,
         productModelId: data.productModelId,
@@ -145,18 +113,7 @@ export default defineEventHandler(async (event) => {
         machineNo: data.machineNo,
         batchNo: data.batchNo,
         feedbackContent: data.feedbackContent,
-        customerComplaintText: data.customerComplaintText,
-        internalComplaintName: data.internalComplaintName,
-        defectSource: data.defectSource,
-        specificDefect: data.specificDefect,
-        complaintCategory: data.complaintCategory,
-        problemCategoryId: data.problemCategoryId,
-        problemSubcategoryId: data.problemSubcategoryId,
-        severityLevelId: data.severityLevelId,
-        repeatedIssue: data.repeatedIssue,
-        customerDemandId: data.customerDemandId,
-        disposalResult: data.disposalResult,
-        compensationTypeId: data.compensationTypeId,
+        category: data.category,
         closureStatus: data.closureStatus,
         responsibleDeptId: data.responsibleDeptId,
         responsibleProcessId: data.responsibleProcessId,
@@ -164,7 +121,6 @@ export default defineEventHandler(async (event) => {
         correctiveAction: data.correctiveAction,
         lessonsLearned: data.lessonsLearned,
         reviewConclusion: data.reviewConclusion,
-        standardizedAction: data.standardizedAction,
         productUsage: data.productUsage,
         improvementAction: data.improvementAction,
         remark: data.remark,
@@ -175,16 +131,16 @@ export default defineEventHandler(async (event) => {
       }
 
       try {
-        const record = await prisma.complaintRecord.create({
+        const record = await prisma.dataRecord.create({
           data: createData,
-          include: complaintInclude
+          include: dataInclude
         })
 
         // Create attachment records if uploaded
         if (data.attachments && data.attachments.length > 0) {
-          await prisma.complaintAttachment.createMany({
+          await prisma.dataAttachment.createMany({
             data: data.attachments.map(a => ({
-              complaintId: record.id,
+              dataId: record.id,
               fileName: a.fileName,
               fileUrl: a.fileUrl,
               fileType: a.fileType,
@@ -198,21 +154,20 @@ export default defineEventHandler(async (event) => {
           data: {
             userId: currentUser.id,
             action: 'create',
-            module: 'complaint',
+            module: 'data',
             targetId: record.id,
-            targetName: record.complaintNo,
-            detail: JSON.stringify({ complaintNo: record.complaintNo })
+            targetName: record.dataNo,
+            detail: JSON.stringify({ dataNo: record.dataNo })
           }
         })
 
         return {
           success: true,
           data: record,
-          warning: duplicateCount > 0 ? `疑似重复数据：同一客户/型号/不良点在90天内已有${duplicateCount}条记录` : undefined,
           message: '数据记录创建成功'
         }
       } catch (error) {
-        if (isComplaintNoConflict(error) && attempt < 4) {
+        if (isDataNoConflict(error) && attempt < 4) {
           continue
         }
 

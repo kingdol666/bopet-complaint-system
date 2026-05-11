@@ -52,47 +52,25 @@ export default defineEventHandler(async (event) => {
 
     let file: any = null
     let templateId = 0
-    let columnMapStr = ''
 
     for (const part of formData) {
       if ((part.name === 'file' || (!part.name && part.filename)) && part.filename) file = part
       else if (part.name === 'templateId' && part.data) templateId = parseInt(part.data.toString(), 10)
-      else if (part.name === 'columnMap' && part.data) columnMapStr = part.data.toString()
     }
 
     if (!file) throw createError({ statusCode: 400, message: '未选择文件' })
     if (!templateId) throw createError({ statusCode: 400, message: '未选择模板' })
 
-    // Load template fields
+    // Load template
     const template = await prisma.formTemplate.findUnique({
-      where: { id: templateId },
-      include: { fields: { orderBy: { sortOrder: 'asc' } } }
+      where: { id: templateId }
     })
     if (!template) throw createError({ statusCode: 404, message: '模板不存在' })
 
     // Parse file
+    const XLSX = await import('xlsx')
     const { headers, rows } = await parseFileContent(file)
     if (rows.length === 0) throw createError({ statusCode: 400, message: '文件中无数据行' })
-
-    // Build column mapping: file column → template field
-    let columnMap: Record<string, string> = {}
-    if (columnMapStr) {
-      try { columnMap = JSON.parse(columnMapStr) } catch {}
-    } else {
-      // Auto-match by name similarity
-      for (const fh of headers) {
-        for (const tf of template.fields) {
-          if (fh.includes(tf.fieldLabel) || tf.fieldLabel.includes(fh) ||
-              fh.toLowerCase() === tf.fieldKey.toLowerCase()) {
-            columnMap[fh] = tf.fieldKey
-            break
-          }
-        }
-      }
-    }
-
-    // Import xlsx for date parsing
-    const XLSX = await import('xlsx')
 
     // Pre-load customers/models for name lookup
     const customers = await prisma.customer.findMany()
@@ -108,24 +86,17 @@ export default defineEventHandler(async (event) => {
       return found?.id || null
     }
 
-    // Generate complaint numbers
+    // Generate data numbers
     const year = new Date().getFullYear()
-    const prefix = `CP-${year}-`
-    const existingNos = await prisma.complaintRecord.findMany({
-      where: { complaintNo: { startsWith: prefix } },
-      select: { complaintNo: true }
+    const prefix = `DR-${year}-`
+    const existingNos = await prisma.dataRecord.findMany({
+      where: { dataNo: { startsWith: prefix } },
+      select: { dataNo: true }
     })
     let nextSeq = existingNos.reduce((max, r) => {
-      const s = parseInt(r.complaintNo.slice(prefix.length), 10)
+      const s = parseInt(r.dataNo.slice(prefix.length), 10)
       return isNaN(s) ? max : Math.max(max, s)
     }, 0) + 1
-
-    const DB_COLUMNS = new Set([
-      'complaintNo', 'feedbackDate', 'customerId', 'productModelId', 'rollNo',
-      'specification', 'feedbackContent', 'defectSource', 'specificDefect',
-      'complaintCategory', 'shaftCount', 'quantityInvolved', 'productionTime',
-      'productUsage', 'improvementAction', 'responsibleDeptId', 'closureStatus'
-    ])
 
     let successCount = 0, errorCount = 0
     const importErrors: any[] = []
@@ -133,79 +104,43 @@ export default defineEventHandler(async (event) => {
     for (let i = 0; i < rows.length; i++) {
       try {
         const row = rows[i]
-        const recordData: Record<string, any> = {}
-        const customData: Record<string, any> = {}
-
-        for (const [fileHeader, fieldKey] of Object.entries(columnMap)) {
-          const colIdx = headers.indexOf(fileHeader)
-          if (colIdx < 0) continue
-          const rawVal = row[colIdx]
-          const field = template.fields.find(f => f.fieldKey === fieldKey)
-          if (!field) continue
-
-          // Determine storage target: DB column or templateData JSON
-          const isDBColumn = DB_COLUMNS.has(fieldKey)
-
-          switch (field.fieldType) {
-            case 'date': {
-              const d = parseDate(rawVal, XLSX) || new Date()
-              if (isDBColumn) recordData[fieldKey] = d
-              else customData[fieldKey] = dayjs(d).format('YYYY-MM-DD')
-              break
-            }
-            case 'number': {
-              const n = parseInt(String(rawVal)) || null
-              if (isDBColumn) recordData[fieldKey] = n
-              else customData[fieldKey] = n
-              break
-            }
-            case 'switch': {
-              const b = ['是', 'yes', 'true', '1'].includes(String(rawVal).toLowerCase())
-              if (isDBColumn) recordData[fieldKey] = b
-              else customData[fieldKey] = b
-              break
-            }
-            case 'select-config':
-            case 'auto-complete': {
-              const cfg = field.configType
-              if (cfg === 'customers') recordData.customerId = findRef(String(rawVal), customers)
-              else if (cfg === 'productModels') recordData.productModelId = findRef(String(rawVal), models)
-              else if (cfg === 'responsibleDepartments') recordData.responsibleDeptId = findRef(String(rawVal), depts)
-              else if (isDBColumn) recordData[fieldKey] = String(rawVal)
-              else customData[fieldKey] = String(rawVal)
-              break
-            }
-            default:
-              if (isDBColumn) recordData[fieldKey] = String(rawVal || '')
-              else customData[fieldKey] = String(rawVal || '')
-          }
+        const rowData: Record<string, any> = {}
+        
+        // Use original headers directly, no column mapping
+        for (let j = 0; j < headers.length; j++) {
+          rowData[headers[j]] = row[j] ?? ''
         }
 
-        if (!recordData.feedbackDate) recordData.feedbackDate = new Date()
+        // Extract common fields by header name matching
+        const feedbackDate = parseDate(rowData['反馈日期'] || rowData['日期'] || rowData['时间'], XLSX) || new Date()
+        const customerId = findRef(rowData['客户'] || rowData['客户名称'], customers)
+        const productModelId = findRef(rowData['型号'] || rowData['产品型号'], models)
+        const responsibleDeptId = findRef(rowData['责任部门'] || rowData['部门'], depts)
 
-        await prisma.complaintRecord.create({
+        await prisma.dataRecord.create({
           data: {
-            complaintNo: `${prefix}${String(nextSeq++).padStart(4, '0')}`,
-            feedbackDate: recordData.feedbackDate,
-            customerId: recordData.customerId || null,
-            productModelId: recordData.productModelId || null,
-            rollNo: String(recordData.rollNo || ''),
-            specification: String(recordData.specification || ''),
-            feedbackContent: String(recordData.feedbackContent || ''),
-            defectSource: String(recordData.defectSource || ''),
-            specificDefect: String(recordData.specificDefect || ''),
-            complaintCategory: String(recordData.complaintCategory || ''),
-            shaftCount: recordData.shaftCount || null,
-            quantityInvolved: recordData.quantityInvolved || null,
-            productionTime: recordData.productionTime || null,
-            productUsage: String(recordData.productUsage || ''),
-            improvementAction: String(recordData.improvementAction || ''),
-            responsibleDeptId: recordData.responsibleDeptId || null,
+            dataNo: `${prefix}${String(nextSeq++).padStart(4, '0')}`,
+            feedbackDate,
+            customerId,
+            productModelId,
+            rollNo: String(rowData['轴号'] || ''),
+            specification: String(rowData['规格'] || ''),
+            feedbackContent: String(rowData['反馈内容'] || rowData['问题描述'] || ''),
+            category: String(rowData['数据分类'] || rowData['问题分类'] || ''),
+            quantityInvolved: parseInt(rowData['数量']) || null,
+            productionTime: parseDate(rowData['反馈轴生产日期'] || rowData['生产日期'], XLSX),
+            productUsage: String(rowData['产品用途'] || ''),
+            improvementAction: String(rowData['改善措施'] || rowData['纠正措施'] || ''),
+            responsibleDeptId,
             closureStatus: 'pending',
             createdById: currentUser.id,
             updatedById: currentUser.id,
             templateIds: JSON.stringify([templateId]),
-            templateData: Object.keys(customData).length > 0 ? JSON.stringify(customData) : null
+            // Store all original data with headers
+            templateData: JSON.stringify({
+              headers,
+              rawData: rowData
+            })
           }
         })
         successCount++

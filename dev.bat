@@ -1,6 +1,6 @@
 @echo off
 echo ============================================================
-echo BOPET Complaint System - Development Mode
+echo BOPET EDA Platform - Development Mode
 echo ============================================================
 echo.
 
@@ -26,7 +26,7 @@ if not exist .env (
     echo [OK] .env found
 )
 
-if not exist prisma\data\bopet.db (
+if not exist prisma\data\data.db (
     echo [INFO] Database not found. Initializing...
     call npm run db:generate
     call npm run db:push

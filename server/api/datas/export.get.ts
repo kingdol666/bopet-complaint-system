@@ -1,7 +1,6 @@
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
 import { requireSessionUser, buildDepartmentFilter } from '~/server/utils/auth'
-import { booleanQueryParam } from '~/server/utils/query'
 
 // Query schema for filtering (same as list)
 const querySchema = z.object({
@@ -11,11 +10,8 @@ const querySchema = z.object({
   customerId: z.coerce.number().int().optional(),
   productModelId: z.coerce.number().int().optional(),
   productionLineId: z.coerce.number().int().optional(),
-  problemCategoryId: z.coerce.number().int().optional(),
   closureStatus: z.enum(['pending', 'processing', 'closed']).optional(),
-  responsibleDeptId: z.coerce.number().int().optional(),
-  severityLevelId: z.coerce.number().int().optional(),
-  repeatedIssue: booleanQueryParam
+  responsibleDeptId: z.coerce.number().int().optional()
 })
 
 // Escape CSV field
@@ -67,10 +63,8 @@ export default defineEventHandler(async (event) => {
     if (params.keyword) {
       const keyword = params.keyword
       where.OR = [
-        { complaintNo: { contains: keyword } },
+        { dataNo: { contains: keyword } },
         { feedbackContent: { contains: keyword } },
-        { customerComplaintText: { contains: keyword } },
-        { internalComplaintName: { contains: keyword } },
         { rootCauseAnalysis: { contains: keyword } },
         { correctiveAction: { contains: keyword } },
         { rollNo: { contains: keyword } },
@@ -91,24 +85,16 @@ export default defineEventHandler(async (event) => {
     if (params.customerId) where.customerId = params.customerId
     if (params.productModelId) where.productModelId = params.productModelId
     if (params.productionLineId) where.productionLineId = params.productionLineId
-    if (params.problemCategoryId) where.problemCategoryId = params.problemCategoryId
     if (params.closureStatus) where.closureStatus = params.closureStatus
     if (params.responsibleDeptId) where.responsibleDeptId = params.responsibleDeptId
-    if (params.severityLevelId) where.severityLevelId = params.severityLevelId
-    if (params.repeatedIssue !== undefined) where.repeatedIssue = params.repeatedIssue
 
     // Get all matching records
-    const records = await prisma.complaintRecord.findMany({
+    const records = await prisma.dataRecord.findMany({
       where,
       include: {
         customer: true,
         productModel: true,
         productionLine: true,
-        problemCategory: true,
-        problemSubcategory: true,
-        severityLevel: true,
-        customerDemand: true,
-        compensationType: true,
         responsibleDept: true,
         responsibleProcess: true
       },
@@ -142,18 +128,7 @@ export default defineEventHandler(async (event) => {
       '机台',
       '批次号',
       '反馈内容',
-      '客户问题描述',
-      '内部问题名称',
-      '弊病源',
-      '具体不良点',
       '数据分类',
-      '问题大类',
-      '问题小类',
-      '严重等级',
-      '是否重复',
-      '客户诉求',
-      '处置结果',
-      '赔偿方式',
       '闭环状态',
       '责任部门',
       '责任工序',
@@ -161,7 +136,6 @@ export default defineEventHandler(async (event) => {
       '改善措施',
       '启示',
       '复盘结论',
-      '标准化措施',
       '产品用途',
       '备注',
       '创建时间',
@@ -175,7 +149,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const rows = records.map(r => [
-      escapeCSV(r.complaintNo),
+      escapeCSV(r.dataNo),
       escapeCSV(r.feedbackDate ? formatDateSafe(r.feedbackDate) : ''),
       escapeCSV(r.productionTime ? formatDateSafe(r.productionTime) : ''),
       escapeCSV(r.customer?.code),
@@ -192,18 +166,7 @@ export default defineEventHandler(async (event) => {
       escapeCSV(r.machineNo),
       escapeCSV(r.batchNo),
       escapeCSV(r.feedbackContent),
-      escapeCSV(r.customerComplaintText),
-      escapeCSV(r.internalComplaintName),
-      escapeCSV(r.defectSource),
-      escapeCSV(r.specificDefect),
-      escapeCSV(r.complaintCategory),
-      escapeCSV(r.problemCategory?.name),
-      escapeCSV(r.problemSubcategory?.name),
-      escapeCSV(r.severityLevel?.name),
-      escapeCSV(r.repeatedIssue ? '是' : '否'),
-      escapeCSV(r.customerDemand?.name),
-      escapeCSV(r.disposalResult),
-      escapeCSV(r.compensationType?.name),
+      escapeCSV(r.category),
       escapeCSV(statusMap[r.closureStatus] || r.closureStatus),
       escapeCSV(r.responsibleDept?.name),
       escapeCSV(r.responsibleProcess?.name),
@@ -211,7 +174,6 @@ export default defineEventHandler(async (event) => {
       escapeCSV(r.correctiveAction),
       escapeCSV(r.lessonsLearned),
       escapeCSV(r.reviewConclusion),
-      escapeCSV(r.standardizedAction ? '是' : '否'),
       escapeCSV(r.productUsage),
       escapeCSV(r.remark),
       escapeCSV(r.createdAt ? formatDateTimeSafe(r.createdAt) : ''),
@@ -224,7 +186,7 @@ export default defineEventHandler(async (event) => {
     // Set response headers for file download
     setResponseHeaders(event, {
       'Content-Type': 'text/csv; charset=utf-8',
-      'Content-Disposition': `attachment; filename="complaints_${new Date().toISOString().slice(0, 10)}.csv"`
+      'Content-Disposition': `attachment; filename="datas_${new Date().toISOString().slice(0, 10)}.csv"`
     })
 
     return csvContent

@@ -78,7 +78,12 @@ export const useAuthStore = defineStore('auth', {
 
         return { success: false, message: '登录失败' }
       } catch (error: any) {
-        return { success: false, message: error.data?.statusMessage || '登录失败' }
+        const msg = error.data?.message
+        if (msg) return { success: false, message: msg }
+        if (error.message === 'Failed to fetch' || error.cause?.code === 'ECONNREFUSED') {
+          return { success: false, message: '无法连接到服务器，请检查网络' }
+        }
+        return { success: false, message: '登录失败，请稍后重试' }
       }
     },
 

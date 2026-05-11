@@ -88,17 +88,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
       <!-- Monthly trend chart -->
       <div class="card lg:col-span-2">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="section-title mb-0">月度趋势</h2>
-          <n-button text size="small" @click="navigateTo('/stats/custom')">
-            自定义分析
-            <template #icon>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-              </svg>
-            </template>
-          </n-button>
-        </div>
+        <h2 class="section-title">月度趋势</h2>
         <div class="h-80">
           <ClientOnly>
             <v-chart :option="trendChartOption" autoresize />
@@ -117,23 +107,13 @@
       </div>
     </div>
 
-    <!-- Category and recent section -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-      <!-- Category distribution -->
-      <div class="card">
-        <h2 class="section-title">问题分类分布</h2>
-        <div class="h-80">
-          <ClientOnly>
-            <v-chart :option="categoryChartOption" autoresize />
-          </ClientOnly>
-        </div>
-      </div>
-
+    <!-- Recent records section -->
+    <div class="grid grid-cols-1 gap-6 mb-8">
       <!-- Recent records -->
-      <div class="card lg:col-span-2">
+      <div class="card">
         <div class="flex items-center justify-between mb-4">
           <h2 class="section-title mb-0">最近记录</h2>
-          <n-button text size="small" @click="navigateTo('/complaints')">
+          <n-button text size="small" @click="navigateTo('/datas')">
             查看全部
             <template #icon>
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -144,10 +124,10 @@
         </div>
         <div class="space-y-3">
           <div
-            v-for="item in recentComplaints"
+            v-for="item in recentData"
             :key="item.id"
             class="flex items-center justify-between p-4 rounded-xl bg-slate-50 hover:bg-blue-50/50 cursor-pointer transition-colors group border border-slate-100 hover:border-blue-200"
-            @click="navigateTo(`/complaints/${item.id}`)"
+            @click="navigateTo(`/datas/${item.id}`)"
           >
             <div class="flex items-center gap-4">
               <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-slate-500 group-hover:text-blue-600 shadow-sm">
@@ -156,15 +136,15 @@
                 </svg>
               </div>
               <div>
-                <p class="font-medium text-slate-900">{{ item.complaintNo }}</p>
-                <p class="text-sm text-slate-500">{{ item.customer?.name || '-' }} · {{ item.internalComplaintName || '-' }}</p>
+                <p class="font-medium text-slate-900">{{ item.dataNo }}</p>
+                <p class="text-sm text-slate-500">{{ item.customer?.name || '-' }}</p>
               </div>
             </div>
             <n-tag :type="getStatusType(item.closureStatus)" size="small">
               {{ getStatusLabel(item.closureStatus) }}
             </n-tag>
           </div>
-          <div v-if="recentComplaints.length === 0" class="empty-state py-8">
+          <div v-if="recentData.length === 0" class="empty-state py-8">
             <div class="empty-state-icon">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -178,10 +158,10 @@
     </div>
 
     <!-- Pending records -->
-    <div class="card" v-if="pendingComplaints.length > 0">
+    <div class="card" v-if="pendingData.length > 0">
       <div class="flex items-center justify-between mb-4">
         <h2 class="section-title mb-0">待处理记录</h2>
-        <n-button text size="small" @click="navigateTo('/complaints?closureStatus=pending')">
+        <n-button text size="small" @click="navigateTo('/datas?closureStatus=pending')">
           查看全部
           <template #icon>
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -192,13 +172,13 @@
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div
-          v-for="item in pendingComplaints"
+          v-for="item in pendingData"
           :key="item.id"
           class="p-4 rounded-xl bg-amber-50 border border-amber-200 hover:bg-amber-100 cursor-pointer transition-colors"
-          @click="navigateTo(`/complaints/${item.id}`)"
+          @click="navigateTo(`/datas/${item.id}`)"
         >
           <div class="flex items-start justify-between mb-2">
-            <span class="font-medium text-slate-900">{{ item.complaintNo }}</span>
+            <span class="font-medium text-slate-900">{{ item.dataNo }}</span>
             <n-tag type="warning" size="small">{{ getStatusLabel(item.closureStatus) }}</n-tag>
           </div>
           <p class="text-sm text-slate-600 mb-1">{{ item.customer?.name || '-' }}</p>
@@ -256,12 +236,11 @@ const stats = ref<any>({
 })
 
 // Recent records
-const recentComplaints = ref<any[]>([])
-const pendingComplaints = ref<any[]>([])
+const recentData = ref<any[]>([])
+const pendingData = ref<any[]>([])
 
 // Trend data
 const trendData = ref<any[]>([])
-const categoryData = ref<any[]>([])
 const templateData = ref<any[]>([])
 
 // Closed rate
@@ -376,54 +355,13 @@ const trendChartOption = computed(() => ({
   ]
 }))
 
-// Category chart option
-const categoryChartOption = computed(() => ({
-  tooltip: {
-    trigger: 'item',
-    formatter: '{b}: {c} ({d}%)',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderColor: '#e2e8f0',
-    borderWidth: 1,
-    textStyle: { color: '#475569' }
-  },
-  legend: {
-    orient: 'vertical',
-    right: '5%',
-    top: 'center',
-    textStyle: { color: '#64748b' }
-  },
-  series: [
-    {
-      type: 'pie',
-      radius: ['40%', '70%'],
-      center: ['35%', '50%'],
-      avoidLabelOverlap: false,
-      itemStyle: {
-        borderRadius: 8,
-        borderColor: '#fff',
-        borderWidth: 2
-      },
-      label: { show: false },
-      emphasis: {
-        label: { show: true, fontSize: 14, fontWeight: 'bold' }
-      },
-      labelLine: { show: false },
-      data: categoryData.value.map((d: any) => ({
-        name: d.categoryName,
-        value: d.count
-      }))
-    }
-  ]
-}))
-
 // Load data
 onMounted(async () => {
   await configStore.loadConfig()
   await loadStats()
   await loadTrend()
-  await loadCategoryStats()
   await loadTemplateStats()
-  await loadRecentComplaints()
+  await loadRecentData()
 })
 
 async function loadStats() {
@@ -448,17 +386,6 @@ async function loadTrend() {
   }
 }
 
-async function loadCategoryStats() {
-  try {
-    const response = await $fetch('/api/stats/by-category')
-    if (response.success) {
-      categoryData.value = response.data.byCategory
-    }
-  } catch (e) {
-    console.error('Failed to load category stats:', e)
-  }
-}
-
 async function loadTemplateStats() {
   try {
     const response = await $fetch('/api/stats/overview')
@@ -470,9 +397,9 @@ async function loadTemplateStats() {
   }
 }
 
-async function loadRecentComplaints() {
+async function loadRecentData() {
   try {
-    const response = await $fetch('/api/complaints', {
+    const response = await $fetch('/api/datas', {
       params: {
         page: 1,
         pageSize: 5,
@@ -481,11 +408,11 @@ async function loadRecentComplaints() {
       }
     })
     if (response.success) {
-      recentComplaints.value = response.data.records
+      recentData.value = response.data.records
     }
 
     // Load pending records
-    const pendingResponse = await $fetch('/api/complaints', {
+    const pendingResponse = await $fetch('/api/datas', {
       params: {
         page: 1,
         pageSize: 6,
@@ -493,7 +420,7 @@ async function loadRecentComplaints() {
       }
     })
     if (pendingResponse.success) {
-      pendingComplaints.value = pendingResponse.data.records
+      pendingData.value = pendingResponse.data.records
     }
   } catch (e) {
     console.error('Failed to load records:', e)

@@ -9,11 +9,6 @@ export default defineEventHandler(async (event) => {
       productionLines,
       customers,
       productModels,
-      problemCategories,
-      problemSubcategories,
-      customerDemands,
-      compensationTypes,
-      severityLevels,
       responsibleDepartments,
       responsibleProcesses
     ] = await Promise.all([
@@ -26,27 +21,6 @@ export default defineEventHandler(async (event) => {
         orderBy: { sortOrder: 'asc' }
       }),
       prisma.productModel.findMany({
-        where: { enabled: true },
-        orderBy: { sortOrder: 'asc' }
-      }),
-      prisma.problemCategory.findMany({
-        where: { enabled: true },
-        orderBy: { sortOrder: 'asc' }
-      }),
-      prisma.problemSubcategory.findMany({
-        where: { enabled: true },
-        orderBy: { sortOrder: 'asc' },
-        include: { category: true }
-      }),
-      prisma.customerDemand.findMany({
-        where: { enabled: true },
-        orderBy: { sortOrder: 'asc' }
-      }),
-      prisma.compensationType.findMany({
-        where: { enabled: true },
-        orderBy: { sortOrder: 'asc' }
-      }),
-      prisma.severityLevel.findMany({
         where: { enabled: true },
         orderBy: { sortOrder: 'asc' }
       }),
@@ -67,11 +41,6 @@ export default defineEventHandler(async (event) => {
         productionLines,
         customers,
         productModels,
-        problemCategories,
-        problemSubcategories,
-        customerDemands,
-        compensationTypes,
-        severityLevels,
         responsibleDepartments,
         responsibleProcesses
       }

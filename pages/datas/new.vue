@@ -2,7 +2,7 @@
   <div class="animate-fade-in">
     <!-- Page header -->
     <div class="flex items-center gap-4 mb-6">
-      <n-button text @click="navigateTo('/complaints')" class="hover:bg-corporate-100 rounded-lg p-2 transition-colors">
+      <n-button text @click="navigateTo('/datas')" class="hover:bg-corporate-100 rounded-lg p-2 transition-colors">
         <template #icon>
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-corporate-500" fill="none" viewBox="0 0 24 24"
             stroke="currentColor">
@@ -66,7 +66,7 @@
 
       <!-- Actions -->
       <div class="flex justify-end gap-2">
-        <n-button type="default" size="large" @click="navigateTo('/complaints')">
+        <n-button type="default" size="large" @click="navigateTo('/datas')">
           取消
         </n-button>
         <n-button type="primary" size="large" :loading="submitting" @click="handleSubmit">
@@ -106,16 +106,14 @@ const templateOptions = computed(() =>
   }))
 )
 
-// Standard field keys that map directly to ComplaintRecord columns
+// Standard field keys that map directly to DataRecord columns
 const STANDARD_FIELD_KEYS = new Set([
   'feedbackDate', 'productionTime', 'customerId', 'productModelId', 'thickness',
   'rollNo', 'quantityInvolved', 'application', 'productionLineId', 'shiftTeam',
-  'machineNo', 'batchNo', 'feedbackContent', 'customerComplaintText',
-  'internalComplaintName', 'problemCategoryId', 'problemSubcategoryId',
-  'severityLevelId', 'repeatedIssue', 'customerDemandId', 'disposalResult',
-  'compensationTypeId', 'closureStatus', 'responsibleDeptId',
+  'machineNo', 'batchNo', 'feedbackContent',
+  'closureStatus', 'responsibleDeptId',
   'responsibleProcessId', 'rootCauseAnalysis', 'correctiveAction',
-  'lessonsLearned', 'reviewConclusion', 'standardizedAction', 'remark'
+  'lessonsLearned', 'reviewConclusion', 'remark'
 ])
 
 const DATE_FIELDS = new Set(['feedbackDate', 'productionTime'])
@@ -183,7 +181,7 @@ async function handleSubmit() {
   try {
     const payload = buildPayload(templateData.value)
 
-    const response = await $fetch('/api/complaints', {
+    const response = await $fetch('/api/datas', {
       method: 'POST',
       body: payload,
       headers: authStore.getAuthHeaders()
@@ -195,10 +193,10 @@ async function handleSubmit() {
       } else {
         message.success('数据记录创建成功')
       }
-      router.push('/complaints')
+      router.push('/datas')
     }
   } catch (error: any) {
-    message.error(error.data?.statusMessage || '创建失败')
+    message.error(error.data?.message || '创建失败')
   } finally {
     submitting.value = false
   }

@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
         where: { id },
         include: {
           userDepartments: { include: { user: { select: { id: true, username: true, name: true, role: true, enabled: true } } } },
-          _count: { select: { complaints: true, processes: true } }
+          _count: { select: { dataRecords: true, processes: true } }
         }
       })
       if (!dept) throw createError({ statusCode: 404, message: '部门不存在' })

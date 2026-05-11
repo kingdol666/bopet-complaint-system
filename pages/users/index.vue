@@ -284,7 +284,7 @@ async function handleSubmit() {
     showModal.value = false
     loadData()
   } catch (error: any) {
-    message.error(error.data?.statusMessage || '操作失败')
+    message.error(error.data?.message || '操作失败')
   } finally {
     submitting.value = false
   }
@@ -305,7 +305,7 @@ function handleDelete(user: any) {
         message.success('删除成功')
         loadData()
       } catch (error: any) {
-        message.error(error.data?.statusMessage || '删除失败')
+        message.error(error.data?.message || '删除失败')
       }
     }
   })

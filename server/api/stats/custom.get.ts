@@ -1,9 +1,9 @@
 import { prisma } from '~/server/utils/prisma'
 import { requireSessionUser, buildDepartmentFilter } from '~/server/utils/auth'
 
-// Direct string columns on ComplaintRecord that can be grouped
+// Direct string columns on DataRecord that can be grouped
 const COLUMN_FIELDS = new Set([
-  'complaintCategory', 'defectSource', 'specificDefect', 'closureStatus',
+  'category', 'closureStatus',
   'thickness', 'rollNo', 'specification', 'shiftTeam', 'machineNo',
   'feedbackContent', 'productUsage', 'improvementAction', 'batchNo', 'application'
 ])
@@ -65,8 +65,8 @@ export default defineEventHandler(async (event) => {
         }
         where[groupBy] = { not: null }
 
-        const total = await prisma.complaintRecord.count({ where })
-        const raw = await prisma.complaintRecord.groupBy({
+        const total = await prisma.dataRecord.count({ where })
+        const raw = await prisma.dataRecord.groupBy({
           by: [groupBy as any],
           where,
           _count: true
@@ -96,8 +96,8 @@ export default defineEventHandler(async (event) => {
         }
         where[groupBy] = { not: null }
 
-        const total = await prisma.complaintRecord.count({ where })
-        const raw = await prisma.complaintRecord.groupBy({
+        const total = await prisma.dataRecord.count({ where })
+        const raw = await prisma.dataRecord.groupBy({
           by: [groupBy as any],
           where,
           _count: true
@@ -125,7 +125,7 @@ export default defineEventHandler(async (event) => {
       const safeFieldKey = groupBy.replace(/[^\w一-鿿-]/g, '')
       if (!safeFieldKey) throw createError({ statusCode: 400, message: '字段名无效' })
 
-      let sql = `SELECT json_extract(templateData, '$.${safeFieldKey}') as value, COUNT(*) as _count FROM complaint_records WHERE templateData IS NOT NULL AND json_extract(templateData, '$.${safeFieldKey}') IS NOT NULL`
+      let sql = `SELECT json_extract(templateData, '$.${safeFieldKey}') as value, COUNT(*) as _count FROM data_records WHERE templateData IS NOT NULL AND json_extract(templateData, '$.${safeFieldKey}') IS NOT NULL`
       const params: any[] = []
       if (dateFilter.length) { sql += ' AND ' + dateFilter.join(' AND '); params.push(...dateParams) }
       sql += ` GROUP BY value ORDER BY _count DESC LIMIT ?`
@@ -133,7 +133,7 @@ export default defineEventHandler(async (event) => {
 
       const raw = await prisma.$queryRawUnsafe(sql, ...params) as any[]
 
-      let countSql = `SELECT COUNT(*) as total FROM complaint_records WHERE templateData IS NOT NULL AND json_extract(templateData, '$.${safeFieldKey}') IS NOT NULL`
+      let countSql = `SELECT COUNT(*) as total FROM data_records WHERE templateData IS NOT NULL AND json_extract(templateData, '$.${safeFieldKey}') IS NOT NULL`
       const countParams: any[] = []
       if (dateFilter.length) { countSql += ' AND ' + dateFilter.join(' AND '); countParams.push(...dateParams) }
       const countResult = await prisma.$queryRawUnsafe(countSql, ...countParams) as any[]
@@ -206,7 +206,7 @@ export default defineEventHandler(async (event) => {
 
     // Count total matching RECORDS (not groups)
     const countSQL = `
-      SELECT COUNT(*) as total FROM complaint_records cr
+      SELECT COUNT(*) as total FROM data_records cr
       ${joinClause}
       WHERE ${whereClause}
     `
@@ -216,7 +216,7 @@ export default defineEventHandler(async (event) => {
     // Data query
     const dataSQL = `
       SELECT ${selectClause}, COUNT(*) as _count
-      FROM complaint_records cr
+      FROM data_records cr
       ${joinClause}
       WHERE ${whereClause}
       GROUP BY ${groupClause}

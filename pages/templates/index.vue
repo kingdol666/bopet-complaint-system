@@ -242,11 +242,6 @@ const configTypeOptions = [
   { label: '客户', value: 'customers' },
   { label: '产品型号', value: 'productModels' },
   { label: '产线', value: 'productionLines' },
-  { label: '问题大类', value: 'problemCategories' },
-  { label: '问题小类', value: 'problemSubcategories' },
-  { label: '客户诉求', value: 'customerDemands' },
-  { label: '赔偿方式', value: 'compensationTypes' },
-  { label: '严重等级', value: 'severityLevels' },
   { label: '责任部门', value: 'responsibleDepartments' },
   { label: '责任工序', value: 'responsibleProcesses' }
 ]
@@ -287,9 +282,9 @@ const columns = computed(() => {
     },
     {
       title: '使用次数',
-      key: 'complaints',
+      key: 'datas',
       width: 90,
-      render: (row: any) => h('span', { class: 'text-corporate-600 font-medium' }, row._count?.complaints || 0)
+      render: (row: any) => h('span', { class: 'text-corporate-600 font-medium' }, row._count?.datas || 0)
     },
     {
       title: '状态',
@@ -408,7 +403,7 @@ function handleDelete(row: any) {
         message.success('删除成功')
         await loadTemplates()
       } catch (e: any) {
-        message.error(e.data?.statusMessage || '删除失败')
+        message.error(e.data?.message || '删除失败')
       }
     }
   })
@@ -483,7 +478,7 @@ async function handleSubmit() {
     modalVisible.value = false
     await loadTemplates()
   } catch (error: any) {
-    message.error(error.data?.statusMessage || '操作失败')
+    message.error(error.data?.message || '操作失败')
   } finally {
     submitting.value = false
   }
