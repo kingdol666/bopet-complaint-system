@@ -1,5 +1,5 @@
 import dayjs from 'dayjs'
-import customParseFormat from 'dayjs/plugin/customParseFormat'
+import customParseFormat from 'dayjs/plugin/customParseFormat.js'
 import { prisma } from '~/server/utils/prisma'
 import { requireWritePermission } from '~/server/utils/auth'
 
