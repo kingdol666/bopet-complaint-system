@@ -11,19 +11,49 @@ export default defineEventHandler(async (event) => {
     }
 
     const file = formData[0]
-    if (!file.filename || !file.filename.match(/\.(xlsx|xls)$/i)) {
-      throw createError({ statusCode: 400, message: '仅支持 .xlsx / .xls 格式的Excel文件' })
+    if (!file.filename || !file.filename.match(/\.(xlsx|xls|csv)$/i)) {
+      throw createError({ statusCode: 400, message: '仅支持 .xlsx / .xls / .csv 格式的文件' })
     }
 
-    // Parse Excel
-    const XLSX = await import('xlsx')
-    const workbook = XLSX.read(file.data, { type: 'buffer' })
-    const sheetName = workbook.SheetNames[0]
-    const worksheet = workbook.Sheets[sheetName]
-    const jsonData = XLSX.utils.sheet_to_json(worksheet) as Record<string, any>[]
+    const isCSV = file.filename.endsWith('.csv')
+    let jsonData: Record<string, any>[]
+
+    if (isCSV) {
+      // Parse CSV
+      const text = file.data.toString('utf-8')
+      const lines = text.split(/\r?\n/).filter(r => r.trim())
+      if (lines.length < 2) {
+        throw createError({ statusCode: 400, message: 'CSV文件中没有数据' })
+      }
+      const parseCSVLine = (line: string) => {
+        const result: string[] = []
+        let current = '', inQuote = false
+        for (const ch of line) {
+          if (ch === '"') { inQuote = !inQuote }
+          else if (ch === ',' && !inQuote) { result.push(current.trim()); current = '' }
+          else { current += ch }
+        }
+        result.push(current.trim())
+        return result
+      }
+      const headers = parseCSVLine(lines[0]).map(h => h.replace(/^"|"$/g, ''))
+      jsonData = lines.slice(1).map(line => {
+        const values = parseCSVLine(line)
+        const row: Record<string, any> = {}
+        headers.forEach((h, i) => { row[h] = values[i] ?? '' })
+        return row
+      })
+    } else {
+      // Parse Excel
+      const XLSX = await import('xlsx')
+      const workbook = XLSX.read(file.data, { type: 'buffer' })
+      const sheetName = workbook.SheetNames[0]
+      const worksheet = workbook.Sheets[sheetName]
+      jsonData = XLSX.utils.sheet_to_json(worksheet) as Record<string, any>[]
+    }
 
     if (jsonData.length === 0) {
-      throw createError({ statusCode: 400, message: 'Excel文件中没有数据' })
+      throw createError({ statusCode: 400, message: '文件中没有数据' })
     }
 
     // Get original headers from first row
@@ -56,13 +86,13 @@ export default defineEventHandler(async (event) => {
 
     function parseDate(val: any): Date | null {
       if (!val) return null
-      // Handle Excel serial date number
-      if (typeof val === 'number') {
-        const date = XLSX.SSF.parse_date_code(val)
-        if (date) return new Date(date.y, date.m - 1, date.d)
-        return null
+      // Handle Excel serial date number (days since 1900-01-01, with the 1900 leap year bug)
+      if (typeof val === 'number' && val > 40000 && val < 60000) {
+        const excelEpoch = new Date(1899, 11, 30)
+        const d = new Date(excelEpoch.getTime() + val * 86400000)
+        return isNaN(d.getTime()) ? null : d
       }
-      const str = String(val).replace(/\./g, '-')
+      const str = String(val).replace(/\./g, '-').replace(/\//g, '-')
       const d = new Date(str)
       return isNaN(d.getTime()) ? null : d
     }
