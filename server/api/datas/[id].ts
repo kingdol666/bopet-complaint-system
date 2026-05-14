@@ -34,8 +34,10 @@ const updateSchema = z.object({
   attachments: z.array(z.object({
     fileName: z.string(),
     fileUrl: z.string(),
+    storagePath: z.string().optional().default(''),
     fileType: z.string(),
-    fileSize: z.number()
+    fileSize: z.number(),
+    contentHash: z.string().optional().default('')
   })).optional().nullable()
 })
 
@@ -160,8 +162,10 @@ export default defineEventHandler(async (event) => {
               dataId: record.id,
               fileName: a.fileName,
               fileUrl: a.fileUrl,
+              storagePath: a.storagePath || '',
               fileType: a.fileType,
               fileSize: a.fileSize,
+              contentHash: a.contentHash || '',
               uploadedById: currentUser.id
             }))
           })

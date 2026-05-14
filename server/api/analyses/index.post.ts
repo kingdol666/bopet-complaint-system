@@ -4,7 +4,11 @@ import { requireSessionUser } from '~/server/utils/auth'
 
 const createSchema = z.object({
   name: z.string().min(1, '名称不能为空').max(100),
-  config: z.object({}).passthrough()
+  config: z.object({}).passthrough(),
+  dashboardId: z.number().int().positive().nullable().optional(),
+  sortOrder: z.number().int().min(0).optional(),
+  gridW: z.number().int().min(1).max(3).optional(),
+  gridH: z.number().int().min(1).max(3).optional()
 })
 
 export default defineEventHandler(async (event) => {
@@ -17,7 +21,11 @@ export default defineEventHandler(async (event) => {
       data: {
         userId: user.id,
         name: validated.name,
-        config: JSON.stringify(validated.config)
+        config: JSON.stringify(validated.config),
+        dashboardId: validated.dashboardId ?? null,
+        sortOrder: validated.sortOrder ?? 0,
+        gridW: validated.gridW ?? 1,
+        gridH: validated.gridH ?? 1
       }
     })
 

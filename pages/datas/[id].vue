@@ -107,6 +107,51 @@
         </div>
       </div>
 
+      <!-- Image / Attachments Gallery -->
+      <div class="card mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+            </div>
+            <h2 class="section-title mb-0">附件与图片 ({{ images.length }})</h2>
+          </div>
+          <n-upload :multiple="true" accept="image/*,application/pdf" :show-file-list="false"
+            :custom-request="handleImageUpload">
+            <n-button size="small" type="primary">
+              <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg></template>
+              上传
+            </n-button>
+          </n-upload>
+        </div>
+        <div v-if="images.length" class="flex flex-wrap gap-3">
+          <div v-for="img in images" :key="img.id"
+            class="relative group w-32 h-32 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+            <img v-if="img.fileType?.startsWith('image/')" :src="img.fileUrl" class="w-full h-full object-cover" :alt="img.fileName"
+              @click="previewImage = img" />
+            <div v-else class="w-full h-full flex flex-col items-center justify-center text-gray-400 p-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              <span class="text-xs mt-1 truncate w-full text-center">{{ img.fileName }}</span>
+            </div>
+            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+              <n-button size="tiny" type="error" quaternary class="opacity-0 group-hover:opacity-100 transition-opacity"
+                @click="deleteImage(img.id)">
+                <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></template>
+              </n-button>
+            </div>
+            <p class="absolute bottom-0 left-0 right-0 text-xs text-white bg-black/50 px-1 py-0.5 truncate opacity-0 group-hover:opacity-100 transition-opacity">
+              {{ img.width }}x{{ img.height }}
+            </p>
+          </div>
+        </div>
+        <div v-else class="text-center py-8 text-gray-400 text-sm">暂无附件，点击「上传」添加</div>
+      </div>
+
+      <!-- Image preview modal -->
+      <n-modal v-model:show="previewVisible" preset="card" style="max-width:90vw;max-height:90vh" :title="previewImage?.fileName">
+        <img v-if="previewImage" :src="previewImage.fileUrl" style="max-width:100%;max-height:70vh;object-fit:contain" :alt="previewImage.fileName" />
+      </n-modal>
+
       <!-- Audit info -->
       <div class="card">
         <div class="flex items-center gap-2 mb-5">
@@ -271,6 +316,60 @@ function resolveDisplayValue(field: any, rec: any): string {
   return String(value)
 }
 
+// ─── Image management ─────────────────────────────
+const images = ref<any[]>([])
+const previewImage = ref<any>(null)
+const previewVisible = computed({
+  get: () => !!previewImage.value,
+  set: (v) => { if (!v) previewImage.value = null }
+})
+
+async function loadImages() {
+  const id = route.params.id
+  if (!id) return
+  try {
+    const resp = await $fetch('/api/images/' + id) as any
+    if (resp.success) images.value = resp.data || []
+  } catch (e) { /* ignore */ }
+}
+
+async function handleImageUpload(opts: any) {
+  const file: globalThis.File = (opts.file as any).file
+  if (!file) { opts.onError(); return }
+  const fd = new FormData()
+  fd.append('file', file)
+  try {
+    const id = route.params.id
+    const resp = await $fetch('/api/images/' + id, { method: 'POST', body: fd }) as any
+    if (resp.success) {
+      if (resp.data?.uploaded?.length) {
+        images.value = [...images.value, ...resp.data.uploaded]
+        message.success(`上传成功: ${resp.data.uploaded.map((u: any) => u.fileName).join(', ')}`)
+      }
+      if (resp.data?.errors?.length) {
+        message.warning(resp.data.errors.join('; '))
+      }
+    } else {
+      message.error(resp.message || '上传失败')
+    }
+    opts.onFinish()
+  } catch (e: any) {
+    message.error(e.data?.message || '上传失败')
+    opts.onError()
+  }
+}
+
+async function deleteImage(imageId: number) {
+  try {
+    const id = route.params.id
+    const resp = await $fetch(`/api/images/${id}/${imageId}`, { method: 'DELETE' }) as any
+    if (resp.success) {
+      images.value = images.value.filter(i => i.id !== imageId)
+      message.success('已删除')
+    }
+  } catch (e: any) { message.error('删除失败') }
+}
+
 // Load data
 onMounted(async () => {
   const id = route.params.id
@@ -321,6 +420,8 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
+  // Load images in background
+  loadImages()
 })
 
 function formatDateTime(date: string | Date) {

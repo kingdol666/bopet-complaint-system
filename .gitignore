@@ -33,6 +33,9 @@ Thumbs.db
 # Data files (large files, generated data)
 data/
 
+# OSS uploaded files
+oss-storage/
+
 # Prisma
 # Note: SQLite database files are now tracked in git for data persistence
 # prisma/*.db

@@ -68,19 +68,29 @@
           <div class="w-full">
             <n-upload :multiple="true" :max="10" accept="image/*,application/pdf,.doc,.docx"
               :custom-request="(opts: any) => handleUpload(opts, field.fieldKey)"
-              @remove="(opts: any) => handleRemove(opts, field.fieldKey)" @before-upload="handleBeforeUpload">
+              @remove="(opts: any) => handleRemove(opts, field.fieldKey)" @before-upload="handleBeforeUpload"
+              :default-file-list="getUploadFileList(field.fieldKey)">
               <n-button>
                 <template #icon>
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
-                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                  </svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                 </template>
                 上传文件
               </n-button>
             </n-upload>
-            <p class="text-xs text-gray-400 mt-1">支持图片、PDF格式，单文件不超过5MB</p>
+            <p class="text-xs text-gray-400 mt-1">支持图片、PDF，单文件不超过 10MB</p>
+            <!-- Image previews -->
+            <div v-if="getUploadFiles(field.fieldKey).length" class="flex flex-wrap gap-2 mt-2">
+              <div v-for="(f, fi) in getUploadFiles(field.fieldKey)" :key="fi"
+                class="relative group w-20 h-20 rounded-lg overflow-hidden border border-gray-200">
+                <img v-if="isImageType(f.fileType)" :src="f.fileUrl" class="w-full h-full object-cover" :alt="f.fileName" />
+                <div v-else class="w-full h-full flex items-center justify-center bg-gray-100">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                </div>
+                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <span class="text-white text-xs truncate px-1">{{ f.fileName }}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </n-form-item>
       </template>
@@ -210,6 +220,23 @@ function getAutoCompleteOptions(configType: string | null | undefined) {
 
 // Upload handling
 const uploadFiles = reactive<Record<string, any[]>>({})
+
+function isImageType(mime: string): boolean {
+  return mime?.startsWith('image/') && mime !== 'image/svg+xml'
+}
+
+function getUploadFiles(fieldKey: string): any[] {
+  return uploadFiles[fieldKey] || []
+}
+
+function getUploadFileList(fieldKey: string): any[] {
+  return (uploadFiles[fieldKey] || []).map((f: any) => ({
+    id: f.fileUrl || f.fileName,
+    name: f.fileName,
+    status: 'finished' as const,
+    url: f.fileUrl
+  }))
+}
 
 async function handleUpload(options: UploadCustomRequestOptions, fieldKey: string) {
   const file: globalThis.File = (options.file as any).file
