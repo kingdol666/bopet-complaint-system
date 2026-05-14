@@ -454,6 +454,7 @@ async function handleSubmit() {
       name: formData.name,
       description: formData.description,
       departmentId: formData.departmentId,
+      isPublic: formData.isPublic,
       enabled: formData.enabled,
       sortOrder: formData.sortOrder,
       fields: formData.fields

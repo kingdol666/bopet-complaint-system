@@ -151,25 +151,25 @@ export default defineEventHandler(async (event) => {
         include: dataInclude
       })
 
-      // Handle attachments: delete old, create new
+      // Handle attachments: delete old, create new (in transaction)
       if (attachments !== undefined) {
-        // Delete existing attachments for this data record
-        await prisma.dataAttachment.deleteMany({ where: { dataId: id } })
-        // Create new attachments
-        if (attachments && attachments.length > 0) {
-          await prisma.dataAttachment.createMany({
-            data: attachments.map(a => ({
-              dataId: record.id,
-              fileName: a.fileName,
-              fileUrl: a.fileUrl,
-              storagePath: a.storagePath || '',
-              fileType: a.fileType,
-              fileSize: a.fileSize,
-              contentHash: a.contentHash || '',
-              uploadedById: currentUser.id
-            }))
-          })
-        }
+        await prisma.$transaction(async (tx) => {
+          await tx.dataAttachment.deleteMany({ where: { dataId: id } })
+          if (attachments && attachments.length > 0) {
+            await tx.dataAttachment.createMany({
+              data: attachments.map(a => ({
+                dataId: record.id,
+                fileName: a.fileName,
+                fileUrl: a.fileUrl,
+                storagePath: a.storagePath || '',
+                fileType: a.fileType,
+                fileSize: a.fileSize,
+                contentHash: a.contentHash || '',
+                uploadedById: currentUser.id
+              }))
+            })
+          }
+        })
       }
 
       await prisma.operationLog.create({
@@ -230,20 +230,19 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    await prisma.dataRecord.delete({
-      where: { id }
-    })
-
-    await prisma.operationLog.create({
-      data: {
-        userId: currentUser.id,
-        action: 'delete',
-        module: 'data',
-        targetId: existing.id,
-        targetName: existing.dataNo,
-        detail: JSON.stringify({ dataNo: existing.dataNo })
-      }
-    })
+    await prisma.$transaction([
+      prisma.dataRecord.delete({ where: { id } }),
+      prisma.operationLog.create({
+        data: {
+          userId: currentUser.id,
+          action: 'delete',
+          module: 'data',
+          targetId: existing.id,
+          targetName: existing.dataNo,
+          detail: JSON.stringify({ dataNo: existing.dataNo })
+        }
+      })
+    ])
 
     return {
       success: true,

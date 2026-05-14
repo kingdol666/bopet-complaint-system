@@ -18,7 +18,7 @@ const DB_COLUMNS = new Set([
 const querySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   pageSize: z.coerce.number().int().positive().max(100).default(20),
-  sortBy: z.string().default('feedbackDate'),
+  sortBy: z.string().default('feedbackDate').refine(v => ['feedbackDate','createdAt','updatedAt','closureStatus','category','dataNo'].includes(v), { message: '无效的排序字段' }),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
   // Filters
   keyword: z.string().optional(),
@@ -146,7 +146,7 @@ export default defineEventHandler(async (event) => {
 
     // Template filter: search templateIds JSON string for the given templateId
     if (params.templateId) {
-      where.templateIds = { contains: String(params.templateId) }
+      where.templateIds = { contains: `"${params.templateId}"` }
     }
 
     // Dynamic filters: parse JSON string
@@ -172,7 +172,8 @@ export default defineEventHandler(async (event) => {
     let total = 0
 
     if (customFilters.length > 0) {
-      // Get all records matching DB filters (no pagination limit initially)
+      // Get records matching DB filters with a hard limit to avoid memory issues
+      const CUSTOM_FILTER_MEMORY_LIMIT = 5000
       const allRecords = await prisma.dataRecord.findMany({
         where,
         include: {
@@ -186,7 +187,8 @@ export default defineEventHandler(async (event) => {
         },
         orderBy: {
           [sortBy]: sortOrder
-        }
+        },
+        take: CUSTOM_FILTER_MEMORY_LIMIT
       })
 
       // Filter in memory for custom fields

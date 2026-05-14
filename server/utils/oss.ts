@@ -27,7 +27,7 @@ const PUBLIC_BASE = '/oss'
 
 /** 允许的图片 MIME 类型 */
 export const ALLOWED_IMAGE_TYPES = [
-  'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/bmp'
+  'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp'
 ]
 
 /** 允许的文档 MIME 类型 */

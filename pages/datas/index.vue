@@ -80,7 +80,7 @@
           </span>
         </div>
 
-        <div v-for="(row, idx) in dynamicFilters" :key="idx"
+        <div v-for="(row, rid) in dynamicFilters" :key="row.id"
           class="flex flex-wrap items-center gap-2 p-3 bg-corporate-50 rounded-lg">
           <!-- Field selector -->
           <n-select v-model:value="row.field" :options="filterFieldOptions" placeholder="选择字段" clearable
@@ -242,7 +242,8 @@ const selectedTemplateName = computed(() => {
   return t?.name || ''
 })
 const filterFieldConfigs = ref<any[]>([]) // Loaded filter fields from template
-const dynamicFilters = reactive<Array<{ field: string | null; operator: string; value: any; _dateValue: any }>>([])
+let filterId = 0
+const dynamicFilters = reactive<Array<{ id: number; field: string | null; operator: string; value: any; _dateValue: any }>>([])
 const activeFilterCount = computed(() => dynamicFilters.filter(r => r.field && r.value).length)
 
 const filterFieldOptions = computed(() =>
@@ -316,7 +317,7 @@ function onDynamicFieldChange(idx: number, newField: string) {
 }
 
 function addDynamicFilter() {
-  dynamicFilters.push({ field: null, operator: 'contains', value: null, _dateValue: null })
+  dynamicFilters.push({ id: ++filterId, field: null, operator: 'contains', value: null, _dateValue: null })
 }
 
 function removeDynamicFilter(idx: number) {
@@ -624,21 +625,24 @@ async function handleProcessedChange(row: any, value: string) {
 async function batchMarkProcessed() {
   if (checkedRowKeys.value.length === 0) return
   batchProcessing.value = true
-  let successCount = 0
   try {
-    for (const id of checkedRowKeys.value) {
-      try {
-        await $fetch(`/api/datas/${id}`, {
+    const results = await Promise.allSettled(
+      checkedRowKeys.value.map(id =>
+        $fetch(`/api/datas/${id}`, {
           method: 'PUT',
           headers: authStore.getAuthHeaders(),
           body: { closureStatus: 'closed' }
         })
-        // Update local data
-        const row = tableData.value.find((r: any) => r.id === id)
+      )
+    )
+    let successCount = 0
+    results.forEach((r, i) => {
+      if (r.status === 'fulfilled') {
+        const row = tableData.value.find((r2: any) => r2.id === checkedRowKeys.value[i])
         if (row) row.closureStatus = 'closed'
         successCount++
-      } catch { /* skip failed */ }
-    }
+      }
+    })
     message.success(`成功标记 ${successCount} 条为已处理`)
     checkedRowKeys.value = []
   } catch {
@@ -657,17 +661,16 @@ function batchDelete() {
     negativeText: '取消',
     onPositiveClick: async () => {
       batchProcessing.value = true
-      let successCount = 0
       try {
-        for (const id of checkedRowKeys.value) {
-          try {
-            await $fetch(`/api/datas/${id}`, {
+        const results = await Promise.allSettled(
+          checkedRowKeys.value.map(id =>
+            $fetch(`/api/datas/${id}`, {
               method: 'DELETE',
               headers: authStore.getAuthHeaders()
             })
-            successCount++
-          } catch { /* skip failed */ }
-        }
+          )
+        )
+        const successCount = results.filter(r => r.status === 'fulfilled').length
         message.success(`成功删除 ${successCount} 条记录`)
         checkedRowKeys.value = []
         await loadData()

@@ -191,6 +191,7 @@ import dayjs from 'dayjs'
 const route = useRoute()
 const router = useRouter()
 const message = useMessage()
+const authStore = useAuthStore()
 
 const loading = ref(true)
 const record = ref<any>(null)
@@ -328,9 +329,9 @@ async function loadImages() {
   const id = route.params.id
   if (!id) return
   try {
-    const resp = await $fetch('/api/images/' + id) as any
+    const resp = await $fetch('/api/images/' + id, { headers: authStore.getAuthHeaders() }) as any
     if (resp.success) images.value = resp.data || []
-  } catch (e) { /* ignore */ }
+  } catch (e) { message.error('加载附件失败') }
 }
 
 async function handleImageUpload(opts: any) {
@@ -340,7 +341,7 @@ async function handleImageUpload(opts: any) {
   fd.append('file', file)
   try {
     const id = route.params.id
-    const resp = await $fetch('/api/images/' + id, { method: 'POST', body: fd }) as any
+    const resp = await $fetch('/api/images/' + id, { method: 'POST', body: fd, headers: authStore.getAuthHeaders() }) as any
     if (resp.success) {
       if (resp.data?.uploaded?.length) {
         images.value = [...images.value, ...resp.data.uploaded]
@@ -362,7 +363,7 @@ async function handleImageUpload(opts: any) {
 async function deleteImage(imageId: number) {
   try {
     const id = route.params.id
-    const resp = await $fetch(`/api/images/${id}/${imageId}`, { method: 'DELETE' }) as any
+    const resp = await $fetch(`/api/images/${id}/${imageId}`, { method: 'DELETE', headers: authStore.getAuthHeaders() }) as any
     if (resp.success) {
       images.value = images.value.filter(i => i.id !== imageId)
       message.success('已删除')

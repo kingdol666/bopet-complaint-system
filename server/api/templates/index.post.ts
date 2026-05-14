@@ -24,55 +24,65 @@ const createTemplateSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-  const user = await requireWritePermission(event)
-  const body = await readBody(event)
-  const data = createTemplateSchema.parse(body)
+  try {
+    const user = await requireWritePermission(event)
+    const body = await readBody(event)
+    const data = createTemplateSchema.parse(body)
 
-  // Validate department access
-  // superadmin can create templates for any department
-  // admin can only create templates for their own departments
-  if (data.departmentId && !isSuperAdmin(user) && !canAccessDepartment(user, data.departmentId)) {
-    throw createError({ statusCode: 403, message: '无权为该部门创建模板' })
-  }
-
-  // Validate select-config fields have configType
-  for (const field of data.fields) {
-    if (field.fieldType === 'select-config' && !field.configType) {
-      throw createError({ statusCode: 400, message: `字段"${field.fieldLabel}"类型为配置选择，必须指定配置源` })
+    // Validate department access
+    // superadmin can create templates for any department
+    // admin can only create templates for their own departments
+    if (data.departmentId && !isSuperAdmin(user) && !canAccessDepartment(user, data.departmentId)) {
+      throw createError({ statusCode: 403, message: '无权为该部门创建模板' })
     }
-    if (field.fieldType === 'select' && !field.options) {
-      throw createError({ statusCode: 400, message: `字段"${field.fieldLabel}"类型为下拉选择，必须提供选项` })
-    }
-  }
 
-  const template = await prisma.formTemplate.create({
-    data: {
-      name: data.name,
-      description: data.description,
-      departmentId: data.departmentId,
-      enabled: data.enabled,
-      sortOrder: data.sortOrder,
-      createdById: user.id,
-      fields: {
-        create: data.fields.map((f, index) => ({
-          fieldKey: f.fieldKey,
-          fieldLabel: f.fieldLabel,
-          fieldType: f.fieldType,
-          required: f.required,
-          sortOrder: f.sortOrder ?? index,
-          options: f.options,
-          configType: f.configType,
-          defaultValue: f.defaultValue,
-          placeholder: f.placeholder
-        }))
+    // Validate select-config fields have configType
+    for (const field of data.fields) {
+      if (field.fieldType === 'select-config' && !field.configType) {
+        throw createError({ statusCode: 400, message: `字段"${field.fieldLabel}"类型为配置选择，必须指定配置源` })
       }
-    },
-    include: {
-      department: true,
-      createdBy: { select: { id: true, name: true } },
-      fields: { orderBy: { sortOrder: 'asc' } }
+      if (field.fieldType === 'select' && !field.options) {
+        throw createError({ statusCode: 400, message: `字段"${field.fieldLabel}"类型为下拉选择，必须提供选项` })
+      }
     }
-  })
 
-  return { success: true, data: template }
+    const template = await prisma.formTemplate.create({
+      data: {
+        name: data.name,
+        description: data.description,
+        departmentId: data.departmentId,
+        enabled: data.enabled,
+        sortOrder: data.sortOrder,
+        createdById: user.id,
+        fields: {
+          create: data.fields.map((f, index) => ({
+            fieldKey: f.fieldKey,
+            fieldLabel: f.fieldLabel,
+            fieldType: f.fieldType,
+            required: f.required,
+            sortOrder: f.sortOrder ?? index,
+            options: f.options,
+            configType: f.configType,
+            defaultValue: f.defaultValue,
+            placeholder: f.placeholder
+          }))
+        }
+      },
+      include: {
+        department: true,
+        createdBy: { select: { id: true, name: true } },
+        fields: { orderBy: { sortOrder: 'asc' } }
+      }
+    })
+
+    return { success: true, data: template }
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      throw createError({
+        statusCode: 400,
+        message: error.errors[0].message
+      })
+    }
+    throw error
+  }
 })

@@ -32,11 +32,13 @@
             <p class="text-3xl font-bold text-slate-900 mt-2">{{ stats.thisMonth }}</p>
             <div class="flex items-center gap-1 mt-1">
               <span
+                v-if="stats.momChange != null && !isNaN(parseFloat(stats.momChange))"
                 class="text-xs font-medium"
                 :class="parseFloat(stats.momChange) >= 0 ? 'text-red-500' : 'text-emerald-500'"
               >
                 {{ parseFloat(stats.momChange) >= 0 ? '↑' : '↓' }} {{ Math.abs(parseFloat(stats.momChange)) }}%
               </span>
+              <span v-else class="text-xs font-medium text-slate-400">--</span>
               <span class="text-xs text-slate-400">环比上月</span>
             </div>
           </div>
@@ -360,7 +362,6 @@ onMounted(async () => {
   await configStore.loadConfig()
   await loadStats()
   await loadTrend()
-  await loadTemplateStats()
   await loadRecentData()
 })
 
@@ -369,6 +370,7 @@ async function loadStats() {
     const response = await $fetch('/api/stats/overview')
     if (response.success) {
       stats.value = response.data
+      templateData.value = response.data.byTemplate || []
     }
   } catch (e) {
     console.error('Failed to load stats:', e)
@@ -383,17 +385,6 @@ async function loadTrend() {
     }
   } catch (e) {
     console.error('Failed to load trend:', e)
-  }
-}
-
-async function loadTemplateStats() {
-  try {
-    const response = await $fetch('/api/stats/overview')
-    if (response.success) {
-      templateData.value = response.data.byTemplate || []
-    }
-  } catch (e) {
-    console.error('Failed to load template stats:', e)
   }
 }
 

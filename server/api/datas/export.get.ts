@@ -88,7 +88,12 @@ export default defineEventHandler(async (event) => {
     if (params.closureStatus) where.closureStatus = params.closureStatus
     if (params.responsibleDeptId) where.responsibleDeptId = params.responsibleDeptId
 
-    // Get all matching records
+    // Check total count before export
+    const totalCount = await prisma.dataRecord.count({ where })
+    const EXPORT_LIMIT = 10000
+    const truncated = totalCount > EXPORT_LIMIT
+
+    // Get matching records with a hard limit to avoid memory issues
     const records = await prisma.dataRecord.findMany({
       where,
       include: {
@@ -100,7 +105,8 @@ export default defineEventHandler(async (event) => {
       },
       orderBy: {
         feedbackDate: 'desc'
-      }
+      },
+      take: EXPORT_LIMIT
     })
 
     // Add watermark / export info row
@@ -180,8 +186,11 @@ export default defineEventHandler(async (event) => {
       escapeCSV(r.updatedAt ? formatDateTimeSafe(r.updatedAt) : '')
     ])
 
+    const truncationWarning = truncated
+      ? `\n\u6CE8\u610F: \u67E5\u8BE2\u7ED3\u679C\u5171 ${totalCount} \u6761\uFF0C\u5DF2\u9650\u5236\u5BFC\u51FA\u524D ${EXPORT_LIMIT} \u6761\n`
+      : ''
     const watermarkLine = `\u5BFC\u51FA\u4EBA:${currentUser.name} \u5BFC\u51FA\u65F6\u95F4:${new Date().toISOString().slice(0, 10)} \u5185\u90E8\u4F7F\u7528\uFF0C\u8BF7\u52FF\u5916\u4F20`
-    const csvContent = '\uFEFF' + watermarkLine + '\n\n' + headers.join(',') + '\n' + rows.map(r => r.join(',')).join('\n')
+    const csvContent = '\uFEFF' + watermarkLine + truncationWarning + '\n' + headers.join(',') + '\n' + rows.map(r => r.join(',')).join('\n')
 
     // Set response headers for file download
     setResponseHeaders(event, {

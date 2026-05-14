@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client'
 import { prisma } from '~/server/utils/prisma'
 import { requireSessionUser, buildDepartmentFilter } from '~/server/utils/auth'
 
@@ -27,7 +28,7 @@ export default defineEventHandler(async (event) => {
     const templateId = query.templateId ? Number(query.templateId) : undefined
     const startDate = query.startDate ? new Date(query.startDate as string) : undefined
     const endDate = query.endDate ? new Date(query.endDate as string) : undefined
-    const limit = query.limit ? Number(query.limit) : 30
+    const limit = Math.min(Math.max(Number(query.limit) || 30, 1), 200)
 
     if (groupByFields.length === 0) {
       throw createError({ statusCode: 400, message: '缺少groupBy参数' })
@@ -159,18 +160,25 @@ export default defineEventHandler(async (event) => {
     const joinClauses: string[] = []
     const whereParts: string[] = ['1=1']
 
+    // Parameterized SQL values
+    const sqlParams: any[] = []
+
     // Department filter (data isolation for non-superadmin)
     if (deptIds && deptIds.length > 0) {
-      whereParts.push(`cr.responsibleDeptId IN (${deptIds.join(',')})`)
+      const placeholders = deptIds.map(() => '?').join(',')
+      whereParts.push(`cr.responsibleDeptId IN (${placeholders})`)
+      sqlParams.push(...deptIds)
     } else if (deptIds && deptIds.length === 0) {
       whereParts.push('cr.responsibleDeptId = -1')
     }
     // Date filter
     if (startDate) {
-      whereParts.push(`cr.feedbackDate >= '${startDate.toISOString().split('T')[0]}'`)
+      whereParts.push('cr.feedbackDate >= ?')
+      sqlParams.push(startDate.toISOString().split('T')[0])
     }
     if (endDate) {
-      whereParts.push(`cr.feedbackDate <= '${endDate.toISOString().split('T')[0]}'`)
+      whereParts.push('cr.feedbackDate <= ?')
+      sqlParams.push(endDate.toISOString().split('T')[0])
     }
 
     for (const field of groupByFields) {
@@ -204,26 +212,12 @@ export default defineEventHandler(async (event) => {
     const joinClause = joinClauses.join('\n  ')
     const whereClause = whereParts.join(' AND ')
 
-    // Count total matching RECORDS (not groups)
-    const countSQL = `
-      SELECT COUNT(*) as total FROM data_records cr
-      ${joinClause}
-      WHERE ${whereClause}
-    `
-    const countResult = await prisma.$queryRawUnsafe(countSQL) as any[]
+    const countSQL = `SELECT COUNT(*) as total FROM data_records cr ${joinClause} WHERE ${whereClause}`
+    const countResult = await prisma.$queryRawUnsafe(countSQL, ...sqlParams) as any[]
     const total = Number(countResult[0]?.total || 0)
 
-    // Data query
-    const dataSQL = `
-      SELECT ${selectClause}, COUNT(*) as _count
-      FROM data_records cr
-      ${joinClause}
-      WHERE ${whereClause}
-      GROUP BY ${groupClause}
-      ORDER BY _count DESC
-      LIMIT ${limit * 2}
-    `
-    const rawRows = await prisma.$queryRawUnsafe(dataSQL) as any[]
+    const dataSQL = `SELECT ${selectClause}, COUNT(*) as _count FROM data_records cr ${joinClause} WHERE ${whereClause} GROUP BY ${groupClause} ORDER BY _count DESC LIMIT ?`
+    const rawRows = await prisma.$queryRawUnsafe(dataSQL, ...sqlParams, limit * 2) as any[]
 
     const results = rawRows.map((r: any) => {
       const vals: string[] = []

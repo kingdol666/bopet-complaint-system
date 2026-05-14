@@ -133,36 +133,39 @@ export default defineEventHandler(async (event) => {
       }
 
       try {
-        const record = await prisma.dataRecord.create({
-          data: createData,
-          include: dataInclude
-        })
-
-        // Create attachment records if uploaded
-        if (data.attachments && data.attachments.length > 0) {
-          await prisma.dataAttachment.createMany({
-            data: data.attachments.map(a => ({
-              dataId: record.id,
-              fileName: a.fileName,
-              fileUrl: a.fileUrl,
-              storagePath: a.storagePath || '',
-              fileType: a.fileType,
-              fileSize: a.fileSize,
-              contentHash: a.contentHash || '',
-              uploadedById: currentUser.id
-            }))
+        const record = await prisma.$transaction(async (tx) => {
+          const r = await tx.dataRecord.create({
+            data: createData,
+            include: dataInclude
           })
-        }
 
-        await prisma.operationLog.create({
-          data: {
-            userId: currentUser.id,
-            action: 'create',
-            module: 'data',
-            targetId: record.id,
-            targetName: record.dataNo,
-            detail: JSON.stringify({ dataNo: record.dataNo })
+          if (data.attachments && data.attachments.length > 0) {
+            await tx.dataAttachment.createMany({
+              data: data.attachments.map(a => ({
+                dataId: r.id,
+                fileName: a.fileName,
+                fileUrl: a.fileUrl,
+                storagePath: a.storagePath || '',
+                fileType: a.fileType,
+                fileSize: a.fileSize,
+                contentHash: a.contentHash || '',
+                uploadedById: currentUser.id
+              }))
+            })
           }
+
+          await tx.operationLog.create({
+            data: {
+              userId: currentUser.id,
+              action: 'create',
+              module: 'data',
+              targetId: r.id,
+              targetName: r.dataNo,
+              detail: JSON.stringify({ dataNo: r.dataNo })
+            }
+          })
+
+          return r
         })
 
         return {

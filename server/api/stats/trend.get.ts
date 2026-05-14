@@ -10,22 +10,36 @@ export default defineEventHandler(async (event) => {
     // Department filter
     const deptFilter = buildDepartmentFilter(currentUser)
 
-    // Get monthly counts for the specified year
-    const records = await prisma.dataRecord.findMany({
-      where: {
-        ...deptFilter,
-        feedbackDate: {
-          gte: new Date(year, 0, 1),
-          lt: new Date(year + 1, 0, 1)
-        }
-      },
-      select: {
-        feedbackDate: true,
-        closureStatus: true
-      }
-    })
+    // Get monthly counts for the specified year using raw SQL (avoids loading all records into memory)
+    const yearStart = `${year}-01-01`
+    const yearEnd = `${year + 1}-01-01`
 
-    // Group by month
+    // Build department filter SQL clause
+    let deptSql = ''
+    const sqlParams: any[] = [yearStart, yearEnd]
+    if (deptFilter.departmentId) {
+      deptSql = 'AND departmentId = ?'
+      sqlParams.push(deptFilter.departmentId)
+    } else if (deptFilter.departmentId && (deptFilter as any).departmentId?.in) {
+      const ids = (deptFilter as any).departmentId.in as number[]
+      if (ids.length > 0) {
+        deptSql = `AND departmentId IN (${ids.map(() => '?').join(',')})`
+        sqlParams.push(...ids)
+      }
+    }
+
+    const rawResults = await prisma.$queryRawUnsafe<
+      Array<{ month: string; closureStatus: string; count: bigint }>
+    >(
+      `SELECT strftime('%m', feedbackDate) as month, closureStatus, COUNT(*) as count
+       FROM data_records
+       WHERE feedbackDate >= ? AND feedbackDate < ? ${deptSql}
+       GROUP BY month, closureStatus
+       ORDER BY month`,
+      ...sqlParams
+    )
+
+    // Build monthly data from raw results
     const monthlyData: Array<{
       month: number
       total: number
@@ -35,18 +49,17 @@ export default defineEventHandler(async (event) => {
     }> = []
 
     for (let month = 1; month <= 12; month++) {
-      const monthRecords = records.filter(r => {
-        const d = new Date(r.feedbackDate)
-        return d.getMonth() + 1 === month
-      })
-
-      monthlyData.push({
-        month,
-        total: monthRecords.length,
-        pending: monthRecords.filter(r => r.closureStatus === 'pending').length,
-        processing: monthRecords.filter(r => r.closureStatus === 'processing').length,
-        closed: monthRecords.filter(r => r.closureStatus === 'closed').length
-      })
+      const monthStr = String(month).padStart(2, '0')
+      const monthRows = rawResults.filter(r => r.month === monthStr)
+      let total = 0, pending = 0, processing = 0, closed = 0
+      for (const row of monthRows) {
+        const count = Number(row.count)
+        total += count
+        if (row.closureStatus === 'pending') pending = count
+        else if (row.closureStatus === 'processing') processing = count
+        else if (row.closureStatus === 'closed') closed = count
+      }
+      monthlyData.push({ month, total, pending, processing, closed })
     }
 
     return {

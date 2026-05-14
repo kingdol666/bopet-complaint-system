@@ -18,12 +18,12 @@
     <div class="px-4 py-3 space-y-2 bg-white border-b">
       <div class="grid grid-cols-2 gap-2">
         <n-select v-model:value="tid" :options="tplOpts" placeholder="选择模板" size="small" filterable clearable @update:value="onTemplateChange" />
-        <n-select v-model:value="gField" :options="fieldOpts" placeholder="选择分析字段" size="small" filterable :disabled="!tid" />
+        <n-select v-model:value="gField" :options="fieldOpts" placeholder="选择分析字段（可多选）" size="small" filterable multiple :disabled="!tid" :max-tag-count="3" />
       </div>
       <div class="grid grid-cols-3 gap-2">
         <n-select v-model:value="chartType" :options="chartOpts" size="small" />
         <n-date-picker v-model:value="dr" type="daterange" size="small" clearable placeholder="日期范围" />
-        <n-button type="primary" :loading="loading" :disabled="!gField" @click="run" size="small" block>开始分析</n-button>
+        <n-button type="primary" :loading="loading" :disabled="!gField.length" @click="run" size="small" block>开始分析</n-button>
       </div>
     </div>
 
@@ -83,7 +83,7 @@ const message = useMessage()
 const templates = ref<any[]>([])
 const fields = ref<any[]>([])
 const tid = ref<number | null>(props.initialConfig?.templateId || null)
-const gField = ref<string | null>(props.initialConfig?.groupByField || null)
+const gField = ref<string[]>(Array.isArray(props.initialConfig?.groupByField) ? props.initialConfig.groupByField : (props.initialConfig?.groupByField ? [props.initialConfig.groupByField] : []))
 const chartType = ref<string>(props.initialConfig?.chartType || 'bar')
 const dr = ref<[number, number] | null>(props.initialConfig?.dateRange ? [new Date(props.initialConfig.dateRange.start).getTime(), new Date(props.initialConfig.dateRange.end).getTime()] : null)
 const loading = ref(false)
@@ -95,7 +95,10 @@ const tableSearch = ref('')
 const tplOpts = computed(() => templates.value.map((t: any) => ({ label: t.name, value: t.id })))
 const fieldOpts = computed(() => fields.value.map((f: any) => ({ label: f.fieldLabel, value: f.fieldKey })))
 const chartOpts = [{ label: '柱状图', value: 'bar' }, { label: '横向柱状图', value: 'hbar' }, { label: '饼图', value: 'pie' }, { label: '环形图', value: 'donut' }]
-const fLabel = computed(() => fields.value.find((f: any) => f.fieldKey === gField.value)?.fieldLabel || gField.value || '')
+const fLabel = computed(() => {
+  if (!gField.value.length) return ''
+  return gField.value.map(k => fields.value.find((f: any) => f.fieldKey === k)?.fieldLabel || k).join(' / ')
+})
 const topItem = computed(() => data.value[0] || null)
 
 const cols = [
@@ -145,7 +148,7 @@ const chartOption = computed(() => {
 })
 
 async function onTemplateChange(val: number | null) {
-  fields.value = []; gField.value = null; result.value = false; data.value = []
+  fields.value = []; gField.value = []; result.value = false; data.value = []
   if (!val) return
   try {
     const resp = await $fetch(`/api/templates/${val}/filter-fields`) as any
@@ -154,9 +157,9 @@ async function onTemplateChange(val: number | null) {
 }
 
 async function run() {
-  if (!gField.value) return; loading.value = true; result.value = false; data.value = []
+  if (!gField.value.length) return; loading.value = true; result.value = false; data.value = []
   try {
-    const params: any = { groupBy: gField.value, limit: 30 }
+    const params: any = { groupBy: gField.value.join(','), limit: 30 }
     if (tid.value) params.templateId = tid.value
     if (dr.value) { params.startDate = dayjs(dr.value[0]).format('YYYY-MM-DD'); params.endDate = dayjs(dr.value[1]).format('YYYY-MM-DD') }
     const resp = await $fetch('/api/stats/custom', { params }) as any
@@ -179,6 +182,13 @@ function filterBy(name: string) { router.push(`/complaints?keyword=${encodeURICo
 
 onMounted(async () => {
   try { const r = await $fetch('/api/templates') as any; if (r.success) templates.value = r.data } catch (e) { console.error(e) }
-  if (props.initialConfig?.templateId) { tid.value = props.initialConfig.templateId; await onTemplateChange(props.initialConfig.templateId); gField.value = props.initialConfig.groupByField || null; await nextTick(); if (gField.value) run() }
+  if (props.initialConfig?.templateId) {
+    tid.value = props.initialConfig.templateId
+    await onTemplateChange(props.initialConfig.templateId)
+    const gbf = props.initialConfig.groupByField
+    gField.value = Array.isArray(gbf) ? gbf : (gbf ? [gbf] : [])
+    await nextTick()
+    if (gField.value.length) run()
+  }
 })
 </script>

@@ -55,14 +55,19 @@ export default defineEventHandler(async (event) => {
       ? ((thisMonth - lastMonth) / lastMonth * 100).toFixed(1)
       : '0'
 
-    // Template distribution - parse templateIds from all records
-    const allRecords = await prisma.dataRecord.findMany({
+    // Template distribution - use raw SQL to count records grouped by templateId
+    // templateIds is stored as a JSON string like "[1,2,3]"
+    // We use a raw SQL approach: fetch limited records and parse in JS to avoid loading all records
+    const TEMPLATE_STATS_LIMIT = 10000
+    const limitedRecords = await prisma.dataRecord.findMany({
       where: baseWhere,
-      select: { templateIds: true }
+      select: { templateIds: true },
+      orderBy: { id: 'desc' },
+      take: TEMPLATE_STATS_LIMIT
     })
 
     const templateCountMap: Record<number, number> = {}
-    for (const record of allRecords) {
+    for (const record of limitedRecords) {
       if (!record.templateIds) continue
       try {
         const ids: number[] = typeof record.templateIds === 'string'

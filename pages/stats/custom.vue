@@ -148,7 +148,9 @@
 
 <script setup lang="ts">
 import dayjs from 'dayjs'
+import { h } from 'vue'
 import { VueDraggableNext } from 'vue-draggable-next'
+import { NInput } from 'naive-ui'
 
 definePageMeta({ title: '自定义分析' })
 
@@ -173,6 +175,7 @@ const dashboardSaveModal = ref(false)
 const dashboardName = ref('')
 const dashboardDesc = ref('')
 const dashboardSaving = ref(false)
+const renameTarget = ref('')
 
 const gridColumns = computed(() => panels.value.length === 1 ? 1 : 2)
 
@@ -263,11 +266,18 @@ async function deleteSaved(id: number) {
 }
 
 function renameSaved(sa: any) {
-  // Simple prompt-based rename
-  const newName = prompt('输入新名称', sa.name)
-  if (newName && newName.trim()) {
-    $fetch(`/api/analyses/${sa.id}`, { method: 'PUT', body: { name: newName.trim() } }).then(() => refreshData())
-  }
+  dialog.create({
+    title: '重命名分析',
+    content: () => h(NInput, { defaultValue: sa.name, onInput: (v: string) => { renameTarget.value = v } }),
+    positiveText: '确定',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      const name = renameTarget.value?.trim()
+      if (!name) { message.error('名称不能为空'); return false }
+      try { await $fetch(`/api/analyses/${sa.id}`, { method: 'PUT', body: { name } }); await refreshData() }
+      catch (e: any) { message.error(e.data?.message || '重命名失败') }
+    }
+  })
 }
 
 async function loadDashboard(db: any) {
@@ -324,10 +334,18 @@ async function doSaveDashboard() {
 }
 
 function renameDashboard(db: any) {
-  const newName = prompt('输入新名称', db.name)
-  if (newName && newName.trim()) {
-    $fetch(`/api/dashboards/${db.id}`, { method: 'PUT', body: { name: newName.trim() } }).then(() => refreshData())
-  }
+  dialog.create({
+    title: '重命名看板',
+    content: () => h(NInput, { defaultValue: db.name, onInput: (v: string) => { renameTarget.value = v } }),
+    positiveText: '确定',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      const name = renameTarget.value?.trim()
+      if (!name) { message.error('名称不能为空'); return false }
+      try { await $fetch(`/api/dashboards/${db.id}`, { method: 'PUT', body: { name } }); await refreshData() }
+      catch (e: any) { message.error(e.data?.message || '重命名失败') }
+    }
+  })
 }
 
 async function deleteDashboard(id: number) {

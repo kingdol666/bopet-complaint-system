@@ -108,46 +108,41 @@ export default defineEventHandler(async (event) => {
     if (data.enabled !== undefined) updateData.enabled = data.enabled
     if (data.sortOrder !== undefined) updateData.sortOrder = data.sortOrder
 
-    // Handle fields update
+    // Handle fields update (in transaction)
     if (data.fields) {
-      const existingFields = await prisma.formTemplateField.findMany({ where: { templateId: id } })
-      const existingFieldIds = new Set(existingFields.map(f => f.id))
-      const incomingFieldIds = new Set(data.fields.filter(f => f.id).map(f => f.id!))
+      await prisma.$transaction(async (tx) => {
+        const existingFields = await tx.formTemplateField.findMany({ where: { templateId: id } })
+        const existingFieldIds = new Set(existingFields.map(f => f.id))
+        const incomingFieldIds = new Set(data.fields!.filter(f => f.id).map(f => f.id!))
 
-      // Delete removed fields
-      const toDelete = [...existingFieldIds].filter(fid => !incomingFieldIds.has(fid))
-      if (toDelete.length > 0) {
-        await prisma.formTemplateField.deleteMany({
-          where: { id: { in: toDelete }, templateId: id }
-        })
-      }
-
-      // Upsert fields
-      for (let i = 0; i < data.fields.length; i++) {
-        const f = data.fields[i]
-        const fieldData = {
-          fieldKey: f.fieldKey,
-          fieldLabel: f.fieldLabel,
-          fieldType: f.fieldType,
-          required: f.required,
-          sortOrder: f.sortOrder ?? i,
-          options: f.options,
-          configType: f.configType,
-          defaultValue: f.defaultValue,
-          placeholder: f.placeholder
-        }
-
-        if (f.id && existingFieldIds.has(f.id)) {
-          await prisma.formTemplateField.update({
-            where: { id: f.id },
-            data: fieldData
-          })
-        } else {
-          await prisma.formTemplateField.create({
-            data: { ...fieldData, templateId: id }
+        const toDelete = [...existingFieldIds].filter(fid => !incomingFieldIds.has(fid))
+        if (toDelete.length > 0) {
+          await tx.formTemplateField.deleteMany({
+            where: { id: { in: toDelete }, templateId: id }
           })
         }
-      }
+
+        for (let i = 0; i < data.fields!.length; i++) {
+          const f = data.fields![i]
+          const fieldData = {
+            fieldKey: f.fieldKey,
+            fieldLabel: f.fieldLabel,
+            fieldType: f.fieldType,
+            required: f.required,
+            sortOrder: f.sortOrder ?? i,
+            options: f.options,
+            configType: f.configType,
+            defaultValue: f.defaultValue,
+            placeholder: f.placeholder
+          }
+
+          if (f.id && existingFieldIds.has(f.id)) {
+            await tx.formTemplateField.update({ where: { id: f.id }, data: fieldData })
+          } else {
+            await tx.formTemplateField.create({ data: { ...fieldData, templateId: id } })
+          }
+        }
+      })
     }
 
     const template = await prisma.formTemplate.update({

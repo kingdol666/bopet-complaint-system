@@ -31,7 +31,9 @@ export default defineEventHandler(async (event) => {
   setResponseHeaders(event, {
     'Content-Type': result.mimeType,
     'Content-Length': result.buffer.length.toString(),
-    'Cache-Control': 'public, max-age=31536000, immutable'
+    'Cache-Control': 'public, max-age=31536000, immutable',
+    'X-Content-Type-Options': 'nosniff',
+    'Content-Security-Policy': "default-src 'none'"
   })
 
   return result.buffer

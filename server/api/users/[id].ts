@@ -73,7 +73,6 @@ export default defineEventHandler(async (event) => {
 
       // Update departments if provided
       if (data.departmentIds !== undefined) {
-        // Validate department IDs
         if (data.departmentIds.length > 0) {
           const depts = await prisma.responsibleDepartment.findMany({
             where: { id: { in: data.departmentIds }, enabled: true }
@@ -83,13 +82,14 @@ export default defineEventHandler(async (event) => {
           }
         }
 
-        // Delete old and create new
-        await prisma.userDepartment.deleteMany({ where: { userId: id } })
-        updateData.departments = {
-          create: data.departmentIds.map((deptId: number) => ({
-            departmentId: deptId
-          }))
-        }
+        await prisma.$transaction(async (tx) => {
+          await tx.userDepartment.deleteMany({ where: { userId: id } })
+          if (data.departmentIds!.length > 0) {
+            await tx.userDepartment.createMany({
+              data: data.departmentIds!.map((deptId: number) => ({ userId: id, departmentId: deptId }))
+            })
+          }
+        })
       }
 
       const user = await prisma.user.update({
@@ -130,9 +130,10 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 404, message: '用户不存在' })
     }
 
-    // Delete user departments first, then user
-    await prisma.userDepartment.deleteMany({ where: { userId: id } })
-    await prisma.user.delete({ where: { id } })
+    await prisma.$transaction([
+      prisma.userDepartment.deleteMany({ where: { userId: id } }),
+      prisma.user.delete({ where: { id } })
+    ])
 
     return {
       success: true,

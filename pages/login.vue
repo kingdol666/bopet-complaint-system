@@ -45,7 +45,7 @@
           </n-button>
         </n-form>
 
-        <div class="mt-6 p-4 rounded-xl bg-black/[0.02] border border-black/[0.04]">
+        <div v-if="isDev" class="mt-6 p-4 rounded-xl bg-black/[0.02] border border-black/[0.04]">
           <p class="text-[10px] text-slate-400 uppercase tracking-[0.15em] font-semibold mb-2.5">演示账户</p>
           <div class="space-y-1.5 text-[13px]">
             <div class="flex items-center justify-between"><span class="text-slate-500">管理员</span><code class="px-2 py-0.5 rounded-md bg-white/60 text-slate-600 text-[11px] font-mono border border-black/[0.04]">admin / admin123</code></div>
@@ -67,6 +67,7 @@ definePageMeta({ layout: false })
 
 const authStore = useAuthStore()
 const message = useMessage()
+const isDev = import.meta.dev
 const formRef = ref<FormInst | null>(null)
 const loading = ref(false)
 const formData = reactive({ username: '', password: '' })
