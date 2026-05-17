@@ -2,63 +2,84 @@
   <div class="animate-fade-in h-full flex flex-col custom-analysis-page">
     <!-- Page header -->
     <div class="flex items-center justify-between mb-4">
-      <div>
-        <h1 class="page-title mb-1">自定义分析</h1>
-        <p class="page-subtitle">
-          <template v-if="currentDashboard">看板：<span class="font-semibold text-primary-600">{{ currentDashboard.name }}</span>（{{ panels.length }} 个面板）</template>
-          <template v-else>拖拽排列面板，保存为看板组合，一键加载完整分析</template>
-        </p>
+      <div class="flex items-center gap-3">
+        <div>
+          <h1 class="page-title mb-0.5">自定义分析</h1>
+          <p class="page-subtitle">
+            <template v-if="currentDashboard">
+              看板：<span class="font-semibold text-primary-600">{{ currentDashboard.name }}</span>
+              <span class="text-gray-300 mx-1">·</span>
+              {{ panels.length }} 个面板
+            </template>
+            <template v-else>
+              选择模板和字段，自动生成可视化分析图表
+            </template>
+          </p>
+        </div>
       </div>
-      <div v-if="currentDashboard" class="flex gap-2">
-        <n-button size="small" @click="clearDashboard">退出看板</n-button>
-        <n-button size="small" type="primary" @click="openDashboardSaveModal">更新看板</n-button>
+      <div class="flex items-center gap-2">
+        <!-- Grid toggle -->
+        <n-button-group v-if="panels.length > 1" size="small">
+          <n-button :type="gridColumns === 1 ? 'primary' : 'default'" @click="setColumns(1)" size="small">
+            <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg></template>
+          </n-button>
+          <n-button :type="gridColumns === 2 ? 'primary' : 'default'" @click="setColumns(2)" size="small">
+            <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 9a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1v-5zm10-9a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zm0 9a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1h-4a1 1 0 01-1-1v-5z"/></svg></template>
+          </n-button>
+        </n-button-group>
+        <!-- Dashboard actions -->
+        <template v-if="currentDashboard">
+          <n-button size="small" @click="clearDashboard">退出看板</n-button>
+          <n-button size="small" type="primary" @click="openDashboardSaveModal">更新看板</n-button>
+        </template>
+        <!-- Save dashboard -->
+        <n-button v-else-if="panels.length > 1" size="small" type="primary" @click="openDashboardSaveModal">
+          <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 8a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zm12 0a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg></template>
+          保存为看板
+        </n-button>
       </div>
     </div>
 
     <div class="flex gap-4 flex-1 min-h-0">
       <!-- Left sidebar -->
-      <div class="w-64 shrink-0 flex flex-col gap-2 overflow-y-auto">
-        <div class="flex flex-col gap-2">
-          <n-button type="primary" block @click="addPanel()">
-            <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg></template>
-            新建分析面板
-          </n-button>
-          <n-button v-if="panels.length" block secondary @click="openDashboardSaveModal">
-            <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 8a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zm12 0a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg></template>
-            保存为看板
-          </n-button>
-        </div>
+      <div class="w-60 shrink-0 flex flex-col gap-3 overflow-y-auto pr-1">
+        <!-- New panel -->
+        <n-button type="primary" block @click="addPanel()" size="small">
+          <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg></template>
+          新建分析面板
+        </n-button>
 
-        <!-- Dashboards -->
+        <!-- My dashboards -->
         <div v-if="dashboards.length" class="card p-3">
           <div class="flex items-center justify-between mb-2">
-            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">我的看板</h3>
-            <n-tag size="tiny" :bordered="false">{{ dashboards.length }}</n-tag>
+            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">看板</h3>
+            <n-tag size="tiny" :bordered="false" type="info">{{ dashboards.length }}</n-tag>
           </div>
-          <div class="space-y-1">
+          <div class="space-y-0.5">
             <div v-for="db in dashboards" :key="db.id"
               class="group flex items-center justify-between p-2 rounded-lg hover:bg-blue-50 cursor-pointer transition-colors border border-transparent hover:border-blue-200"
-              :class="{ 'bg-blue-50 border-blue-200': currentDashboard?.id === db.id }" @click="loadDashboard(db)">
+              :class="{ 'bg-blue-50 border-blue-200': currentDashboard?.id === db.id }"
+              @click="loadDashboard(db)">
               <div class="min-w-0 flex-1">
                 <p class="text-sm font-medium text-gray-700 truncate">{{ db.name }}</p>
                 <p class="text-xs text-gray-400">{{ db._count?.analyses || 0 }} 面板 · {{ dayjs(db.updatedAt).format('MM-DD HH:mm') }}</p>
               </div>
-              <div class="hidden group-hover:flex items-center gap-0.5 shrink-0">
+              <div class="hidden group-hover:flex items-center gap-0.5 shrink-0 ml-1">
                 <n-button size="tiny" quaternary @click.stop="renameDashboard(db)">
-                  <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></template>
+                  <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></template>
                 </n-button>
                 <n-button size="tiny" quaternary type="error" @click.stop="deleteDashboard(db.id)">
-                  <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></template>
+                  <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></template>
                 </n-button>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Independent panels -->
+        <!-- Saved panels -->
         <div v-if="independentAnalyses.length" class="card p-3">
-          <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">独立面板</h3>
-          <div class="space-y-1">
+          <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">已保存面板</h3>
+          <div class="space-y-0.5">
             <div v-for="sa in independentAnalyses" :key="sa.id"
               class="group flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors border border-transparent hover:border-gray-200"
               @click="loadSaved(sa)">
@@ -66,22 +87,23 @@
                 <p class="text-sm font-medium text-gray-700 truncate">{{ sa.name }}</p>
                 <p class="text-xs text-gray-400">{{ dayjs(sa.updatedAt).format('MM-DD HH:mm') }}</p>
               </div>
-              <div class="hidden group-hover:flex items-center gap-0.5 shrink-0">
+              <div class="hidden group-hover:flex items-center gap-0.5 shrink-0 ml-1">
                 <n-button size="tiny" quaternary @click.stop="renameSaved(sa)">
-                  <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></template>
+                  <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></template>
                 </n-button>
                 <n-button size="tiny" quaternary type="error" @click.stop="deleteSaved(sa.id)">
-                  <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></template>
+                  <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></template>
                 </n-button>
               </div>
             </div>
           </div>
         </div>
 
-        <div v-if="!dashboards.length && !independentAnalyses.length" class="card p-6 text-center flex flex-col items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
-          <p class="text-xs text-gray-400">还没有保存的分析</p>
-          <p class="text-xs text-gray-400 mt-1">运行分析后点击「保存配置」</p>
+        <!-- Nothing saved -->
+        <div v-if="!dashboards.length && !independentAnalyses.length" class="card p-4 text-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-300 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+          <p class="text-xs text-gray-400">暂无保存的分析</p>
+          <p class="text-xs text-gray-400 mt-0.5">点击面板内「保存」按钮</p>
         </div>
       </div>
 
@@ -89,33 +111,51 @@
       <div class="flex-1 min-w-0 overflow-y-auto">
         <div v-if="panels.length">
           <ClientOnly>
-            <VueDraggableNext v-model="panels" :animation="200" handle=".drag-handle" ghost-class="ghost-panel" @end="onDragEnd" :class="gridColumns === 1 ? 'panels-grid-1' : 'panels-grid-2'">
+            <VueDraggableNext
+              v-model="panels"
+              :animation="200"
+              handle=".drag-handle"
+              ghost-class="ghost-panel"
+              @end="onDragEnd"
+              :class="gridColumns === 1 ? 'panels-grid-1' : 'panels-grid-2'"
+            >
               <div v-for="p in panels" :key="p.key" :class="gridSpanClass(p.gridW)">
-                <div class="relative h-full">
-                  <div class="drag-handle absolute -left-1 top-1/2 -translate-y-1/2 w-6 h-12 flex items-center justify-center cursor-grab opacity-0 hover:opacity-100 group-hover:opacity-60 transition-opacity z-10 rounded hover:bg-gray-100">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" /></svg>
+                <div class="relative h-full group/panel">
+                  <!-- Drag handle -->
+                  <div class="drag-handle absolute -left-1 top-1/2 -translate-y-1/2 w-6 h-12 flex items-center justify-center cursor-grab opacity-0 group-hover/panel:opacity-60 hover:!opacity-100 transition-opacity z-10 rounded hover:bg-gray-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
                   </div>
-                  <AnalysisPanel :panel-id="p.key" :title="p.title" :saved-analysis-id="p.savedAnalysisId" :initial-config="p.config" :grid-w="p.gridW"
+                  <AnalysisPanel
+                    :panel-id="p.key"
+                    :title="p.title"
+                    :saved-analysis-id="p.savedAnalysisId"
+                    :initial-config="p.config"
+                    :grid-w="p.gridW"
                     @delete="(panelId: number) => handleRemovePanel(panelId)"
                     @save="(cfg: any) => handleSaveConfig(p, cfg)"
-                    @resize="(w: number) => { p.gridW = w; onPanelChange() }" />
+                  />
                 </div>
               </div>
             </VueDraggableNext>
           </ClientOnly>
         </div>
 
-        <div v-else class="card py-20 text-center flex flex-col items-center justify-center">
-          <div class="w-20 h-20 rounded-2xl bg-primary-50 flex items-center justify-center mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+        <!-- Empty canvas -->
+        <div v-else class="h-full flex items-center justify-center">
+          <div class="text-center max-w-sm">
+            <div class="w-16 h-16 rounded-2xl bg-primary-50 flex items-center justify-center mx-auto mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-700 mb-1">开始自定义分析</h3>
+            <p class="text-sm text-gray-400">
+              点击左侧「新建分析面板」创建分析，或加载已保存的看板。面板支持拖拽排序、自由排列，可保存为看板组合一键复用。
+            </p>
           </div>
-          <h3 class="text-lg font-semibold text-gray-700 mb-1">开始自定义分析</h3>
-          <p class="text-sm text-gray-400 max-w-md">点击左侧「新建分析面板」按钮，选择模板和字段，系统将自动生成可视化图表和统计表格。拖拽面板左侧手柄可调整排列顺序，支持保存为看板组合一键加载。</p>
         </div>
       </div>
     </div>
 
-    <!-- Modals... -->
+    <!-- Save analysis modal -->
     <n-modal v-model:show="saveModal" preset="card" title="保存分析配置" style="width:500px">
       <n-form-item label="分析名称" required>
         <n-input v-model:value="saveName" placeholder="例如：客诉分类月度分析" />
@@ -129,6 +169,7 @@
       </template>
     </n-modal>
 
+    <!-- Save dashboard modal -->
     <n-modal v-model:show="dashboardSaveModal" preset="card" :title="currentDashboard ? '更新看板' : '保存为看板'" style="width:500px">
       <n-form-item label="看板名称" required>
         <n-input v-model:value="dashboardName" placeholder="例如：月度质量分析看板" />
@@ -163,6 +204,7 @@ const allSavedAnalyses = ref<any[]>([])
 let nextKey = 1
 
 const currentDashboard = ref<any>(null)
+const preferredColumns = ref(2)
 
 const independentAnalyses = computed(() => allSavedAnalyses.value.filter((sa: any) => !sa.dashboardId))
 
@@ -177,7 +219,12 @@ const dashboardDesc = ref('')
 const dashboardSaving = ref(false)
 const renameTarget = ref('')
 
-const gridColumns = computed(() => panels.value.length === 1 ? 1 : 2)
+const gridColumns = computed(() => {
+  if (panels.value.length <= 1) return 1
+  return preferredColumns.value
+})
+
+function setColumns(n: number) { preferredColumns.value = n }
 
 function gridSpanClass(w: number) {
   const span = Math.min(Math.max(w || 1, 1), 3)
@@ -185,7 +232,13 @@ function gridSpanClass(w: number) {
 }
 
 function addPanel(config?: any, savedAnalysisId?: number | null, title?: string, gridW = 1, gridH = 1) {
-  panels.value.push({ key: nextKey++, title: title || `分析面板 ${panels.value.length + 1}`, savedAnalysisId: savedAnalysisId || null, gridW, gridH, config: config || null })
+  panels.value.push({
+    key: nextKey++,
+    title: title || `分析面板 ${panels.value.length + 1}`,
+    savedAnalysisId: savedAnalysisId || null,
+    gridW, gridH,
+    config: config || null
+  })
   nextTick(() => {
     const el = document.querySelector('.flex-1.min-w-0.overflow-y-auto')
     if (el) el.scrollTop = el.scrollHeight

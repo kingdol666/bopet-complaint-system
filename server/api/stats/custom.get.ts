@@ -29,18 +29,156 @@ export default defineEventHandler(async (event) => {
     const startDate = query.startDate ? new Date(query.startDate as string) : undefined
     const endDate = query.endDate ? new Date(query.endDate as string) : undefined
     const limit = Math.min(Math.max(Number(query.limit) || 30, 1), 200)
+    const mode = (query.mode as string) || 'group'
+    const timeFieldRaw = (query.timeField as string) || undefined
+    // Normalize built-in time fields (strip __ prefix)
+    const timeField = timeFieldRaw?.startsWith('__') ? timeFieldRaw.slice(2) : timeFieldRaw
 
     if (groupByFields.length === 0) {
       throw createError({ statusCode: 400, message: '缺少groupBy参数' })
     }
 
-    // Fetch template field definitions (for labels and FK detection)
+    // Fetch template field definitions (for labels, FK detection, and field types)
     let templateFieldMap = new Map<string, any>()
     if (templateId) {
+      const lookupKeys = [...groupByFields]
+      if (timeField && !lookupKeys.includes(timeField)) lookupKeys.push(timeField)
       const tplFields = await prisma.formTemplateField.findMany({
-        where: { templateId, fieldKey: { in: groupByFields } }
+        where: { templateId, fieldKey: { in: lookupKeys } }
       })
       for (const f of tplFields) templateFieldMap.set(f.fieldKey, f)
+    }
+
+    // ─── Trend mode for numeric fields ───
+    if (mode === 'trend' && groupByFields.length === 1) {
+      const field = groupByFields[0]
+      const templateField = templateFieldMap.get(field) || null
+      const isColumnField = COLUMN_FIELDS.has(field)
+
+      // Build date filter
+      const whereParts: string[] = ['1=1']
+      const sqlParams: any[] = []
+      if (deptIds && deptIds.length > 0) {
+        const placeholders = deptIds.map(() => '?').join(',')
+        whereParts.push(`responsibleDeptId IN (${placeholders})`)
+        sqlParams.push(...deptIds)
+      } else if (deptIds && deptIds.length === 0) {
+        whereParts.push('responsibleDeptId = -1')
+      }
+      if (startDate) {
+        whereParts.push('feedbackDate >= ?')
+        sqlParams.push(startDate.toISOString().split('T')[0])
+      }
+      if (endDate) {
+        whereParts.push('feedbackDate <= ?')
+        sqlParams.push(endDate.toISOString().split('T')[0])
+      }
+
+      // Numeric value extraction
+      let valueExpr: string
+      if (isColumnField) {
+        valueExpr = `CAST("${field}" AS REAL)`
+        whereParts.push(`"${field}" IS NOT NULL`)
+      } else {
+        const safeKey = field.replace(/[^\w一-鿿-]/g, '')
+        valueExpr = `CAST(json_extract(templateData, '$.${safeKey}') AS REAL)`
+        whereParts.push(`json_extract(templateData, '$.${safeKey}') IS NOT NULL`)
+      }
+
+      const whereClause = whereParts.join(' AND ')
+
+      // Resolve time field
+      const builtinTimeFields = new Set(['feedbackDate', 'createdAt'])
+      let timeExpr = 'rowid'
+      let timeLabel = '序号'
+      let hasTimeField = false
+
+      if (timeField) {
+        if (builtinTimeFields.has(timeField)) {
+          timeExpr = timeField === 'feedbackDate' ? 'feedbackDate' : 'createdAt'
+          timeLabel = timeField === 'feedbackDate' ? '反馈日期' : '创建时间'
+          hasTimeField = true
+        } else {
+          // Template date field stored in templateData JSON or column
+          const safeTimeKey = timeField.replace(/[^\w一-鿿-]/g, '')
+          if (COLUMN_FIELDS.has(timeField)) {
+            timeExpr = `"${timeField}"`
+          } else {
+            timeExpr = `json_extract(templateData, '$.${safeTimeKey}')`
+          }
+          const tf = templateFieldMap.get(timeField)
+          timeLabel = tf?.fieldLabel || timeField
+          hasTimeField = true
+        }
+      }
+
+      if (hasTimeField) {
+        // Group by time field, AVG the numeric value
+        const timeSelect = builtinTimeFields.has(timeField!)
+          ? `strftime('%Y-%m-%d', ${timeExpr}) as time_val`
+          : `CAST(${timeExpr} AS TEXT) as time_val`
+
+        const statsSQL = `SELECT COUNT(*) as cnt, AVG(${valueExpr}) as avg_val, MIN(${valueExpr}) as min_val, MAX(${valueExpr}) as max_val FROM data_records WHERE ${whereClause}`
+        const statsResult = await prisma.$queryRawUnsafe(statsSQL, ...sqlParams) as any[]
+        const stats = statsResult[0]
+
+        const dataSQL = `SELECT ${timeSelect}, AVG(${valueExpr}) as num_val FROM data_records WHERE ${whereClause} GROUP BY time_val ORDER BY time_val ASC LIMIT ?`
+        const rows = await prisma.$queryRawUnsafe(dataSQL, ...sqlParams, limit) as any[]
+
+        const total = Number(stats?.cnt || 0)
+        const results = rows.map((r: any) => ({
+          name: r.time_val || String(r.time_val),
+          value: Number(Number(r.num_val).toFixed(2))
+        }))
+
+        return {
+          success: true,
+          data: {
+            groupBy: field, fields: [field],
+            fieldLabels: [templateField?.fieldLabel || field],
+            total, mode: 'trend',
+            timeField: timeField || null, timeLabel,
+            stats: {
+              avg: Number(Number(stats?.avg_val || 0).toFixed(2)),
+              min: Number(Number(stats?.min_val || 0).toFixed(2)),
+              max: Number(Number(stats?.max_val || 0).toFixed(2)),
+              count: total
+            },
+            results
+          }
+        }
+      } else {
+        // No time field — return all records in row order
+        const statsSQL = `SELECT COUNT(*) as cnt, AVG(${valueExpr}) as avg_val, MIN(${valueExpr}) as min_val, MAX(${valueExpr}) as max_val FROM data_records WHERE ${whereClause}`
+        const statsResult = await prisma.$queryRawUnsafe(statsSQL, ...sqlParams) as any[]
+        const stats = statsResult[0]
+
+        const dataSQL = `SELECT rowid as seq, ${valueExpr} as num_val FROM data_records WHERE ${whereClause} ORDER BY rowid ASC LIMIT ?`
+        const rows = await prisma.$queryRawUnsafe(dataSQL, ...sqlParams, limit) as any[]
+
+        const total = Number(stats?.cnt || 0)
+        const results = rows.map((r: any, i: number) => ({
+          name: String(i + 1),
+          value: Number(Number(r.num_val).toFixed(2))
+        }))
+
+        return {
+          success: true,
+          data: {
+            groupBy: field, fields: [field],
+            fieldLabels: [templateField?.fieldLabel || field],
+            total, mode: 'trend',
+            timeField: null, timeLabel: '序号',
+            stats: {
+              avg: Number(Number(stats?.avg_val || 0).toFixed(2)),
+              min: Number(Number(stats?.min_val || 0).toFixed(2)),
+              max: Number(Number(stats?.max_val || 0).toFixed(2)),
+              count: total
+            },
+            results
+          }
+        }
+      }
     }
 
     // ─── Single-field path (keep existing logic) ───
