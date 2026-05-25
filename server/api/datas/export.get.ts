@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
-import { requireSessionUser, buildDepartmentFilter } from '~/server/utils/auth'
+import { requireSessionUser, requireWritePermission, buildDepartmentFilter } from '~/server/utils/auth'
 
 // Query schema for filtering (same as list)
 const querySchema = z.object({
@@ -50,6 +50,7 @@ function formatDateTimeSafe(date: Date | string): string {
 export default defineEventHandler(async (event) => {
   try {
     const currentUser = await requireSessionUser(event)
+    await requireWritePermission(event)
     const query = await getQuery(event)
     const params = querySchema.parse(query)
 

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
-import { requireSessionUser } from '~/server/utils/auth'
+import { requireWritePermission } from '~/server/utils/auth'
 
 const updateSchema = z.object({
   name: z.string().min(1).max(100).optional(),
@@ -11,7 +11,7 @@ const updateSchema = z.object({
 
 export default defineEventHandler(async (event) => {
   try {
-    const user = await requireSessionUser(event)
+    const user = await requireWritePermission(event)
     const id = Number.parseInt(getRouterParam(event, 'id') || '0')
     const body = await readBody(event)
     const validated = updateSchema.parse(body)

@@ -1,9 +1,9 @@
 import { prisma } from '~/server/utils/prisma'
-import { requireSessionUser } from '~/server/utils/auth'
+import { requireWritePermission } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   try {
-    const user = await requireSessionUser(event)
+    const user = await requireWritePermission(event)
     const id = Number.parseInt(getRouterParam(event, 'id') || '0')
 
     const existing = await prisma.savedAnalysis.findUnique({ where: { id } })

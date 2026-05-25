@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
-import { requireSessionUser } from '~/server/utils/auth'
+import { requireWritePermission } from '~/server/utils/auth'
 
 const createSchema = z.object({
   name: z.string().min(1, '名称不能为空').max(100),
@@ -13,7 +13,7 @@ const createSchema = z.object({
 
 export default defineEventHandler(async (event) => {
   try {
-    const user = await requireSessionUser(event)
+    const user = await requireWritePermission(event)
     const body = await readBody(event)
     const validated = createSchema.parse(body)
 
