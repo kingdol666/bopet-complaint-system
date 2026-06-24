@@ -1,145 +1,145 @@
 <template>
-  <div class="analysis-panel border rounded-xl bg-white shadow-sm overflow-hidden">
-    <!-- Header -->
-    <div class="flex items-center justify-between px-4 py-2.5 bg-gray-50 border-b">
-      <div class="flex items-center gap-2 min-w-0">
-        <div class="w-1.5 h-5 rounded-full" :class="result ? 'bg-green-400' : 'bg-gray-300'" />
-        <span class="text-sm font-semibold text-gray-700 truncate">{{ displayTitle }}</span>
-        <n-tag v-if="result" :type="isTrendMode ? 'success' : 'info'" size="tiny" :bordered="false">
-          {{ trendStats ? trendStats.count + '点' : total + '条' }}
-        </n-tag>
-      </div>
-      <div class="flex items-center gap-0.5 shrink-0">
-        <n-button v-if="result" size="tiny" quaternary @click="exportCSV" title="导出CSV">
-          <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></template>
-        </n-button>
-        <n-button v-if="result" size="tiny" quaternary type="primary" @click="$emit('save', currentConfig)" title="保存配置">
-          <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg></template>
-        </n-button>
-        <n-button size="tiny" quaternary type="error" @click="$emit('delete', panelId)" title="移除面板">
-          <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></template>
-        </n-button>
+  <div class="analysis-panel">
+    <div class="panel-header">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="panel-status-indicator" :class="result ? 'active' : 'inactive'" />
+          <span class="panel-title">{{ displayTitle }}</span>
+          <n-tag v-if="result" :type="isTrendMode ? 'success' : 'primary'" size="small" :bordered="false" class="data-count-tag">
+            {{ trendStats ? trendStats.count + '点' : total + '条' }}
+          </n-tag>
+        </div>
+        <div class="flex items-center gap-1 shrink-0 panel-actions">
+          <n-button v-if="result" size="small" quaternary @click="exportCSV" title="导出CSV" class="action-btn">
+            <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></template>
+          </n-button>
+          <n-button v-if="result" size="small" quaternary type="primary" @click="$emit('save', currentConfig)" title="保存配置" class="action-btn">
+            <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-4 4m0 0l-4-4m4 4V4"/></svg></template>
+          </n-button>
+          <n-button size="small" quaternary type="error" @click="$emit('delete', panelId)" title="移除面板" class="action-btn">
+            <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></template>
+          </n-button>
+        </div>
       </div>
     </div>
 
-    <!-- Controls area -->
-    <div class="px-4 py-3 space-y-2.5 bg-white border-b">
-      <!-- Step 1: Template -->
-      <div class="flex items-center gap-2">
-        <span class="text-xs text-gray-400 w-5 shrink-0">1.</span>
-        <n-select v-model:value="tid" :options="tplOpts" placeholder="选择数据模板" size="small" filterable clearable @update:value="onTemplateChange" class="flex-1" />
+    <div class="panel-controls">
+      <div class="control-row">
+        <div class="control-step-badge">1</div>
+        <n-select v-model:value="tid" :options="tplOpts" placeholder="选择数据模板" size="small" filterable clearable @update:value="onTemplateChange" class="control-select" />
       </div>
 
-      <!-- Step 2: Fields + Chart type -->
-      <div class="flex items-center gap-2">
-        <span class="text-xs text-gray-400 w-5 shrink-0">2.</span>
-        <n-select v-model:value="gField" :options="fieldOpts" placeholder="选择分析字段（可多选）" size="small" filterable multiple :disabled="!tid" :max-tag-count="3" @update:value="onFieldChange" class="flex-1" />
-        <n-select v-model:value="chartType" :options="chartOpts" size="small" style="width:110px" :disabled="!gField.length" />
+      <div class="control-row">
+        <div class="control-step-badge">2</div>
+        <n-select v-model:value="gField" :options="fieldOpts" placeholder="选择分析字段（可多选）" size="small" filterable multiple :disabled="!tid" :max-tag-count="3" @update:value="onFieldChange" class="control-select control-select-flex" />
+        <n-select v-model:value="chartType" :options="chartOpts" size="small" class="control-select-chart" :disabled="!gField.length" />
       </div>
 
-      <!-- Step 3: Filters (date + time) -->
-      <div class="flex items-center gap-2">
-        <span class="text-xs text-gray-400 w-5 shrink-0">3.</span>
-        <n-date-picker v-model:value="dr" type="daterange" size="small" clearable placeholder="日期范围筛选" class="flex-1" @update:value="onFilterChange" />
+      <div class="control-row">
+        <div class="control-step-badge">3</div>
+        <n-date-picker v-model:value="dr" type="daterange" size="small" clearable placeholder="日期范围筛选" class="control-select" @update:value="onFilterChange" />
         <Transition name="slide-fade">
-          <n-select v-if="isNumericField && chartType === 'line'" v-model:value="timeField" :options="timeOpts" size="small" style="width:150px" placeholder="时间列（可选）" clearable @update:value="onFilterChange" />
+          <n-select v-if="isNumericField && chartType === 'line'" v-model:value="timeField" :options="timeOpts" size="small" class="control-select-time" placeholder="时间列（可选）" clearable @update:value="onFilterChange" />
         </Transition>
       </div>
     </div>
 
-    <!-- Loading -->
-    <div v-if="loading" class="px-4 py-16 text-center">
-      <n-spin size="medium" />
-      <p class="text-xs text-gray-400 mt-3">正在加载数据...</p>
-    </div>
-
-    <!-- Empty state -->
-    <div v-if="!loading && !result && !tid" class="px-4 py-12 text-center text-gray-400">
-      <div class="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+    <div v-if="loading" class="panel-loading">
+      <div class="loading-spinner">
+        <div class="spinner-ring"></div>
+        <div class="spinner-ring"></div>
+        <div class="spinner-ring"></div>
       </div>
-      <p class="text-sm font-medium">选择模板开始分析</p>
-      <p class="text-xs mt-1">选择一个数据模板和字段，自动生成可视化图表</p>
+      <p class="loading-text">正在加载数据...</p>
     </div>
 
-    <div v-if="!loading && !result && tid && !gField.length" class="px-4 py-12 text-center text-gray-400">
-      <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center mx-auto mb-3">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7M4 7c0-2 1-3 3-3h10c2 0 3 1 3 3M4 7h16M9 11h6"/></svg>
+    <div v-if="!loading && !result && !tid" class="panel-empty">
+      <div class="empty-icon-wrapper">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
       </div>
-      <p class="text-sm font-medium">请选择分析字段</p>
-      <p class="text-xs mt-1">选中字段后将自动进行分析</p>
+      <p class="empty-title">选择模板开始分析</p>
+      <p class="empty-desc">选择一个数据模板和字段，自动生成可视化图表</p>
     </div>
 
-    <!-- Results -->
+    <div v-if="!loading && !result && tid && !gField.length" class="panel-empty">
+      <div class="empty-icon-wrapper blue">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7M4 7c0-2 1-3 3-3h10c2 0 3 1 3 3M4 7h16M9 11h6"/></svg>
+      </div>
+      <p class="empty-title">请选择分析字段</p>
+      <p class="empty-desc">选中字段后将自动进行分析</p>
+    </div>
+
     <template v-if="result && !loading">
-      <!-- Trend mode summary bar -->
-      <div v-if="isTrendMode && trendStats" class="flex items-center divide-x divide-gray-200 px-4 py-2.5 bg-gradient-to-r from-blue-50 to-white border-b">
-        <div class="flex-1 text-center">
-          <p class="text-[10px] text-gray-400 uppercase tracking-wide">数据点</p>
-          <p class="text-sm font-bold text-gray-700">{{ trendStats.count }}</p>
+      <div v-if="isTrendMode && trendStats" class="stats-bar trend-bar">
+        <div class="stat-item">
+          <p class="stat-label">数据点</p>
+          <p class="stat-value">{{ trendStats.count }}</p>
         </div>
-        <div class="flex-1 text-center">
-          <p class="text-[10px] text-gray-400 uppercase tracking-wide">均值</p>
-          <p class="text-sm font-bold text-blue-600">{{ trendStats.avg }}</p>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <p class="stat-label">均值</p>
+          <p class="stat-value text-blue-600">{{ trendStats.avg }}</p>
         </div>
-        <div class="flex-1 text-center">
-          <p class="text-[10px] text-gray-400 uppercase tracking-wide">最小</p>
-          <p class="text-sm font-bold text-green-600">{{ trendStats.min }}</p>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <p class="stat-label">最小</p>
+          <p class="stat-value text-green-600">{{ trendStats.min }}</p>
         </div>
-        <div class="flex-1 text-center">
-          <p class="text-[10px] text-gray-400 uppercase tracking-wide">最大</p>
-          <p class="text-sm font-bold text-amber-600">{{ trendStats.max }}</p>
-        </div>
-      </div>
-
-      <!-- Group mode summary bar -->
-      <div v-else class="flex items-center divide-x divide-gray-200 px-4 py-2.5 bg-gradient-to-r from-gray-50 to-white border-b">
-        <div class="flex-1 text-center">
-          <p class="text-[10px] text-gray-400 uppercase tracking-wide">总计</p>
-          <p class="text-sm font-bold text-gray-700">{{ total }}</p>
-        </div>
-        <div class="flex-1 text-center">
-          <p class="text-[10px] text-gray-400 uppercase tracking-wide">分类</p>
-          <p class="text-sm font-bold text-primary-600">{{ data.length }}</p>
-        </div>
-        <div class="flex-1 text-center">
-          <p class="text-[10px] text-gray-400 uppercase tracking-wide">最高项</p>
-          <p class="text-xs font-semibold text-gray-700 truncate px-1" :title="topItem?.name">{{ topItem?.name || '-' }}</p>
-        </div>
-        <div class="flex-1 text-center">
-          <p class="text-[10px] text-gray-400 uppercase tracking-wide">占比</p>
-          <p class="text-sm font-bold text-amber-600">{{ topItem?.percentage || '0' }}%</p>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <p class="stat-label">最大</p>
+          <p class="stat-value text-amber-600">{{ trendStats.max }}</p>
         </div>
       </div>
 
-      <!-- Chart -->
-      <div class="px-4 py-3" style="height:290px">
+      <div v-else class="stats-bar">
+        <div class="stat-item">
+          <p class="stat-label">总计</p>
+          <p class="stat-value">{{ total }}</p>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <p class="stat-label">分类</p>
+          <p class="stat-value text-primary-600">{{ data.length }}</p>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item stat-item-wide">
+          <p class="stat-label">最高项</p>
+          <p class="stat-value stat-value-truncate" :title="topItem?.name">{{ topItem?.name || '-' }}</p>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <p class="stat-label">占比</p>
+          <p class="stat-value text-amber-600">{{ topItem?.percentage || '0' }}%</p>
+        </div>
+      </div>
+
+      <div class="chart-container">
         <ClientOnly>
-          <v-chart v-if="data.length" :option="chartOption" autoresize style="height:100%" />
-          <div v-else class="h-full flex items-center justify-center text-gray-400 text-sm">无数据可显示</div>
+          <v-chart v-if="data.length" :option="chartOption" autoresize class="chart" />
+          <div v-else class="chart-empty">无数据可显示</div>
         </ClientOnly>
       </div>
 
-      <!-- Table -->
-      <div class="px-4 pb-3">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-xs text-gray-400">{{ isTrendMode ? '趋势' : '分布' }}明细</span>
-          <n-input v-model:value="tableSearch" size="tiny" placeholder="搜索..." clearable style="width:130px" />
+      <div class="table-section">
+        <div class="table-header">
+          <span class="table-title">{{ isTrendMode ? '趋势' : '分布' }}明细</span>
+          <n-input v-model:value="tableSearch" size="small" placeholder="搜索..." clearable class="table-search" />
         </div>
         <n-data-table
           :columns="isTrendMode ? trendCols : cols"
           :data="filteredData"
           size="small"
-          :max-height="200"
+          :max-height="220"
           :bordered="false"
           :single-line="false"
           virtual-scroll
+          class="modern-table"
         />
       </div>
 
-      <!-- Tags (group mode only) -->
-      <div v-if="!isTrendMode && data.length" class="px-4 pb-3 flex flex-wrap gap-1">
-        <n-tag v-for="d in data.slice(0, 10)" :key="d.name" size="small" closable type="info" @click="filterBy(d.name)">
+      <div v-if="!isTrendMode && data.length" class="tags-section">
+        <n-tag v-for="d in data.slice(0, 10)" :key="d.name" size="small" closable type="info" @click="filterBy(d.name)" class="data-tag">
           {{ d.name }} ({{ d.count }})
         </n-tag>
       </div>
@@ -177,8 +177,6 @@ const tableSearch = ref('')
 const trendStats = ref<{ avg: number; min: number; max: number; count: number } | null>(null)
 const isTrendMode = ref(false)
 const timeField = ref<string | null>(null)
-
-// ── Computed ──
 
 const selectedTemplateName = computed(() => {
   if (!tid.value) return ''
@@ -264,12 +262,9 @@ const currentConfig = computed(() => ({
 
 const COLORS = ['#ef4444','#f97316','#f59e0b','#84cc16','#22c55e','#14b8a6','#06b6d4','#3b82f6','#8b5cf6','#ec4899','#6366f1','#0ea5e9','#10b981','#f43f5e','#a855f7','#d946ef']
 
-// ── Chart config ──
-
 const chartOption = computed(() => {
   const d = data.value; if (!d.length) return {}
   if (chartType.value === 'line') {
-    // Determine if X axis values look like dates
     const isDateX = d.length > 0 && /^\d{4}-\d{2}-\d{2}/.test(String(d[0].name))
     return {
       tooltip: {
@@ -319,7 +314,6 @@ const chartOption = computed(() => {
   }
   if (chartType.value === 'pie' || chartType.value === 'donut') {
     const innerRadius = chartType.value === 'donut' ? ['40%', '70%'] : ['0%', '65%']
-    // Only show top 12 in pie, others grouped
     const pieData = d.length > 12
       ? [...d.slice(0, 12).map((x: any, i: number) => ({ name: x.name, value: x.count, itemStyle: { color: COLORS[i % 16] } })), { name: '其他', value: d.slice(12).reduce((s: number, x: any) => s + x.count, 0), itemStyle: { color: '#d1d5db' } }]
       : d.map((x: any, i: number) => ({ name: x.name, value: x.count, itemStyle: { color: COLORS[i % 16] } }))
@@ -347,7 +341,6 @@ const chartOption = computed(() => {
   }
 })
 
-// ── Auto-run timer ──
 let autoRunTimer: ReturnType<typeof setTimeout> | null = null
 
 function scheduleRun() {
@@ -355,8 +348,6 @@ function scheduleRun() {
   if (!gField.value.length) return
   autoRunTimer = setTimeout(() => run(), 300)
 }
-
-// ── Event handlers ──
 
 async function onTemplateChange(val: number | null) {
   fields.value = []; gField.value = []; result.value = false; data.value = []; trendStats.value = null; isTrendMode.value = false; timeField.value = null
@@ -368,18 +359,15 @@ async function onTemplateChange(val: number | null) {
 }
 
 function onFieldChange() {
-  // Auto-adapt chart type based on field type
   if (isNumericField.value && chartType.value !== 'line') {
     chartType.value = 'line'
   } else if (!isNumericField.value && chartType.value === 'line') {
     chartType.value = 'bar'
   }
-  // Auto-run on field change
   scheduleRun()
 }
 
 function onFilterChange() {
-  // Auto-run when filters change (if already have results)
   if (result.value || gField.value.length) scheduleRun()
 }
 
@@ -410,8 +398,6 @@ async function run() {
   } finally { loading.value = false }
 }
 
-// ── Export ──
-
 function exportCSV() {
   if (!data.value.length) return
   const BOM = '\uFEFF'
@@ -430,8 +416,6 @@ function exportCSV() {
 }
 
 function filterBy(name: string) { router.push(`/complaints?keyword=${encodeURIComponent(name)}`) }
-
-// ── Init ──
 
 onMounted(async () => {
   try { const r = await $fetch('/api/templates') as any; if (r.success) templates.value = r.data } catch (e) { console.error(e) }
@@ -452,16 +436,335 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.analysis-panel {
+  background: #ffffff;
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+.analysis-panel:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.panel-header {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  padding: 0.875rem 1.25rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.panel-status-indicator {
+  width: 0.375rem;
+  height: 1.25rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+  transition: background-color 0.3s ease;
+}
+
+.panel-status-indicator.active {
+  background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.4);
+}
+
+.panel-status-indicator.inactive {
+  background: #cbd5e1;
+}
+
+.panel-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.data-count-tag {
+  font-weight: 500;
+}
+
+.panel-actions {
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.analysis-panel:hover .panel-actions {
+  opacity: 1;
+}
+
+.action-btn {
+  transition: all 0.2s ease;
+}
+
+.panel-controls {
+  padding: 1rem 1.25rem;
+  background: #ffffff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.control-step-badge {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+  color: #ffffff;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(14, 165, 233, 0.2);
+}
+
+.control-select {
+  flex: 1;
+}
+
+.control-select-flex {
+  flex: 1;
+}
+
+.control-select-chart {
+  width: 110px;
+  flex-shrink: 0;
+}
+
+.control-select-time {
+  width: 150px;
+  flex-shrink: 0;
+}
+
+.panel-loading {
+  padding: 3rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.loading-spinner {
+  position: relative;
+  width: 3rem;
+  height: 3rem;
+}
+
+.spinner-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 3px solid transparent;
+  border-radius: 50%;
+  animation: spin 1.5s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+
+.spinner-ring:nth-child(1) {
+  border-top-color: #0ea5e9;
+  animation-delay: -0.45s;
+}
+
+.spinner-ring:nth-child(2) {
+  border-top-color: #6366f1;
+  animation-delay: -0.3s;
+}
+
+.spinner-ring:nth-child(3) {
+  border-top-color: #8b5cf6;
+  animation-delay: -0.15s;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 0.8125rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.panel-empty {
+  padding: 2.5rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.empty-icon-wrapper {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  color: #94a3b8;
+}
+
+.empty-icon-wrapper.blue {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #3b82f6;
+}
+
+.empty-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #475569;
+  margin: 0;
+}
+
+.empty-desc {
+  font-size: 0.8125rem;
+  color: #94a3b8;
+  margin-top: 0.375rem;
+  max-width: 20rem;
+}
+
+.stats-bar {
+  display: flex;
+  align-items: center;
+  padding: 0.875rem 1.25rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.stats-bar.trend-bar {
+  background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+}
+
+.stat-item {
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+}
+
+.stat-item-wide {
+  flex: 1.5;
+}
+
+.stat-label {
+  font-size: 0.625rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.25rem 0;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.stat-value-truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.8125rem;
+}
+
+.stat-divider {
+  width: 1px;
+  height: 2rem;
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.08) 50%, transparent 100%);
+  flex-shrink: 0;
+}
+
+.chart-container {
+  padding: 1rem 1.25rem;
+  height: 290px;
+  background: #ffffff;
+}
+
+.chart {
+  width: 100%;
+  height: 100%;
+}
+
+.chart-empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #cbd5e1;
+  font-size: 0.875rem;
+}
+
+.table-section {
+  padding: 0 1.25rem 1rem 1.25rem;
+}
+
+.table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.625rem;
+}
+
+.table-title {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.table-search {
+  width: 130px;
+}
+
+.modern-table {
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.tags-section {
+  padding: 0 1.25rem 1rem 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.data-tag {
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.data-tag:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 .slide-fade-enter-active {
   transition: all 0.25s ease-out;
 }
+
 .slide-fade-leave-active {
   transition: all 0.15s ease-in;
 }
+
 .slide-fade-enter-from {
   opacity: 0;
   transform: translateX(8px);
 }
+
 .slide-fade-leave-to {
   opacity: 0;
   transform: translateX(8px);

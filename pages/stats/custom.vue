@@ -1,75 +1,110 @@
 <template>
-  <div class="animate-fade-in h-full flex flex-col custom-analysis-page">
-    <!-- Page header -->
-    <div class="flex items-center justify-between mb-4">
-      <div class="flex items-center gap-3">
-        <div>
-          <h1 class="page-title mb-0.5">自定义分析</h1>
-          <p class="page-subtitle">
+  <div class="analysis-page-wrapper">
+    <!-- Modern page header with gradient background -->
+    <div class="analysis-header">
+      <div class="header-content">
+        <div class="flex items-start justify-between">
+          <div class="flex items-center gap-4">
+            <div class="header-icon-wrapper">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+            <div>
+              <h1 class="analysis-page-title">自定义分析</h1>
+              <p class="analysis-page-subtitle">
+                <template v-if="currentDashboard">
+                  看板：<span class="font-semibold text-primary-600">{{ currentDashboard.name }}</span>
+                  <span class="text-gray-300 mx-2">·</span>
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary-50 text-primary-600 text-xs font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                    {{ panels.length }} 个面板
+                  </span>
+                </template>
+                <template v-else>
+                  选择模板和字段，自动生成可视化分析图表
+                </template>
+              </p>
+            </div>
+          </div>
+          
+          <!-- Action buttons -->
+          <div class="flex items-center gap-2">
+            <!-- Grid toggle -->
+            <n-button-group v-if="panels.length > 1" class="grid-toggle">
+              <n-button :type="gridColumns === 1 ? 'primary' : 'default'" @click="setColumns(1)">
+                <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg></template>
+              </n-button>
+              <n-button :type="gridColumns === 2 ? 'primary' : 'default'" @click="setColumns(2)">
+                <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 9a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1v-5zm10-9a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zm0 9a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1h-4a1 1 0 01-1-1v-5z"/></svg></template>
+              </n-button>
+            </n-button-group>
+            
+            <!-- Dashboard actions -->
             <template v-if="currentDashboard">
-              看板：<span class="font-semibold text-primary-600">{{ currentDashboard.name }}</span>
-              <span class="text-gray-300 mx-1">·</span>
-              {{ panels.length }} 个面板
+              <n-button class="action-btn" @click="clearDashboard">
+                <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></template>
+                退出看板
+              </n-button>
+              <n-button type="primary" class="action-btn-primary" @click="openDashboardSaveModal">
+                <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></template>
+                更新看板
+              </n-button>
             </template>
-            <template v-else>
-              选择模板和字段，自动生成可视化分析图表
-            </template>
-          </p>
+            
+            <!-- Save dashboard -->
+            <n-button v-else-if="panels.length > 1" type="primary" class="action-btn-primary" @click="openDashboardSaveModal">
+              <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 8a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zm12 0a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg></template>
+              保存为看板
+            </n-button>
+          </div>
         </div>
-      </div>
-      <div class="flex items-center gap-2">
-        <!-- Grid toggle -->
-        <n-button-group v-if="panels.length > 1" size="small">
-          <n-button :type="gridColumns === 1 ? 'primary' : 'default'" @click="setColumns(1)" size="small">
-            <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg></template>
-          </n-button>
-          <n-button :type="gridColumns === 2 ? 'primary' : 'default'" @click="setColumns(2)" size="small">
-            <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 9a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1v-5zm10-9a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zm0 9a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1h-4a1 1 0 01-1-1v-5z"/></svg></template>
-          </n-button>
-        </n-button-group>
-        <!-- Dashboard actions -->
-        <template v-if="currentDashboard">
-          <n-button size="small" @click="clearDashboard">退出看板</n-button>
-          <n-button size="small" type="primary" @click="openDashboardSaveModal">更新看板</n-button>
-        </template>
-        <!-- Save dashboard -->
-        <n-button v-else-if="panels.length > 1" size="small" type="primary" @click="openDashboardSaveModal">
-          <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 8a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zm12 0a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg></template>
-          保存为看板
-        </n-button>
       </div>
     </div>
 
-    <div class="flex gap-4 flex-1 min-h-0">
+    <!-- Main content area -->
+    <div class="analysis-content">
       <!-- Left sidebar -->
-      <div class="w-60 shrink-0 flex flex-col gap-3 overflow-y-auto pr-1">
-        <!-- New panel -->
-        <n-button type="primary" block @click="addPanel()" size="small">
-          <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg></template>
-          新建分析面板
+      <div class="analysis-sidebar">
+        <!-- New panel button -->
+        <n-button type="primary" block class="new-panel-btn" @click="addPanel()">
+          <template #icon>
+            <div class="btn-icon-circle">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+            </div>
+          </template>
+          <span class="btn-text">新建分析面板</span>
         </n-button>
 
         <!-- My dashboards -->
-        <div v-if="dashboards.length" class="card p-3">
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">看板</h3>
-            <n-tag size="tiny" :bordered="false" type="info">{{ dashboards.length }}</n-tag>
+        <div v-if="dashboards.length" class="sidebar-card">
+          <div class="sidebar-card-header">
+            <div class="header-left">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 8a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zm12 0a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
+              <h3>我的看板</h3>
+            </div>
+            <n-tag :bordered="false" type="info" size="small" class="count-badge">{{ dashboards.length }}</n-tag>
           </div>
-          <div class="space-y-0.5">
+          <div class="sidebar-list">
             <div v-for="db in dashboards" :key="db.id"
-              class="group flex items-center justify-between p-2 rounded-lg hover:bg-blue-50 cursor-pointer transition-colors border border-transparent hover:border-blue-200"
-              :class="{ 'bg-blue-50 border-blue-200': currentDashboard?.id === db.id }"
+              class="sidebar-list-item"
+              :class="{ 'active': currentDashboard?.id === db.id }"
               @click="loadDashboard(db)">
-              <div class="min-w-0 flex-1">
-                <p class="text-sm font-medium text-gray-700 truncate">{{ db.name }}</p>
-                <p class="text-xs text-gray-400">{{ db._count?.analyses || 0 }} 面板 · {{ dayjs(db.updatedAt).format('MM-DD HH:mm') }}</p>
+              <div class="item-content">
+                <div class="item-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                </div>
+                <div class="item-text">
+                  <p class="item-title">{{ db.name }}</p>
+                  <p class="item-meta">{{ db._count?.analyses || 0 }} 面板 · {{ dayjs(db.updatedAt).format('MM-DD HH:mm') }}</p>
+                </div>
               </div>
-              <div class="hidden group-hover:flex items-center gap-0.5 shrink-0 ml-1">
-                <n-button size="tiny" quaternary @click.stop="renameDashboard(db)">
-                  <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></template>
+              <div class="item-actions">
+                <n-button size="tiny" quaternary circle @click.stop="renameDashboard(db)">
+                  <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></template>
                 </n-button>
-                <n-button size="tiny" quaternary type="error" @click.stop="deleteDashboard(db.id)">
-                  <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></template>
+                <n-button size="tiny" quaternary circle type="error" @click.stop="deleteDashboard(db.id)">
+                  <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></template>
                 </n-button>
               </div>
             </div>
@@ -77,22 +112,33 @@
         </div>
 
         <!-- Saved panels -->
-        <div v-if="independentAnalyses.length" class="card p-3">
-          <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">已保存面板</h3>
-          <div class="space-y-0.5">
+        <div v-if="independentAnalyses.length" class="sidebar-card">
+          <div class="sidebar-card-header">
+            <div class="header-left">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+              <h3>已保存面板</h3>
+            </div>
+            <n-tag :bordered="false" type="default" size="small" class="count-badge">{{ independentAnalyses.length }}</n-tag>
+          </div>
+          <div class="sidebar-list">
             <div v-for="sa in independentAnalyses" :key="sa.id"
-              class="group flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors border border-transparent hover:border-gray-200"
+              class="sidebar-list-item"
               @click="loadSaved(sa)">
-              <div class="min-w-0 flex-1">
-                <p class="text-sm font-medium text-gray-700 truncate">{{ sa.name }}</p>
-                <p class="text-xs text-gray-400">{{ dayjs(sa.updatedAt).format('MM-DD HH:mm') }}</p>
+              <div class="item-content">
+                <div class="item-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                </div>
+                <div class="item-text">
+                  <p class="item-title">{{ sa.name }}</p>
+                  <p class="item-meta">{{ dayjs(sa.updatedAt).format('MM-DD HH:mm') }}</p>
+                </div>
               </div>
-              <div class="hidden group-hover:flex items-center gap-0.5 shrink-0 ml-1">
-                <n-button size="tiny" quaternary @click.stop="renameSaved(sa)">
-                  <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></template>
+              <div class="item-actions">
+                <n-button size="tiny" quaternary circle @click.stop="renameSaved(sa)">
+                  <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></template>
                 </n-button>
-                <n-button size="tiny" quaternary type="error" @click.stop="deleteSaved(sa.id)">
-                  <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></template>
+                <n-button size="tiny" quaternary circle type="error" @click.stop="deleteSaved(sa.id)">
+                  <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></template>
                 </n-button>
               </div>
             </div>
@@ -100,16 +146,18 @@
         </div>
 
         <!-- Nothing saved -->
-        <div v-if="!dashboards.length && !independentAnalyses.length" class="card p-4 text-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-300 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
-          <p class="text-xs text-gray-400">暂无保存的分析</p>
-          <p class="text-xs text-gray-400 mt-0.5">点击面板内「保存」按钮</p>
+        <div v-if="!dashboards.length && !independentAnalyses.length" class="sidebar-empty">
+          <div class="empty-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+          </div>
+          <p class="empty-title">暂无保存的分析</p>
+          <p class="empty-desc">创建分析后可保存为看板</p>
         </div>
       </div>
 
       <!-- Main panels area -->
-      <div class="flex-1 min-w-0 overflow-y-auto">
-        <div v-if="panels.length">
+      <div class="analysis-main">
+        <div v-if="panels.length" class="panels-container">
           <ClientOnly>
             <VueDraggableNext
               v-model="panels"
@@ -120,10 +168,10 @@
               :class="gridColumns === 1 ? 'panels-grid-1' : 'panels-grid-2'"
             >
               <div v-for="p in panels" :key="p.key" :class="gridSpanClass(p.gridW)">
-                <div class="relative h-full group/panel">
+                <div class="panel-wrapper">
                   <!-- Drag handle -->
-                  <div class="drag-handle absolute -left-1 top-1/2 -translate-y-1/2 w-6 h-12 flex items-center justify-center cursor-grab opacity-0 group-hover/panel:opacity-60 hover:!opacity-100 transition-opacity z-10 rounded hover:bg-gray-100">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
+                  <div class="drag-handle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
                   </div>
                   <AnalysisPanel
                     :panel-id="p.key"
@@ -141,22 +189,30 @@
         </div>
 
         <!-- Empty canvas -->
-        <div v-else class="h-full flex items-center justify-center">
-          <div class="text-center max-w-sm">
-            <div class="w-16 h-16 rounded-2xl bg-primary-50 flex items-center justify-center mx-auto mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        <div v-else class="empty-canvas">
+          <div class="empty-canvas-content">
+            <div class="empty-canvas-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
             </div>
-            <h3 class="text-lg font-semibold text-gray-700 mb-1">开始自定义分析</h3>
-            <p class="text-sm text-gray-400">
+            <h3 class="empty-canvas-title">开始自定义分析</h3>
+            <p class="empty-canvas-desc">
               点击左侧「新建分析面板」创建分析，或加载已保存的看板。面板支持拖拽排序、自由排列，可保存为看板组合一键复用。
             </p>
+            <n-button type="primary" size="large" class="mt-4" @click="addPanel()">
+              <template #icon>
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+              </template>
+              创建第一个分析面板
+            </n-button>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Save analysis modal -->
-    <n-modal v-model:show="saveModal" preset="card" title="保存分析配置" style="width:500px">
+    <n-modal v-model:show="saveModal" preset="card" title="保存分析配置" style="width:500px" class="modern-modal">
       <n-form-item label="分析名称" required>
         <n-input v-model:value="saveName" placeholder="例如：客诉分类月度分析" />
       </n-form-item>
@@ -170,7 +226,7 @@
     </n-modal>
 
     <!-- Save dashboard modal -->
-    <n-modal v-model:show="dashboardSaveModal" preset="card" :title="currentDashboard ? '更新看板' : '保存为看板'" style="width:500px">
+    <n-modal v-model:show="dashboardSaveModal" preset="card" :title="currentDashboard ? '更新看板' : '保存为看板'" style="width:500px" class="modern-modal">
       <n-form-item label="看板名称" required>
         <n-input v-model:value="dashboardName" placeholder="例如：月度质量分析看板" />
       </n-form-item>
@@ -240,7 +296,7 @@ function addPanel(config?: any, savedAnalysisId?: number | null, title?: string,
     config: config || null
   })
   nextTick(() => {
-    const el = document.querySelector('.flex-1.min-w-0.overflow-y-auto')
+    const el = document.querySelector('.analysis-main')
     if (el) el.scrollTop = el.scrollHeight
   })
 }
@@ -403,36 +459,476 @@ function renameDashboard(db: any) {
 
 async function deleteDashboard(id: number) {
   dialog.warning({
-    title: '确认删除看板', content: '删除看板后，看板中的面板配置仍会保留（变为独立面板）。确定要删除吗？',
+    title: '确认删除看板', content: '删除后无法恢复，确定要删除这个看板吗？',
     positiveText: '删除', negativeText: '取消',
     onPositiveClick: async () => {
-      try { await $fetch(`/api/dashboards/${id}`, { method: 'DELETE' }); message.success('看板已删除'); if (currentDashboard.value?.id === id) currentDashboard.value = null; await refreshData() }
+      try { await $fetch(`/api/dashboards/${id}`, { method: 'DELETE' }); message.success('删除成功'); if (currentDashboard.value?.id === id) clearDashboard(); await refreshData() }
       catch (e: any) { message.error(e.data?.message || '删除失败') }
     }
   })
 }
 
-async function refreshData() { await Promise.all([loadDashboardList(), loadSavedList()]) }
-async function loadDashboardList() {
-  try { const resp = await $fetch('/api/dashboards') as any; if (resp.success) dashboards.value = resp.data } catch (e) { console.error(e) }
-}
-async function loadSavedList() {
-  try { const resp = await $fetch('/api/analyses') as any; if (resp.success) allSavedAnalyses.value = resp.data } catch (e) { console.error(e) }
+async function refreshData() {
+  try {
+    const [dashResp, analysesResp] = await Promise.all([
+      $fetch('/api/dashboards'),
+      $fetch('/api/analyses')
+    ])
+    if ((dashResp as any).success) dashboards.value = (dashResp as any).data
+    if ((analysesResp as any).success) allSavedAnalyses.value = (analysesResp as any).data
+  } catch (e: any) { console.error('刷新数据失败:', e) }
 }
 
-onMounted(async () => { await refreshData(); addPanel() })
+onMounted(async () => { await refreshData() })
 </script>
 
 <style scoped>
-.ghost-panel { opacity: 0.4; border: 2px dashed #3b82f6; border-radius: 0.75rem; background: #eff6ff; }
-</style>
+/* Page wrapper */
+.analysis-page-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 2rem);
+  gap: 1.5rem;
+}
 
-<style>
-.custom-analysis-page .panels-grid-1 { display: grid; grid-template-columns: 1fr; gap: 1rem; align-items: start; }
-.custom-analysis-page .panels-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; align-items: start; }
-.custom-analysis-page .panel-span-1 { grid-column: span 1; min-width: 0; }
-.custom-analysis-page .panel-span-2 { grid-column: span 2; min-width: 0; }
-@media (max-width: 1280px) {
-  .custom-analysis-page .panel-span-1, .custom-analysis-page .panel-span-2 { grid-column: span 2; }
+/* Header */
+.analysis-header {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.header-content {
+  max-width: 100%;
+}
+
+.header-icon-wrapper {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.2), 0 2px 4px -1px rgba(14, 165, 233, 0.1);
+}
+
+.analysis-page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.025em;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.analysis-page-subtitle {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-top: 0.25rem;
+  line-height: 1.5;
+}
+
+/* Action buttons */
+.grid-toggle {
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.action-btn {
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  transform: translateY(-1px);
+}
+
+.action-btn-primary {
+  border-radius: 0.5rem;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(14, 165, 233, 0.2);
+  transition: all 0.2s;
+}
+
+.action-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(14, 165, 233, 0.3);
+}
+
+/* Content area */
+.analysis-content {
+  display: flex;
+  gap: 1.5rem;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Sidebar */
+.analysis-sidebar {
+  width: 18rem;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.new-panel-btn {
+  border-radius: 0.75rem;
+  height: auto;
+  padding: 0.75rem 1rem;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(14, 165, 233, 0.2);
+  transition: all 0.2s;
+}
+
+.new-panel-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(14, 165, 233, 0.3);
+}
+
+.btn-icon-circle {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-text {
+  margin-left: 0.5rem;
+}
+
+/* Sidebar cards */
+.sidebar-card {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.header-left svg {
+  color: #64748b;
+}
+
+.header-left h3 {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.count-badge {
+  font-size: 0.625rem;
+}
+
+/* Sidebar list */
+.sidebar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sidebar-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1px solid transparent;
+}
+
+.sidebar-list-item:hover {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.sidebar-list-item.active {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.item-content {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.item-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.sidebar-list-item.active .item-icon {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.item-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.item-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1e293b;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-meta {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin: 0.125rem 0 0 0;
+}
+
+.item-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.sidebar-list-item:hover .item-actions {
+  opacity: 1;
+}
+
+/* Empty state */
+.sidebar-empty {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.empty-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.75rem;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.75rem;
+  color: #cbd5e1;
+}
+
+.empty-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748b;
+  margin: 0 0 0.25rem 0;
+}
+
+.empty-desc {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+/* Main area */
+.analysis-main {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+}
+
+.panels-container {
+  height: 100%;
+}
+
+.panels-grid-1 {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.panels-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.panel-span-1 {
+  grid-column: span 1;
+}
+
+.panel-span-2 {
+  grid-column: span 2;
+}
+
+.panel-wrapper {
+  position: relative;
+  height: 100%;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.panel-wrapper:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.drag-handle {
+  position: absolute;
+  left: -0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.5rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.2s;
+  border-radius: 0.375rem;
+  background: #f1f5f9;
+  color: #94a3b8;
+  z-index: 10;
+}
+
+.panel-wrapper:hover .drag-handle {
+  opacity: 0.6;
+}
+
+.drag-handle:hover {
+  opacity: 1 !important;
+  background: #e2e8f0;
+}
+
+.ghost-panel {
+  opacity: 0.5;
+  background: #f1f5f9;
+}
+
+/* Empty canvas */
+.empty-canvas {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-canvas-content {
+  text-align: center;
+  max-width: 28rem;
+}
+
+.empty-canvas-icon {
+  width: 5rem;
+  height: 5rem;
+  border-radius: 1.25rem;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  color: #3b82f6;
+}
+
+.empty-canvas-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 0.5rem 0;
+}
+
+.empty-canvas-desc {
+  font-size: 0.875rem;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Modal */
+.modern-modal {
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+/* Scrollbar */
+.analysis-sidebar::-webkit-scrollbar,
+.analysis-main::-webkit-scrollbar {
+  width: 4px;
+}
+
+.analysis-sidebar::-webkit-scrollbar-track,
+.analysis-main::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.analysis-sidebar::-webkit-scrollbar-thumb,
+.analysis-main::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 2px;
+}
+
+.analysis-sidebar::-webkit-scrollbar-thumb:hover,
+.analysis-main::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .analysis-content {
+    flex-direction: column;
+  }
+  
+  .analysis-sidebar {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  
+  .sidebar-card {
+    flex: 1;
+    min-width: 200px;
+  }
 }
 </style>

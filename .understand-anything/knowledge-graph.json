@@ -1,0 +1,2775 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-06-06T09:07:13.924Z",
+  "projectRoot": "D:\\codes\\LeKaiProj\\KeSuApp\\bopet-complaint-system",
+  "nodes": [
+    {
+      "id": "project:root",
+      "type": "module",
+      "name": "bopet-complaint-system",
+      "filePath": ".",
+      "layer": "unknown",
+      "summary": "BOPET complaint/data management and analytics platform."
+    },
+    {
+      "id": "module:auth",
+      "type": "module",
+      "name": "Auth Module",
+      "filePath": ".",
+      "layer": "service",
+      "summary": "Authentication, authorization and session state."
+    },
+    {
+      "id": "module:data",
+      "type": "module",
+      "name": "Data Module",
+      "filePath": ".",
+      "layer": "data",
+      "summary": "Core data record CRUD, import/export and attachments."
+    },
+    {
+      "id": "module:templates",
+      "type": "module",
+      "name": "Template Module",
+      "filePath": ".",
+      "layer": "service",
+      "summary": "Dynamic form templates and template field filtering."
+    },
+    {
+      "id": "module:analytics",
+      "type": "module",
+      "name": "Analytics Module",
+      "filePath": ".",
+      "layer": "api",
+      "summary": "Statistics, saved analysis and dashboard aggregation."
+    },
+    {
+      "id": "module:config",
+      "type": "module",
+      "name": "Config Module",
+      "filePath": ".",
+      "layer": "service",
+      "summary": "Master data and system configuration."
+    },
+    {
+      "id": "file:pages/datas/edit/[id].vue",
+      "type": "file",
+      "name": "[id].vue",
+      "filePath": "pages/datas/edit/[id].vue",
+      "layer": "ui",
+      "summary": "File pages/datas/edit/[id].vue starts with: <template>",
+      "language": "vue",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "072070222481064f5c9dc067e560a1bd95088120"
+      }
+    },
+    {
+      "id": "file:pages/datas/import.vue",
+      "type": "file",
+      "name": "import.vue",
+      "filePath": "pages/datas/import.vue",
+      "layer": "ui",
+      "summary": "File pages/datas/import.vue starts with: <template>",
+      "language": "vue",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "40a4d9eaaea971723aac3bb30db6dd49dc334643"
+      }
+    },
+    {
+      "id": "file:pages/datas/index.vue",
+      "type": "file",
+      "name": "index.vue",
+      "filePath": "pages/datas/index.vue",
+      "layer": "ui",
+      "summary": "File pages/datas/index.vue starts with: <template>",
+      "language": "vue",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "695582d2d3dd9cba9357b1306d4f259d930421d8"
+      }
+    },
+    {
+      "id": "file:pages/datas/new.vue",
+      "type": "file",
+      "name": "new.vue",
+      "filePath": "pages/datas/new.vue",
+      "layer": "ui",
+      "summary": "File pages/datas/new.vue starts with: <template>",
+      "language": "vue",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "b3afe653b9ff58b1f6cece93c55bf0efd8a094fe"
+      }
+    },
+    {
+      "id": "file:pages/datas/[id].vue",
+      "type": "file",
+      "name": "[id].vue",
+      "filePath": "pages/datas/[id].vue",
+      "layer": "ui",
+      "summary": "File pages/datas/[id].vue starts with: <template>",
+      "language": "vue",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "9f829158a3ce1561b291a6487191891bf9038360"
+      }
+    },
+    {
+      "id": "file:pages/departments/index.vue",
+      "type": "file",
+      "name": "index.vue",
+      "filePath": "pages/departments/index.vue",
+      "layer": "ui",
+      "summary": "File pages/departments/index.vue starts with: <template>",
+      "language": "vue",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "f525d2a8d463022df27d5153c19c243eadd83995"
+      }
+    },
+    {
+      "id": "file:pages/index.vue",
+      "type": "file",
+      "name": "index.vue",
+      "filePath": "pages/index.vue",
+      "layer": "ui",
+      "summary": "File pages/index.vue starts with: <template>",
+      "language": "vue",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "62c73bebb54ccf0e3b5c413aa5b4821403628bfc"
+      }
+    },
+    {
+      "id": "file:pages/login.vue",
+      "type": "file",
+      "name": "login.vue",
+      "filePath": "pages/login.vue",
+      "layer": "ui",
+      "summary": "File pages/login.vue starts with: <template>",
+      "language": "vue",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "055338e6ab8f0b0f20cbf0ca97239200e15d1d38"
+      }
+    },
+    {
+      "id": "file:pages/stats/custom.vue",
+      "type": "file",
+      "name": "custom.vue",
+      "filePath": "pages/stats/custom.vue",
+      "layer": "ui",
+      "summary": "File pages/stats/custom.vue starts with: <template>",
+      "language": "vue",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "dd7c83e758e146494da8bc6d6d6c385fed9bbd1b"
+      }
+    },
+    {
+      "id": "file:pages/templates/create-from-file.vue",
+      "type": "file",
+      "name": "create-from-file.vue",
+      "filePath": "pages/templates/create-from-file.vue",
+      "layer": "ui",
+      "summary": "File pages/templates/create-from-file.vue starts with: <template>",
+      "language": "vue",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "aa8e79127a7a63f22eb69bb0f199728050220de5"
+      }
+    },
+    {
+      "id": "file:pages/templates/index.vue",
+      "type": "file",
+      "name": "index.vue",
+      "filePath": "pages/templates/index.vue",
+      "layer": "ui",
+      "summary": "File pages/templates/index.vue starts with: <template>",
+      "language": "vue",
+      "concepts": [
+        "async-await",
+        "interfaces"
+      ],
+      "metadata": {
+        "hash": "bef0b069aeec48ca20cbacd8c25fbbbc42124fe0"
+      }
+    },
+    {
+      "id": "file:pages/users/index.vue",
+      "type": "file",
+      "name": "index.vue",
+      "filePath": "pages/users/index.vue",
+      "layer": "ui",
+      "summary": "File pages/users/index.vue starts with: <template>",
+      "language": "vue",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "886a9bdc325c7b1cb10f3823eec8f08edd6395e2"
+      }
+    },
+    {
+      "id": "file:server/api/analyses/index.get.ts",
+      "type": "file",
+      "name": "index.get.ts",
+      "filePath": "server/api/analyses/index.get.ts",
+      "layer": "api",
+      "summary": "File server/api/analyses/index.get.ts starts with: import { prisma } from '~/server/utils/prisma'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "ae4ce337024201f19f0d101ed17811a175c69ed8"
+      }
+    },
+    {
+      "id": "file:server/api/analyses/index.post.ts",
+      "type": "file",
+      "name": "index.post.ts",
+      "filePath": "server/api/analyses/index.post.ts",
+      "layer": "api",
+      "summary": "File server/api/analyses/index.post.ts starts with: import { z } from 'zod'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "d03ddf923e102d64254dbe4534cc019684763097"
+      }
+    },
+    {
+      "id": "file:server/api/analyses/[id].delete.ts",
+      "type": "file",
+      "name": "[id].delete.ts",
+      "filePath": "server/api/analyses/[id].delete.ts",
+      "layer": "api",
+      "summary": "File server/api/analyses/[id].delete.ts starts with: import { prisma } from '~/server/utils/prisma'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "7736ff6fc72f77419d58a7ea99742f4009884e69"
+      }
+    },
+    {
+      "id": "file:server/api/analyses/[id].put.ts",
+      "type": "file",
+      "name": "[id].put.ts",
+      "filePath": "server/api/analyses/[id].put.ts",
+      "layer": "api",
+      "summary": "File server/api/analyses/[id].put.ts starts with: import { z } from 'zod'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "22b54fff14db685efeeeab9a33544a7ad823f57b"
+      }
+    },
+    {
+      "id": "file:server/api/auth/login.post.ts",
+      "type": "file",
+      "name": "login.post.ts",
+      "filePath": "server/api/auth/login.post.ts",
+      "layer": "api",
+      "summary": "File server/api/auth/login.post.ts starts with: import { z } from 'zod'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "9efe15092cb3f4fbfc2bfc4bad09d8d060ce5a62"
+      }
+    },
+    {
+      "id": "file:server/api/auth/logout.post.ts",
+      "type": "file",
+      "name": "logout.post.ts",
+      "filePath": "server/api/auth/logout.post.ts",
+      "layer": "api",
+      "summary": "File server/api/auth/logout.post.ts starts with: export default defineEventHandler(async (event) => {",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "45108837459ae24888c590974906660bee6a3914"
+      }
+    },
+    {
+      "id": "file:server/api/auth/me.get.ts",
+      "type": "file",
+      "name": "me.get.ts",
+      "filePath": "server/api/auth/me.get.ts",
+      "layer": "api",
+      "summary": "File server/api/auth/me.get.ts starts with: import { prisma } from '~/server/utils/prisma'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "c0b4e1fbabb672088bd6a88d4457eea09aab014e"
+      }
+    },
+    {
+      "id": "file:server/api/config/field-options.get.ts",
+      "type": "file",
+      "name": "field-options.get.ts",
+      "filePath": "server/api/config/field-options.get.ts",
+      "layer": "api",
+      "summary": "File server/api/config/field-options.get.ts starts with: import { prisma } from '~/server/utils/prisma'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "7a8b8040c52f9356b569f127f81c7785f4c8c8b2"
+      }
+    },
+    {
+      "id": "file:server/api/config/index.get.ts",
+      "type": "file",
+      "name": "index.get.ts",
+      "filePath": "server/api/config/index.get.ts",
+      "layer": "api",
+      "summary": "File server/api/config/index.get.ts starts with: import { prisma } from '~/server/utils/prisma'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "469e408fd0701749e10e62574795a5e8d97ad9db"
+      }
+    },
+    {
+      "id": "file:server/api/dashboards/index.get.ts",
+      "type": "file",
+      "name": "index.get.ts",
+      "filePath": "server/api/dashboards/index.get.ts",
+      "layer": "api",
+      "summary": "File server/api/dashboards/index.get.ts starts with: import { prisma } from '~/server/utils/prisma'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "26bd61b84916adfc10f14b2b548a6c755ff8781c"
+      }
+    },
+    {
+      "id": "file:server/api/dashboards/index.post.ts",
+      "type": "file",
+      "name": "index.post.ts",
+      "filePath": "server/api/dashboards/index.post.ts",
+      "layer": "api",
+      "summary": "File server/api/dashboards/index.post.ts starts with: import { z } from 'zod'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "ded1d1894b26674733be3e5f9b2f832f847b6a4b"
+      }
+    },
+    {
+      "id": "file:server/api/dashboards/[id]/index.delete.ts",
+      "type": "file",
+      "name": "index.delete.ts",
+      "filePath": "server/api/dashboards/[id]/index.delete.ts",
+      "layer": "api",
+      "summary": "File server/api/dashboards/[id]/index.delete.ts starts with: import { prisma } from '~/server/utils/prisma'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "3541e758ee2c0a97275b9b8aa51366a761a6d48b"
+      }
+    },
+    {
+      "id": "file:server/api/dashboards/[id]/index.get.ts",
+      "type": "file",
+      "name": "index.get.ts",
+      "filePath": "server/api/dashboards/[id]/index.get.ts",
+      "layer": "api",
+      "summary": "File server/api/dashboards/[id]/index.get.ts starts with: import { prisma } from '~/server/utils/prisma'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "1211586ec2e8ad864cd5d9d4a973d498ff6bc9ba"
+      }
+    },
+    {
+      "id": "file:server/api/dashboards/[id]/index.put.ts",
+      "type": "file",
+      "name": "index.put.ts",
+      "filePath": "server/api/dashboards/[id]/index.put.ts",
+      "layer": "api",
+      "summary": "File server/api/dashboards/[id]/index.put.ts starts with: import { z } from 'zod'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "9ee290b4813ad7de627af01d0329a4c6950be1fb"
+      }
+    },
+    {
+      "id": "file:server/api/datas/autocomplete-data.get.ts",
+      "type": "file",
+      "name": "autocomplete-data.get.ts",
+      "filePath": "server/api/datas/autocomplete-data.get.ts",
+      "layer": "api",
+      "summary": "File server/api/datas/autocomplete-data.get.ts starts with: import { prisma } from '~/server/utils/prisma'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "b58b91bde86e0252229466314041ccec37fd34a2"
+      }
+    },
+    {
+      "id": "file:server/api/datas/export.get.ts",
+      "type": "file",
+      "name": "export.get.ts",
+      "filePath": "server/api/datas/export.get.ts",
+      "layer": "api",
+      "summary": "File server/api/datas/export.get.ts starts with: import { z } from 'zod'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "fdd1d0d8a7218da7fcd66bb9e46cd9c002d7887b"
+      }
+    },
+    {
+      "id": "file:server/api/datas/import-to-template.post.ts",
+      "type": "file",
+      "name": "import-to-template.post.ts",
+      "filePath": "server/api/datas/import-to-template.post.ts",
+      "layer": "api",
+      "summary": "File server/api/datas/import-to-template.post.ts starts with: import dayjs from 'dayjs'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "7e4262e5c26089af25ec55d94d648213b64ee33c"
+      }
+    },
+    {
+      "id": "file:server/api/datas/import.post.ts",
+      "type": "file",
+      "name": "import.post.ts",
+      "filePath": "server/api/datas/import.post.ts",
+      "layer": "api",
+      "summary": "File server/api/datas/import.post.ts starts with: import { prisma } from '~/server/utils/prisma'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "dbf824d4f1dd646b8913dbc99bc1957b2ccd5166"
+      }
+    },
+    {
+      "id": "file:server/api/datas/index.get.ts",
+      "type": "file",
+      "name": "index.get.ts",
+      "filePath": "server/api/datas/index.get.ts",
+      "layer": "api",
+      "summary": "File server/api/datas/index.get.ts starts with: import { z } from 'zod'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "a5b12c54de6308343c3372890550a1feb70fa0c3"
+      }
+    },
+    {
+      "id": "file:server/api/datas/index.post.ts",
+      "type": "file",
+      "name": "index.post.ts",
+      "filePath": "server/api/datas/index.post.ts",
+      "layer": "api",
+      "summary": "File server/api/datas/index.post.ts starts with: import { Prisma } from '@prisma/client'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "fbb56c1fdafee3ee212ba4eb17f7e464e181e2cc"
+      }
+    },
+    {
+      "id": "file:server/api/datas/[id].ts",
+      "type": "file",
+      "name": "[id].ts",
+      "filePath": "server/api/datas/[id].ts",
+      "layer": "api",
+      "summary": "File server/api/datas/[id].ts starts with: import { z } from 'zod'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "040962e362dfafdc64e8941ae052f6df44401b03"
+      }
+    },
+    {
+      "id": "file:server/api/departments/index.get.ts",
+      "type": "file",
+      "name": "index.get.ts",
+      "filePath": "server/api/departments/index.get.ts",
+      "layer": "api",
+      "summary": "File server/api/departments/index.get.ts starts with: import { prisma } from '~/server/utils/prisma'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "735e7bdcb9bc014888713d151474f36591304319"
+      }
+    },
+    {
+      "id": "file:server/api/departments/index.post.ts",
+      "type": "file",
+      "name": "index.post.ts",
+      "filePath": "server/api/departments/index.post.ts",
+      "layer": "api",
+      "summary": "File server/api/departments/index.post.ts starts with: import { z } from 'zod'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "2637c729a64dcb6834c02e212ddb35e8a049b0df"
+      }
+    },
+    {
+      "id": "file:server/api/departments/[id].ts",
+      "type": "file",
+      "name": "[id].ts",
+      "filePath": "server/api/departments/[id].ts",
+      "layer": "api",
+      "summary": "File server/api/departments/[id].ts starts with: import { z } from 'zod'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "09b01898487b547cc62e4dac500df9b101905a04"
+      }
+    },
+    {
+      "id": "file:server/api/health.get.ts",
+      "type": "file",
+      "name": "health.get.ts",
+      "filePath": "server/api/health.get.ts",
+      "layer": "api",
+      "summary": "File server/api/health.get.ts starts with: export default defineEventHandler(async () => {",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "a4fe435e927e7a3174cd309d5cf73906f7e0a81f"
+      }
+    },
+    {
+      "id": "file:server/api/images/[dataId]/index.get.ts",
+      "type": "file",
+      "name": "index.get.ts",
+      "filePath": "server/api/images/[dataId]/index.get.ts",
+      "layer": "api",
+      "summary": "File server/api/images/[dataId]/index.get.ts starts with: import { prisma } from '~/server/utils/prisma'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "1efe113ac15b5c294592fbd9a0c918d5341cc78a"
+      }
+    },
+    {
+      "id": "file:server/api/images/[dataId]/index.post.ts",
+      "type": "file",
+      "name": "index.post.ts",
+      "filePath": "server/api/images/[dataId]/index.post.ts",
+      "layer": "api",
+      "summary": "File server/api/images/[dataId]/index.post.ts starts with: import { prisma } from '~/server/utils/prisma'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "708797233346e206487a70b77289d43f34367a9a"
+      }
+    },
+    {
+      "id": "file:server/api/images/[dataId]/[imageId]/index.delete.ts",
+      "type": "file",
+      "name": "index.delete.ts",
+      "filePath": "server/api/images/[dataId]/[imageId]/index.delete.ts",
+      "layer": "api",
+      "summary": "File server/api/images/[dataId]/[imageId]/index.delete.ts starts with: import { prisma } from '~/server/utils/prisma'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "530201f904fb06fbd201071f23c6336531bcb555"
+      }
+    },
+    {
+      "id": "file:server/api/stats/by-category.get.ts",
+      "type": "file",
+      "name": "by-category.get.ts",
+      "filePath": "server/api/stats/by-category.get.ts",
+      "layer": "api",
+      "summary": "File server/api/stats/by-category.get.ts starts with: import { prisma } from '~/server/utils/prisma'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "3eef097532d713e18c9be4a1bc2be9e96207530f"
+      }
+    },
+    {
+      "id": "file:server/api/stats/custom.get.ts",
+      "type": "file",
+      "name": "custom.get.ts",
+      "filePath": "server/api/stats/custom.get.ts",
+      "layer": "api",
+      "summary": "File server/api/stats/custom.get.ts starts with: import { Prisma } from '@prisma/client'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "5f689080c48d6d9f218f77a4e5b66c06ad1f4e7c"
+      }
+    },
+    {
+      "id": "file:server/api/stats/overview.get.ts",
+      "type": "file",
+      "name": "overview.get.ts",
+      "filePath": "server/api/stats/overview.get.ts",
+      "layer": "api",
+      "summary": "File server/api/stats/overview.get.ts starts with: import { prisma } from '~/server/utils/prisma'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "3877cd4f21c5004252785bd885057c2e9130a947"
+      }
+    },
+    {
+      "id": "file:server/api/stats/trend.get.ts",
+      "type": "file",
+      "name": "trend.get.ts",
+      "filePath": "server/api/stats/trend.get.ts",
+      "layer": "api",
+      "summary": "File server/api/stats/trend.get.ts starts with: import { prisma } from '~/server/utils/prisma'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "dd3169bf18d377913405b009b90863cbc9752c43"
+      }
+    },
+    {
+      "id": "file:server/api/templates/create-from-file.post.ts",
+      "type": "file",
+      "name": "create-from-file.post.ts",
+      "filePath": "server/api/templates/create-from-file.post.ts",
+      "layer": "api",
+      "summary": "File server/api/templates/create-from-file.post.ts starts with: import { prisma } from '~/server/utils/prisma'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "6a6fc488d42a7d05cc603c69664c67df81f44a7a"
+      }
+    },
+    {
+      "id": "file:server/api/templates/index.get.ts",
+      "type": "file",
+      "name": "index.get.ts",
+      "filePath": "server/api/templates/index.get.ts",
+      "layer": "api",
+      "summary": "File server/api/templates/index.get.ts starts with: import { prisma } from '~/server/utils/prisma'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "134ec9092dc1f4504e491d0c6fafd57a1ed9c60b"
+      }
+    },
+    {
+      "id": "file:server/api/templates/index.post.ts",
+      "type": "file",
+      "name": "index.post.ts",
+      "filePath": "server/api/templates/index.post.ts",
+      "layer": "api",
+      "summary": "File server/api/templates/index.post.ts starts with: import { z } from 'zod'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "caef57844757230e5f963c5bba65137e8a38c301"
+      }
+    },
+    {
+      "id": "file:server/api/templates/[id]/filter-fields.get.ts",
+      "type": "file",
+      "name": "filter-fields.get.ts",
+      "filePath": "server/api/templates/[id]/filter-fields.get.ts",
+      "layer": "api",
+      "summary": "File server/api/templates/[id]/filter-fields.get.ts starts with: import { prisma } from '~/server/utils/prisma'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "e21bdeb4c053589fbd7ab10312c3d185f06c8d80"
+      }
+    },
+    {
+      "id": "file:server/api/templates/[id].ts",
+      "type": "file",
+      "name": "[id].ts",
+      "filePath": "server/api/templates/[id].ts",
+      "layer": "api",
+      "summary": "File server/api/templates/[id].ts starts with: import { z } from 'zod'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "16b7ee9ee959a5e61b6f4d3bc5f884c35c39eb1b"
+      }
+    },
+    {
+      "id": "file:server/api/upload/index.post.ts",
+      "type": "file",
+      "name": "index.post.ts",
+      "filePath": "server/api/upload/index.post.ts",
+      "layer": "api",
+      "summary": "File server/api/upload/index.post.ts starts with: import { requireSessionUser } from '~/server/utils/auth'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "b3da7a113235018565e92cee3010b7e0371b7b38"
+      }
+    },
+    {
+      "id": "file:server/api/users/index.get.ts",
+      "type": "file",
+      "name": "index.get.ts",
+      "filePath": "server/api/users/index.get.ts",
+      "layer": "api",
+      "summary": "File server/api/users/index.get.ts starts with: import { z } from 'zod'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "ee3ffe2bb2b2696e0cc86e05428dba1b1c1219a0"
+      }
+    },
+    {
+      "id": "file:server/api/users/index.post.ts",
+      "type": "file",
+      "name": "index.post.ts",
+      "filePath": "server/api/users/index.post.ts",
+      "layer": "api",
+      "summary": "File server/api/users/index.post.ts starts with: import { z } from 'zod'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "4b7cc03ac41dbe002996a3e3c8ed80af23ea5653"
+      }
+    },
+    {
+      "id": "file:server/api/users/[id].ts",
+      "type": "file",
+      "name": "[id].ts",
+      "filePath": "server/api/users/[id].ts",
+      "layer": "api",
+      "summary": "File server/api/users/[id].ts starts with: import { z } from 'zod'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "435e218a800b9446048c9029c0279acc7788c0a0"
+      }
+    },
+    {
+      "id": "file:server/routes/oss/[...path].ts",
+      "type": "file",
+      "name": "[...path].ts",
+      "filePath": "server/routes/oss/[...path].ts",
+      "layer": "unknown",
+      "summary": "File server/routes/oss/[...path].ts starts with: import { ossRetrieve } from '~/server/utils/oss'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "a4b18b82e167f202765ae9498cda8c65831751e8"
+      }
+    },
+    {
+      "id": "file:server/routes/sw.js.ts",
+      "type": "file",
+      "name": "sw.js.ts",
+      "filePath": "server/routes/sw.js.ts",
+      "layer": "unknown",
+      "summary": "File server/routes/sw.js.ts starts with: export default defineEventHandler(() => {",
+      "language": "typescript",
+      "concepts": [],
+      "metadata": {
+        "hash": "569c97ad6df0085bea433cc12beeab86c164becc"
+      }
+    },
+    {
+      "id": "file:server/utils/auth.ts",
+      "type": "file",
+      "name": "auth.ts",
+      "filePath": "server/utils/auth.ts",
+      "layer": "utility",
+      "summary": "File server/utils/auth.ts starts with: import { createHmac, randomBytes, timingSafeEqual, scryptSync } from 'node:crypto'",
+      "language": "typescript",
+      "concepts": [
+        "async-await",
+        "interfaces"
+      ],
+      "metadata": {
+        "hash": "2be9aeba615931299422665ac2efc7788988645d"
+      }
+    },
+    {
+      "id": "file:server/utils/oss.ts",
+      "type": "file",
+      "name": "oss.ts",
+      "filePath": "server/utils/oss.ts",
+      "layer": "utility",
+      "summary": "File server/utils/oss.ts starts with: import { randomBytes } from 'node:crypto'",
+      "language": "typescript",
+      "concepts": [
+        "async-await",
+        "interfaces"
+      ],
+      "metadata": {
+        "hash": "021646169dd9572567a5145ef97d496e68cf521e"
+      }
+    },
+    {
+      "id": "file:server/utils/prisma.ts",
+      "type": "file",
+      "name": "prisma.ts",
+      "filePath": "server/utils/prisma.ts",
+      "layer": "utility",
+      "summary": "File server/utils/prisma.ts starts with: import { PrismaClient } from '@prisma/client'",
+      "language": "typescript",
+      "concepts": [],
+      "metadata": {
+        "hash": "eb8173a945dfade2152b1bf7e106668b2c211da8"
+      }
+    },
+    {
+      "id": "file:server/utils/query.ts",
+      "type": "file",
+      "name": "query.ts",
+      "filePath": "server/utils/query.ts",
+      "layer": "utility",
+      "summary": "File server/utils/query.ts starts with: import { z } from 'zod'",
+      "language": "typescript",
+      "concepts": [],
+      "metadata": {
+        "hash": "efd360f3595a1b6609ae8e56197b5f195a171b34"
+      }
+    },
+    {
+      "id": "file:stores/auth.ts",
+      "type": "file",
+      "name": "auth.ts",
+      "filePath": "stores/auth.ts",
+      "layer": "service",
+      "summary": "File stores/auth.ts starts with: import { defineStore } from 'pinia'",
+      "language": "typescript",
+      "concepts": [
+        "async-await",
+        "interfaces"
+      ],
+      "metadata": {
+        "hash": "74062be23627471a43c6de4848af01f8735df00b"
+      }
+    },
+    {
+      "id": "file:stores/config.ts",
+      "type": "file",
+      "name": "config.ts",
+      "filePath": "stores/config.ts",
+      "layer": "service",
+      "summary": "File stores/config.ts starts with: import { defineStore } from 'pinia'",
+      "language": "typescript",
+      "concepts": [
+        "async-await",
+        "interfaces"
+      ],
+      "metadata": {
+        "hash": "2bed9d7b8b3c28cfae3f4f6357e9528f42faa9e2"
+      }
+    },
+    {
+      "id": "file:composables/useNaiveUI.ts",
+      "type": "file",
+      "name": "useNaiveUI.ts",
+      "filePath": "composables/useNaiveUI.ts",
+      "layer": "utility",
+      "summary": "File composables/useNaiveUI.ts starts with: import { useMessage as naiveUseMessage, useDialog as naiveUseDialog, useNotification as naiveUseNotification } from 'naive-ui'",
+      "language": "typescript",
+      "concepts": [],
+      "metadata": {
+        "hash": "dec47ef874082402edf0850e34cc08d1927cd59c"
+      }
+    },
+    {
+      "id": "file:components/AnalysisPanel.vue",
+      "type": "file",
+      "name": "AnalysisPanel.vue",
+      "filePath": "components/AnalysisPanel.vue",
+      "layer": "ui",
+      "summary": "File components/AnalysisPanel.vue starts with: <template>",
+      "language": "vue",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "de0ff9c556c5b0bca8bc2ebb50ea0040f65f1947"
+      }
+    },
+    {
+      "id": "file:components/DynamicFormFields.vue",
+      "type": "file",
+      "name": "DynamicFormFields.vue",
+      "filePath": "components/DynamicFormFields.vue",
+      "layer": "ui",
+      "summary": "File components/DynamicFormFields.vue starts with: <template>",
+      "language": "vue",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "edfb9997d85e163bd90250df65c7eb0231004db5"
+      }
+    },
+    {
+      "id": "file:layouts/default.vue",
+      "type": "file",
+      "name": "default.vue",
+      "filePath": "layouts/default.vue",
+      "layer": "ui",
+      "summary": "File layouts/default.vue starts with: <template>",
+      "language": "vue",
+      "concepts": [
+        "async-await",
+        "interfaces"
+      ],
+      "metadata": {
+        "hash": "7c0029c66b32944e97f984c14c82edf448fe3223"
+      }
+    },
+    {
+      "id": "file:middleware/auth.ts",
+      "type": "file",
+      "name": "auth.ts",
+      "filePath": "middleware/auth.ts",
+      "layer": "service",
+      "summary": "File middleware/auth.ts starts with: export default defineNuxtRouteMiddleware(async (to, from) => {",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "3e2ac8d0e465521484e1a0dd06dc3a3eb0b8418f"
+      }
+    },
+    {
+      "id": "file:plugins/naive-ui.ts",
+      "type": "file",
+      "name": "naive-ui.ts",
+      "filePath": "plugins/naive-ui.ts",
+      "layer": "service",
+      "summary": "File plugins/naive-ui.ts starts with: import { setup } from '@css-render/vue3-ssr'",
+      "language": "typescript",
+      "concepts": [],
+      "metadata": {
+        "hash": "6278598b8922b8bf560a5b8609e22b9fe0814307"
+      }
+    },
+    {
+      "id": "file:prisma/schema.prisma",
+      "type": "file",
+      "name": "schema.prisma",
+      "filePath": "prisma/schema.prisma",
+      "layer": "data",
+      "summary": "File prisma/schema.prisma starts with: generator client {",
+      "language": "prisma",
+      "concepts": [],
+      "metadata": {
+        "hash": "e85cbbb8437d9e6e38472642a40dcba3b1c3b235"
+      }
+    },
+    {
+      "id": "file:prisma/schema.template.prisma",
+      "type": "file",
+      "name": "schema.template.prisma",
+      "filePath": "prisma/schema.template.prisma",
+      "layer": "data",
+      "summary": "File prisma/schema.template.prisma starts with: generator client {",
+      "language": "prisma",
+      "concepts": [],
+      "metadata": {
+        "hash": "f3170887f15376b78c8c80b4f20bc17765042e01"
+      }
+    },
+    {
+      "id": "file:prisma/seed.ts",
+      "type": "file",
+      "name": "seed.ts",
+      "filePath": "prisma/seed.ts",
+      "layer": "data",
+      "summary": "File prisma/seed.ts starts with: import { PrismaClient } from '@prisma/client'",
+      "language": "typescript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "39f72b4c14252c0c140c574be62f547fd12f920b"
+      }
+    },
+    {
+      "id": "file:scripts/build.mjs",
+      "type": "file",
+      "name": "build.mjs",
+      "filePath": "scripts/build.mjs",
+      "layer": "utility",
+      "summary": "File scripts/build.mjs starts with: import { spawn } from 'node:child_process'",
+      "language": "javascript",
+      "concepts": [],
+      "metadata": {
+        "hash": "81719e52af4586fd179853a4124cc75d8cd63699"
+      }
+    },
+    {
+      "id": "file:scripts/fix-unhead.mjs",
+      "type": "file",
+      "name": "fix-unhead.mjs",
+      "filePath": "scripts/fix-unhead.mjs",
+      "layer": "utility",
+      "summary": "File scripts/fix-unhead.mjs starts with: import { cp, readdir, mkdir, access } from 'node:fs/promises'",
+      "language": "javascript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "93a107c7869fb874a661f376040f554992a557e7"
+      }
+    },
+    {
+      "id": "file:scripts/init.mjs",
+      "type": "file",
+      "name": "init.mjs",
+      "filePath": "scripts/init.mjs",
+      "layer": "utility",
+      "summary": "File scripts/init.mjs starts with: import { execSync } from \"node:child_process\";",
+      "language": "javascript",
+      "concepts": [
+        "async-await"
+      ],
+      "metadata": {
+        "hash": "4748d7789f6a66bcb7235469cca978fa3e200a13"
+      }
+    },
+    {
+      "id": "file:scripts/prepare-prisma-schema.mjs",
+      "type": "file",
+      "name": "prepare-prisma-schema.mjs",
+      "filePath": "scripts/prepare-prisma-schema.mjs",
+      "layer": "utility",
+      "summary": "File scripts/prepare-prisma-schema.mjs starts with: import { existsSync, readFileSync, writeFileSync } from 'node:fs'",
+      "language": "javascript",
+      "concepts": [],
+      "metadata": {
+        "hash": "eed9c8163877df6ae54af6ead6b8a89530665038"
+      }
+    },
+    {
+      "id": "file:scripts/start.mjs",
+      "type": "file",
+      "name": "start.mjs",
+      "filePath": "scripts/start.mjs",
+      "layer": "utility",
+      "summary": "File scripts/start.mjs starts with: import { resolve, dirname } from \"node:path\";",
+      "language": "javascript",
+      "concepts": [],
+      "metadata": {
+        "hash": "6883d27e2bf75c47334b4447fabf19ae64a0157a"
+      }
+    },
+    {
+      "id": "file:scripts/understand-generate-graph.mjs",
+      "type": "file",
+      "name": "understand-generate-graph.mjs",
+      "filePath": "scripts/understand-generate-graph.mjs",
+      "layer": "utility",
+      "summary": "File scripts/understand-generate-graph.mjs starts with: import { promises as fs } from 'node:fs'",
+      "language": "javascript",
+      "concepts": [
+        "async-await",
+        "interfaces"
+      ],
+      "metadata": {
+        "hash": "e4bcacbdbe9c405be2237599e6f0c305872bc5f5"
+      }
+    },
+    {
+      "id": "file:README.md",
+      "type": "file",
+      "name": "README.md",
+      "filePath": "README.md",
+      "layer": "unknown",
+      "summary": "File README.md starts with: # BOPET 企业数据管理与分析平台",
+      "language": "markdown",
+      "concepts": [],
+      "metadata": {
+        "hash": "148b2cd46319395dde37751de2225a819b58e1e0"
+      }
+    },
+    {
+      "id": "file:package.json",
+      "type": "file",
+      "name": "package.json",
+      "filePath": "package.json",
+      "layer": "unknown",
+      "summary": "File package.json starts with: {",
+      "language": "json",
+      "concepts": [],
+      "metadata": {
+        "hash": "240b59329a230cf030f51f246e837f0cdc8ca365"
+      }
+    },
+    {
+      "id": "file:nuxt.config.ts",
+      "type": "file",
+      "name": "nuxt.config.ts",
+      "filePath": "nuxt.config.ts",
+      "layer": "unknown",
+      "summary": "File nuxt.config.ts starts with: const tailwindModuleConfig = {",
+      "language": "typescript",
+      "concepts": [],
+      "metadata": {
+        "hash": "0958781e60b96c006a13ed3a1fe45ad53ebafddc"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "uses:project:file:pages/datas/edit/[id].vue",
+      "source": "project:root",
+      "target": "file:pages/datas/edit/[id].vue",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:data:file:pages/datas/edit/[id].vue",
+      "source": "module:data",
+      "target": "file:pages/datas/edit/[id].vue",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:pages/datas/edit/[id].vue:file:stores/auth.ts",
+      "source": "file:pages/datas/edit/[id].vue",
+      "target": "file:stores/auth.ts",
+      "type": "imports",
+      "label": "~/stores/auth"
+    },
+    {
+      "id": "import:file:pages/datas/edit/[id].vue:file:stores/config.ts",
+      "source": "file:pages/datas/edit/[id].vue",
+      "target": "file:stores/config.ts",
+      "type": "imports",
+      "label": "~/stores/config"
+    },
+    {
+      "id": "uses:project:file:pages/datas/import.vue",
+      "source": "project:root",
+      "target": "file:pages/datas/import.vue",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:data:file:pages/datas/import.vue",
+      "source": "module:data",
+      "target": "file:pages/datas/import.vue",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:pages/datas/import.vue:file:stores/auth.ts",
+      "source": "file:pages/datas/import.vue",
+      "target": "file:stores/auth.ts",
+      "type": "imports",
+      "label": "~/stores/auth"
+    },
+    {
+      "id": "uses:project:file:pages/datas/index.vue",
+      "source": "project:root",
+      "target": "file:pages/datas/index.vue",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:data:file:pages/datas/index.vue",
+      "source": "module:data",
+      "target": "file:pages/datas/index.vue",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:pages/datas/index.vue:file:stores/config.ts",
+      "source": "file:pages/datas/index.vue",
+      "target": "file:stores/config.ts",
+      "type": "imports",
+      "label": "~/stores/config"
+    },
+    {
+      "id": "import:file:pages/datas/index.vue:file:stores/auth.ts",
+      "source": "file:pages/datas/index.vue",
+      "target": "file:stores/auth.ts",
+      "type": "imports",
+      "label": "~/stores/auth"
+    },
+    {
+      "id": "uses:project:file:pages/datas/new.vue",
+      "source": "project:root",
+      "target": "file:pages/datas/new.vue",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:data:file:pages/datas/new.vue",
+      "source": "module:data",
+      "target": "file:pages/datas/new.vue",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:pages/datas/new.vue:file:stores/auth.ts",
+      "source": "file:pages/datas/new.vue",
+      "target": "file:stores/auth.ts",
+      "type": "imports",
+      "label": "~/stores/auth"
+    },
+    {
+      "id": "import:file:pages/datas/new.vue:file:stores/config.ts",
+      "source": "file:pages/datas/new.vue",
+      "target": "file:stores/config.ts",
+      "type": "imports",
+      "label": "~/stores/config"
+    },
+    {
+      "id": "uses:project:file:pages/datas/[id].vue",
+      "source": "project:root",
+      "target": "file:pages/datas/[id].vue",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:data:file:pages/datas/[id].vue",
+      "source": "module:data",
+      "target": "file:pages/datas/[id].vue",
+      "type": "uses"
+    },
+    {
+      "id": "uses:project:file:pages/departments/index.vue",
+      "source": "project:root",
+      "target": "file:pages/departments/index.vue",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:config:file:pages/departments/index.vue",
+      "source": "module:config",
+      "target": "file:pages/departments/index.vue",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:pages/departments/index.vue:file:stores/auth.ts",
+      "source": "file:pages/departments/index.vue",
+      "target": "file:stores/auth.ts",
+      "type": "imports",
+      "label": "~/stores/auth"
+    },
+    {
+      "id": "uses:project:file:pages/index.vue",
+      "source": "project:root",
+      "target": "file:pages/index.vue",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:analytics:file:pages/index.vue",
+      "source": "module:analytics",
+      "target": "file:pages/index.vue",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:pages/index.vue:file:stores/config.ts",
+      "source": "file:pages/index.vue",
+      "target": "file:stores/config.ts",
+      "type": "imports",
+      "label": "~/stores/config"
+    },
+    {
+      "id": "uses:project:file:pages/login.vue",
+      "source": "project:root",
+      "target": "file:pages/login.vue",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:auth:file:pages/login.vue",
+      "source": "module:auth",
+      "target": "file:pages/login.vue",
+      "type": "uses"
+    },
+    {
+      "id": "uses:project:file:pages/stats/custom.vue",
+      "source": "project:root",
+      "target": "file:pages/stats/custom.vue",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:analytics:file:pages/stats/custom.vue",
+      "source": "module:analytics",
+      "target": "file:pages/stats/custom.vue",
+      "type": "uses"
+    },
+    {
+      "id": "uses:project:file:pages/templates/create-from-file.vue",
+      "source": "project:root",
+      "target": "file:pages/templates/create-from-file.vue",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:templates:file:pages/templates/create-from-file.vue",
+      "source": "module:templates",
+      "target": "file:pages/templates/create-from-file.vue",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:pages/templates/create-from-file.vue:file:stores/auth.ts",
+      "source": "file:pages/templates/create-from-file.vue",
+      "target": "file:stores/auth.ts",
+      "type": "imports",
+      "label": "~/stores/auth"
+    },
+    {
+      "id": "uses:project:file:pages/templates/index.vue",
+      "source": "project:root",
+      "target": "file:pages/templates/index.vue",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:templates:file:pages/templates/index.vue",
+      "source": "module:templates",
+      "target": "file:pages/templates/index.vue",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:pages/templates/index.vue:file:stores/config.ts",
+      "source": "file:pages/templates/index.vue",
+      "target": "file:stores/config.ts",
+      "type": "imports",
+      "label": "~/stores/config"
+    },
+    {
+      "id": "import:file:pages/templates/index.vue:file:stores/auth.ts",
+      "source": "file:pages/templates/index.vue",
+      "target": "file:stores/auth.ts",
+      "type": "imports",
+      "label": "~/stores/auth"
+    },
+    {
+      "id": "uses:project:file:pages/users/index.vue",
+      "source": "project:root",
+      "target": "file:pages/users/index.vue",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:config:file:pages/users/index.vue",
+      "source": "module:config",
+      "target": "file:pages/users/index.vue",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:pages/users/index.vue:file:stores/config.ts",
+      "source": "file:pages/users/index.vue",
+      "target": "file:stores/config.ts",
+      "type": "imports",
+      "label": "~/stores/config"
+    },
+    {
+      "id": "uses:project:file:server/api/analyses/index.get.ts",
+      "source": "project:root",
+      "target": "file:server/api/analyses/index.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:analytics:file:server/api/analyses/index.get.ts",
+      "source": "module:analytics",
+      "target": "file:server/api/analyses/index.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/analyses/index.get.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/analyses/index.get.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/analyses/index.get.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/analyses/index.get.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/analyses/index.post.ts",
+      "source": "project:root",
+      "target": "file:server/api/analyses/index.post.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:analytics:file:server/api/analyses/index.post.ts",
+      "source": "module:analytics",
+      "target": "file:server/api/analyses/index.post.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/analyses/index.post.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/analyses/index.post.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/analyses/index.post.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/analyses/index.post.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/analyses/[id].delete.ts",
+      "source": "project:root",
+      "target": "file:server/api/analyses/[id].delete.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:analytics:file:server/api/analyses/[id].delete.ts",
+      "source": "module:analytics",
+      "target": "file:server/api/analyses/[id].delete.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/analyses/[id].delete.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/analyses/[id].delete.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/analyses/[id].delete.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/analyses/[id].delete.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/analyses/[id].put.ts",
+      "source": "project:root",
+      "target": "file:server/api/analyses/[id].put.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:analytics:file:server/api/analyses/[id].put.ts",
+      "source": "module:analytics",
+      "target": "file:server/api/analyses/[id].put.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/analyses/[id].put.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/analyses/[id].put.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/analyses/[id].put.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/analyses/[id].put.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/auth/login.post.ts",
+      "source": "project:root",
+      "target": "file:server/api/auth/login.post.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:auth:file:server/api/auth/login.post.ts",
+      "source": "module:auth",
+      "target": "file:server/api/auth/login.post.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/auth/login.post.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/auth/login.post.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/auth/login.post.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/auth/login.post.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/auth/logout.post.ts",
+      "source": "project:root",
+      "target": "file:server/api/auth/logout.post.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:auth:file:server/api/auth/logout.post.ts",
+      "source": "module:auth",
+      "target": "file:server/api/auth/logout.post.ts",
+      "type": "uses"
+    },
+    {
+      "id": "uses:project:file:server/api/auth/me.get.ts",
+      "source": "project:root",
+      "target": "file:server/api/auth/me.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:auth:file:server/api/auth/me.get.ts",
+      "source": "module:auth",
+      "target": "file:server/api/auth/me.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/auth/me.get.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/auth/me.get.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/auth/me.get.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/auth/me.get.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/config/field-options.get.ts",
+      "source": "project:root",
+      "target": "file:server/api/config/field-options.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:config:file:server/api/config/field-options.get.ts",
+      "source": "module:config",
+      "target": "file:server/api/config/field-options.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/config/field-options.get.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/config/field-options.get.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/config/field-options.get.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/config/field-options.get.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/config/index.get.ts",
+      "source": "project:root",
+      "target": "file:server/api/config/index.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:config:file:server/api/config/index.get.ts",
+      "source": "module:config",
+      "target": "file:server/api/config/index.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/config/index.get.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/config/index.get.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/config/index.get.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/config/index.get.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/dashboards/index.get.ts",
+      "source": "project:root",
+      "target": "file:server/api/dashboards/index.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:analytics:file:server/api/dashboards/index.get.ts",
+      "source": "module:analytics",
+      "target": "file:server/api/dashboards/index.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/dashboards/index.get.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/dashboards/index.get.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/dashboards/index.get.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/dashboards/index.get.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/dashboards/index.post.ts",
+      "source": "project:root",
+      "target": "file:server/api/dashboards/index.post.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:analytics:file:server/api/dashboards/index.post.ts",
+      "source": "module:analytics",
+      "target": "file:server/api/dashboards/index.post.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/dashboards/index.post.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/dashboards/index.post.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/dashboards/index.post.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/dashboards/index.post.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/dashboards/[id]/index.delete.ts",
+      "source": "project:root",
+      "target": "file:server/api/dashboards/[id]/index.delete.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:analytics:file:server/api/dashboards/[id]/index.delete.ts",
+      "source": "module:analytics",
+      "target": "file:server/api/dashboards/[id]/index.delete.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/dashboards/[id]/index.delete.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/dashboards/[id]/index.delete.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/dashboards/[id]/index.delete.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/dashboards/[id]/index.delete.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/dashboards/[id]/index.get.ts",
+      "source": "project:root",
+      "target": "file:server/api/dashboards/[id]/index.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:analytics:file:server/api/dashboards/[id]/index.get.ts",
+      "source": "module:analytics",
+      "target": "file:server/api/dashboards/[id]/index.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/dashboards/[id]/index.get.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/dashboards/[id]/index.get.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/dashboards/[id]/index.get.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/dashboards/[id]/index.get.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/dashboards/[id]/index.put.ts",
+      "source": "project:root",
+      "target": "file:server/api/dashboards/[id]/index.put.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:analytics:file:server/api/dashboards/[id]/index.put.ts",
+      "source": "module:analytics",
+      "target": "file:server/api/dashboards/[id]/index.put.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/dashboards/[id]/index.put.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/dashboards/[id]/index.put.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/dashboards/[id]/index.put.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/dashboards/[id]/index.put.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/datas/autocomplete-data.get.ts",
+      "source": "project:root",
+      "target": "file:server/api/datas/autocomplete-data.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:data:file:server/api/datas/autocomplete-data.get.ts",
+      "source": "module:data",
+      "target": "file:server/api/datas/autocomplete-data.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/datas/autocomplete-data.get.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/datas/autocomplete-data.get.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/datas/autocomplete-data.get.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/datas/autocomplete-data.get.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/datas/export.get.ts",
+      "source": "project:root",
+      "target": "file:server/api/datas/export.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:data:file:server/api/datas/export.get.ts",
+      "source": "module:data",
+      "target": "file:server/api/datas/export.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/datas/export.get.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/datas/export.get.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/datas/export.get.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/datas/export.get.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/datas/import-to-template.post.ts",
+      "source": "project:root",
+      "target": "file:server/api/datas/import-to-template.post.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:data:file:server/api/datas/import-to-template.post.ts",
+      "source": "module:data",
+      "target": "file:server/api/datas/import-to-template.post.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/datas/import-to-template.post.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/datas/import-to-template.post.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/datas/import-to-template.post.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/datas/import-to-template.post.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/datas/import.post.ts",
+      "source": "project:root",
+      "target": "file:server/api/datas/import.post.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:data:file:server/api/datas/import.post.ts",
+      "source": "module:data",
+      "target": "file:server/api/datas/import.post.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/datas/import.post.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/datas/import.post.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/datas/import.post.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/datas/import.post.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/datas/index.get.ts",
+      "source": "project:root",
+      "target": "file:server/api/datas/index.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:data:file:server/api/datas/index.get.ts",
+      "source": "module:data",
+      "target": "file:server/api/datas/index.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/datas/index.get.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/datas/index.get.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/datas/index.get.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/datas/index.get.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/datas/index.post.ts",
+      "source": "project:root",
+      "target": "file:server/api/datas/index.post.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:data:file:server/api/datas/index.post.ts",
+      "source": "module:data",
+      "target": "file:server/api/datas/index.post.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/datas/index.post.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/datas/index.post.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/datas/index.post.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/datas/index.post.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/datas/[id].ts",
+      "source": "project:root",
+      "target": "file:server/api/datas/[id].ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:data:file:server/api/datas/[id].ts",
+      "source": "module:data",
+      "target": "file:server/api/datas/[id].ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/datas/[id].ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/datas/[id].ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/datas/[id].ts:file:server/utils/auth.ts",
+      "source": "file:server/api/datas/[id].ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/departments/index.get.ts",
+      "source": "project:root",
+      "target": "file:server/api/departments/index.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:config:file:server/api/departments/index.get.ts",
+      "source": "module:config",
+      "target": "file:server/api/departments/index.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/departments/index.get.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/departments/index.get.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/departments/index.get.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/departments/index.get.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/departments/index.post.ts",
+      "source": "project:root",
+      "target": "file:server/api/departments/index.post.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:config:file:server/api/departments/index.post.ts",
+      "source": "module:config",
+      "target": "file:server/api/departments/index.post.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/departments/index.post.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/departments/index.post.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/departments/index.post.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/departments/index.post.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/departments/[id].ts",
+      "source": "project:root",
+      "target": "file:server/api/departments/[id].ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:config:file:server/api/departments/[id].ts",
+      "source": "module:config",
+      "target": "file:server/api/departments/[id].ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/departments/[id].ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/departments/[id].ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/departments/[id].ts:file:server/utils/auth.ts",
+      "source": "file:server/api/departments/[id].ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/health.get.ts",
+      "source": "project:root",
+      "target": "file:server/api/health.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "uses:project:file:server/api/images/[dataId]/index.get.ts",
+      "source": "project:root",
+      "target": "file:server/api/images/[dataId]/index.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:data:file:server/api/images/[dataId]/index.get.ts",
+      "source": "module:data",
+      "target": "file:server/api/images/[dataId]/index.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/images/[dataId]/index.get.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/images/[dataId]/index.get.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/images/[dataId]/index.get.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/images/[dataId]/index.get.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/images/[dataId]/index.post.ts",
+      "source": "project:root",
+      "target": "file:server/api/images/[dataId]/index.post.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:data:file:server/api/images/[dataId]/index.post.ts",
+      "source": "module:data",
+      "target": "file:server/api/images/[dataId]/index.post.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/images/[dataId]/index.post.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/images/[dataId]/index.post.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/images/[dataId]/index.post.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/images/[dataId]/index.post.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "import:file:server/api/images/[dataId]/index.post.ts:file:server/utils/oss.ts",
+      "source": "file:server/api/images/[dataId]/index.post.ts",
+      "target": "file:server/utils/oss.ts",
+      "type": "imports",
+      "label": "~/server/utils/oss"
+    },
+    {
+      "id": "uses:project:file:server/api/images/[dataId]/[imageId]/index.delete.ts",
+      "source": "project:root",
+      "target": "file:server/api/images/[dataId]/[imageId]/index.delete.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:data:file:server/api/images/[dataId]/[imageId]/index.delete.ts",
+      "source": "module:data",
+      "target": "file:server/api/images/[dataId]/[imageId]/index.delete.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/images/[dataId]/[imageId]/index.delete.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/images/[dataId]/[imageId]/index.delete.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/images/[dataId]/[imageId]/index.delete.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/images/[dataId]/[imageId]/index.delete.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "import:file:server/api/images/[dataId]/[imageId]/index.delete.ts:file:server/utils/oss.ts",
+      "source": "file:server/api/images/[dataId]/[imageId]/index.delete.ts",
+      "target": "file:server/utils/oss.ts",
+      "type": "imports",
+      "label": "~/server/utils/oss"
+    },
+    {
+      "id": "uses:project:file:server/api/stats/by-category.get.ts",
+      "source": "project:root",
+      "target": "file:server/api/stats/by-category.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:analytics:file:server/api/stats/by-category.get.ts",
+      "source": "module:analytics",
+      "target": "file:server/api/stats/by-category.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/stats/by-category.get.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/stats/by-category.get.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/stats/by-category.get.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/stats/by-category.get.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/stats/custom.get.ts",
+      "source": "project:root",
+      "target": "file:server/api/stats/custom.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:analytics:file:server/api/stats/custom.get.ts",
+      "source": "module:analytics",
+      "target": "file:server/api/stats/custom.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/stats/custom.get.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/stats/custom.get.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/stats/custom.get.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/stats/custom.get.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/stats/overview.get.ts",
+      "source": "project:root",
+      "target": "file:server/api/stats/overview.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:analytics:file:server/api/stats/overview.get.ts",
+      "source": "module:analytics",
+      "target": "file:server/api/stats/overview.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/stats/overview.get.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/stats/overview.get.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/stats/overview.get.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/stats/overview.get.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/stats/trend.get.ts",
+      "source": "project:root",
+      "target": "file:server/api/stats/trend.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:analytics:file:server/api/stats/trend.get.ts",
+      "source": "module:analytics",
+      "target": "file:server/api/stats/trend.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/stats/trend.get.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/stats/trend.get.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/stats/trend.get.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/stats/trend.get.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/templates/create-from-file.post.ts",
+      "source": "project:root",
+      "target": "file:server/api/templates/create-from-file.post.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:templates:file:server/api/templates/create-from-file.post.ts",
+      "source": "module:templates",
+      "target": "file:server/api/templates/create-from-file.post.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/templates/create-from-file.post.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/templates/create-from-file.post.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/templates/create-from-file.post.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/templates/create-from-file.post.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/templates/index.get.ts",
+      "source": "project:root",
+      "target": "file:server/api/templates/index.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:templates:file:server/api/templates/index.get.ts",
+      "source": "module:templates",
+      "target": "file:server/api/templates/index.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/templates/index.get.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/templates/index.get.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/templates/index.get.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/templates/index.get.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/templates/index.post.ts",
+      "source": "project:root",
+      "target": "file:server/api/templates/index.post.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:templates:file:server/api/templates/index.post.ts",
+      "source": "module:templates",
+      "target": "file:server/api/templates/index.post.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/templates/index.post.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/templates/index.post.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/templates/index.post.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/templates/index.post.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/templates/[id]/filter-fields.get.ts",
+      "source": "project:root",
+      "target": "file:server/api/templates/[id]/filter-fields.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:templates:file:server/api/templates/[id]/filter-fields.get.ts",
+      "source": "module:templates",
+      "target": "file:server/api/templates/[id]/filter-fields.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/templates/[id]/filter-fields.get.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/templates/[id]/filter-fields.get.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/templates/[id]/filter-fields.get.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/templates/[id]/filter-fields.get.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/templates/[id].ts",
+      "source": "project:root",
+      "target": "file:server/api/templates/[id].ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:templates:file:server/api/templates/[id].ts",
+      "source": "module:templates",
+      "target": "file:server/api/templates/[id].ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/templates/[id].ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/templates/[id].ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/templates/[id].ts:file:server/utils/auth.ts",
+      "source": "file:server/api/templates/[id].ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/upload/index.post.ts",
+      "source": "project:root",
+      "target": "file:server/api/upload/index.post.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:data:file:server/api/upload/index.post.ts",
+      "source": "module:data",
+      "target": "file:server/api/upload/index.post.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/upload/index.post.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/upload/index.post.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "import:file:server/api/upload/index.post.ts:file:server/utils/oss.ts",
+      "source": "file:server/api/upload/index.post.ts",
+      "target": "file:server/utils/oss.ts",
+      "type": "imports",
+      "label": "~/server/utils/oss"
+    },
+    {
+      "id": "uses:project:file:server/api/users/index.get.ts",
+      "source": "project:root",
+      "target": "file:server/api/users/index.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:config:file:server/api/users/index.get.ts",
+      "source": "module:config",
+      "target": "file:server/api/users/index.get.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/users/index.get.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/users/index.get.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/users/index.get.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/users/index.get.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/users/index.post.ts",
+      "source": "project:root",
+      "target": "file:server/api/users/index.post.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:config:file:server/api/users/index.post.ts",
+      "source": "module:config",
+      "target": "file:server/api/users/index.post.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/users/index.post.ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/users/index.post.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/users/index.post.ts:file:server/utils/auth.ts",
+      "source": "file:server/api/users/index.post.ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/api/users/[id].ts",
+      "source": "project:root",
+      "target": "file:server/api/users/[id].ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:config:file:server/api/users/[id].ts",
+      "source": "module:config",
+      "target": "file:server/api/users/[id].ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/api/users/[id].ts:file:server/utils/prisma.ts",
+      "source": "file:server/api/users/[id].ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "import:file:server/api/users/[id].ts:file:server/utils/auth.ts",
+      "source": "file:server/api/users/[id].ts",
+      "target": "file:server/utils/auth.ts",
+      "type": "imports",
+      "label": "~/server/utils/auth"
+    },
+    {
+      "id": "uses:project:file:server/routes/oss/[...path].ts",
+      "source": "project:root",
+      "target": "file:server/routes/oss/[...path].ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:data:file:server/routes/oss/[...path].ts",
+      "source": "module:data",
+      "target": "file:server/routes/oss/[...path].ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/routes/oss/[...path].ts:file:server/utils/oss.ts",
+      "source": "file:server/routes/oss/[...path].ts",
+      "target": "file:server/utils/oss.ts",
+      "type": "imports",
+      "label": "~/server/utils/oss"
+    },
+    {
+      "id": "uses:project:file:server/routes/sw.js.ts",
+      "source": "project:root",
+      "target": "file:server/routes/sw.js.ts",
+      "type": "uses"
+    },
+    {
+      "id": "uses:project:file:server/utils/auth.ts",
+      "source": "project:root",
+      "target": "file:server/utils/auth.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:auth:file:server/utils/auth.ts",
+      "source": "module:auth",
+      "target": "file:server/utils/auth.ts",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:server/utils/auth.ts:file:server/utils/prisma.ts",
+      "source": "file:server/utils/auth.ts",
+      "target": "file:server/utils/prisma.ts",
+      "type": "imports",
+      "label": "~/server/utils/prisma"
+    },
+    {
+      "id": "uses:project:file:server/utils/oss.ts",
+      "source": "project:root",
+      "target": "file:server/utils/oss.ts",
+      "type": "uses"
+    },
+    {
+      "id": "uses:project:file:server/utils/prisma.ts",
+      "source": "project:root",
+      "target": "file:server/utils/prisma.ts",
+      "type": "uses"
+    },
+    {
+      "id": "uses:project:file:server/utils/query.ts",
+      "source": "project:root",
+      "target": "file:server/utils/query.ts",
+      "type": "uses"
+    },
+    {
+      "id": "uses:project:file:stores/auth.ts",
+      "source": "project:root",
+      "target": "file:stores/auth.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:auth:file:stores/auth.ts",
+      "source": "module:auth",
+      "target": "file:stores/auth.ts",
+      "type": "uses"
+    },
+    {
+      "id": "uses:project:file:stores/config.ts",
+      "source": "project:root",
+      "target": "file:stores/config.ts",
+      "type": "uses"
+    },
+    {
+      "id": "uses:project:file:composables/useNaiveUI.ts",
+      "source": "project:root",
+      "target": "file:composables/useNaiveUI.ts",
+      "type": "uses"
+    },
+    {
+      "id": "uses:project:file:components/AnalysisPanel.vue",
+      "source": "project:root",
+      "target": "file:components/AnalysisPanel.vue",
+      "type": "uses"
+    },
+    {
+      "id": "uses:project:file:components/DynamicFormFields.vue",
+      "source": "project:root",
+      "target": "file:components/DynamicFormFields.vue",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:components/DynamicFormFields.vue:file:stores/config.ts",
+      "source": "file:components/DynamicFormFields.vue",
+      "target": "file:stores/config.ts",
+      "type": "imports",
+      "label": "~/stores/config"
+    },
+    {
+      "id": "uses:project:file:layouts/default.vue",
+      "source": "project:root",
+      "target": "file:layouts/default.vue",
+      "type": "uses"
+    },
+    {
+      "id": "import:file:layouts/default.vue:file:stores/auth.ts",
+      "source": "file:layouts/default.vue",
+      "target": "file:stores/auth.ts",
+      "type": "imports",
+      "label": "~/stores/auth"
+    },
+    {
+      "id": "uses:project:file:middleware/auth.ts",
+      "source": "project:root",
+      "target": "file:middleware/auth.ts",
+      "type": "uses"
+    },
+    {
+      "id": "contains:module:auth:file:middleware/auth.ts",
+      "source": "module:auth",
+      "target": "file:middleware/auth.ts",
+      "type": "uses"
+    },
+    {
+      "id": "uses:project:file:plugins/naive-ui.ts",
+      "source": "project:root",
+      "target": "file:plugins/naive-ui.ts",
+      "type": "uses"
+    },
+    {
+      "id": "uses:project:file:prisma/schema.prisma",
+      "source": "project:root",
+      "target": "file:prisma/schema.prisma",
+      "type": "uses"
+    },
+    {
+      "id": "uses:project:file:prisma/schema.template.prisma",
+      "source": "project:root",
+      "target": "file:prisma/schema.template.prisma",
+      "type": "uses"
+    },
+    {
+      "id": "uses:project:file:prisma/seed.ts",
+      "source": "project:root",
+      "target": "file:prisma/seed.ts",
+      "type": "uses"
+    },
+    {
+      "id": "uses:project:file:scripts/build.mjs",
+      "source": "project:root",
+      "target": "file:scripts/build.mjs",
+      "type": "uses"
+    },
+    {
+      "id": "uses:project:file:scripts/fix-unhead.mjs",
+      "source": "project:root",
+      "target": "file:scripts/fix-unhead.mjs",
+      "type": "uses"
+    },
+    {
+      "id": "uses:project:file:scripts/init.mjs",
+      "source": "project:root",
+      "target": "file:scripts/init.mjs",
+      "type": "uses"
+    },
+    {
+      "id": "uses:project:file:scripts/prepare-prisma-schema.mjs",
+      "source": "project:root",
+      "target": "file:scripts/prepare-prisma-schema.mjs",
+      "type": "uses"
+    },
+    {
+      "id": "uses:project:file:scripts/start.mjs",
+      "source": "project:root",
+      "target": "file:scripts/start.mjs",
+      "type": "uses"
+    },
+    {
+      "id": "uses:project:file:scripts/understand-generate-graph.mjs",
+      "source": "project:root",
+      "target": "file:scripts/understand-generate-graph.mjs",
+      "type": "uses"
+    },
+    {
+      "id": "uses:project:file:README.md",
+      "source": "project:root",
+      "target": "file:README.md",
+      "type": "uses"
+    },
+    {
+      "id": "uses:project:file:package.json",
+      "source": "project:root",
+      "target": "file:package.json",
+      "type": "uses"
+    },
+    {
+      "id": "uses:project:file:nuxt.config.ts",
+      "source": "project:root",
+      "target": "file:nuxt.config.ts",
+      "type": "uses"
+    },
+    {
+      "id": "project-module:module:auth",
+      "source": "project:root",
+      "target": "module:auth",
+      "type": "uses"
+    },
+    {
+      "id": "project-module:module:data",
+      "source": "project:root",
+      "target": "module:data",
+      "type": "uses"
+    },
+    {
+      "id": "project-module:module:templates",
+      "source": "project:root",
+      "target": "module:templates",
+      "type": "uses"
+    },
+    {
+      "id": "project-module:module:analytics",
+      "source": "project:root",
+      "target": "module:analytics",
+      "type": "uses"
+    },
+    {
+      "id": "project-module:module:config",
+      "source": "project:root",
+      "target": "module:config",
+      "type": "uses"
+    }
+  ],
+  "tours": [
+    {
+      "id": "tour:onboarding-core",
+      "name": "Core Onboarding Tour",
+      "description": "Suggested order for understanding this project quickly.",
+      "steps": [
+        {
+          "nodeId": "file:README.md"
+        },
+        {
+          "nodeId": "file:package.json"
+        },
+        {
+          "nodeId": "file:nuxt.config.ts"
+        },
+        {
+          "nodeId": "file:prisma/schema.prisma"
+        },
+        {
+          "nodeId": "file:stores/auth.ts"
+        },
+        {
+          "nodeId": "file:server/utils/auth.ts"
+        },
+        {
+          "nodeId": "file:pages/datas/index.vue"
+        },
+        {
+          "nodeId": "file:pages/index.vue"
+        }
+      ]
+    }
+  ]
+}

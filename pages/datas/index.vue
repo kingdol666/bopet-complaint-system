@@ -1,124 +1,100 @@
 <template>
-  <div class="animate-fade-in">
+  <div class="data-management-page animate-fade-in">
     <!-- Page header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-      <div>
-        <h1 class="page-title">数据管理</h1>
-        <p class="page-subtitle">管理和追踪所有业务数据记录</p>
-      </div>
-      <div class="flex items-center gap-2">
-        <n-button type="default" @click="handleExport" :loading="exporting">
-          <template #icon>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
-                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+    <div class="page-header">
+      <div class="page-header-content">
+        <div class="page-header-left">
+          <div class="page-icon-wrapper">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
             </svg>
-          </template>
-          导出CSV
-        </n-button>
-        <n-button type="default" @click="navigateTo('/datas/import')">
-          <template #icon>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
-                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-            </svg>
-          </template>
-          批量导入
-        </n-button>
-        <n-button type="primary" @click="navigateTo('/datas/new')">
-          <template #icon>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v16m8-8H4" />
-            </svg>
-          </template>
-          新增记录
-        </n-button>
+          </div>
+          <div>
+            <h1 class="page-title">数据管理</h1>
+            <p class="page-subtitle">管理和追踪所有业务数据记录</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <n-button class="action-btn" @click="handleExport" :loading="exporting">
+            <template #icon>
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+            </template>
+            导出CSV
+          </n-button>
+          <n-button class="action-btn" @click="navigateTo('/datas/import')">
+            <template #icon>
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+            </template>
+            批量导入
+          </n-button>
+          <n-button type="primary" class="action-btn" @click="navigateTo('/datas/new')">
+            <template #icon>
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v16m8-8H4" />
+              </svg>
+            </template>
+            新增记录
+          </n-button>
+        </div>
       </div>
     </div>
 
     <!-- Filters -->
-    <div class="card mb-6">
-      <div class="flex items-center gap-2 mb-4">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-corporate-400" fill="none" viewBox="0 0 24 24"
-          stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
-            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-        </svg>
-        <span class="text-sm font-medium text-corporate-700">筛选条件（AND：所有条件同时满足）</span>
-        <span v-if="activeFilterCount > 0" class="text-xs bg-primary-50 text-primary-600 px-2 py-0.5 rounded-full">{{
-          activeFilterCount }} 个条件</span>
+    <div class="filter-card">
+      <div class="filter-header">
+        <div class="filter-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+          </svg>
+        </div>
+        <span class="filter-title">筛选条件（AND：所有条件同时满足）</span>
+        <span v-if="activeFilterCount > 0" class="filter-count">{{ activeFilterCount }} 个条件</span>
       </div>
 
       <!-- Row 1: Always visible - Date + Template + Keyword -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 pb-4 border-b border-corporate-100">
-        <n-date-picker v-model:value="dateRange" type="daterange" clearable placeholder="选择日期范围"
-          @update:value="handleDateChange" />
-
-        <n-select v-model:value="selectedTemplateId" :options="templateFilterOptions" placeholder="选择表单模板（加载自定义字段）"
-          clearable filterable @update:value="handleTemplateChange" />
-
-        <n-input v-model:value="filters.keyword" placeholder="全局搜索：编号/内容..." clearable @clear="handleSearch"
-          @keyup.enter="handleSearch">
+      <div class="filter-row">
+        <n-date-picker v-model:value="dateRange" type="daterange" clearable placeholder="选择日期范围" @update:value="handleDateChange" />
+        <n-select v-model:value="selectedTemplateId" :options="templateFilterOptions" placeholder="选择表单模板（加载自定义字段）" clearable filterable @update:value="handleTemplateChange" />
+        <n-input v-model:value="filters.keyword" placeholder="全局搜索：编号/内容..." clearable @clear="handleSearch" @keyup.enter="handleSearch">
           <template #prefix>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-corporate-400" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </template>
         </n-input>
       </div>
 
       <!-- Row 2+: Dynamic filter rows -->
-      <div v-if="selectedTemplateId" class="space-y-3 mb-4">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-medium text-corporate-500">
+      <div v-if="selectedTemplateId" class="dynamic-filters-section">
+        <div class="dynamic-filters-header">
+          <span class="dynamic-filters-label">
             自定义字段筛选（基于"{{ selectedTemplateName }}"模板的字段）
           </span>
         </div>
 
-        <div v-for="(row, rid) in dynamicFilters" :key="row.id"
-          class="flex flex-wrap items-center gap-2 p-3 bg-corporate-50 rounded-lg">
-          <!-- Field selector -->
-          <n-select v-model:value="row.field" :options="filterFieldOptions" placeholder="选择字段" clearable
-            style="min-width:160px;max-width:200px" @update:value="(v: any) => onDynamicFieldChange(idx, v)" />
-
-          <!-- Operator selector -->
-          <n-select v-model:value="row.operator" :options="getOperators(row)" placeholder="操作符"
-            style="min-width:100px;max-width:130px" />
-
-          <!-- Value input - varies by field type -->
-          <n-date-picker v-if="getFieldConfig(row.field)?.fieldType === 'date'" v-model:value="row._dateValue"
-            type="date" clearable style="min-width:160px;max-width:200px"
-            @update:value="(v: any) => row.value = v ? new Date(v).toISOString().slice(0, 10) : ''" />
-
-          <n-input-number v-else-if="getFieldConfig(row.field)?.fieldType === 'number'" v-model:value="row.value"
-            :min="0" placeholder="输入数值" style="min-width:140px;max-width:180px" />
-
-          <n-select v-else-if="hasOptions(row.field)" v-model:value="row.value" :options="getFieldOptions(row.field)"
-            placeholder="选择值" clearable filterable style="min-width:160px;max-width:280px" />
-
-          <n-input v-else v-model:value="row.value" placeholder="输入筛选值" clearable
-            style="min-width:160px;max-width:280px" />
-
-          <!-- Remove button -->
+        <div v-for="(row, idx) in dynamicFilters" :key="row.id" class="dynamic-filter-row">
+          <n-select v-model:value="row.field" :options="filterFieldOptions" placeholder="选择字段" clearable style="min-width:160px;max-width:200px" @update:value="(v: any) => onDynamicFieldChange(idx, v)" />
+          <n-select v-model:value="row.operator" :options="getOperators(row)" placeholder="操作符" style="min-width:100px;max-width:130px" />
+          <n-date-picker v-if="getFieldConfig(row.field)?.fieldType === 'date'" v-model:value="row._dateValue" type="date" clearable style="min-width:160px;max-width:200px" @update:value="(v: any) => row.value = v ? new Date(v).toISOString().slice(0, 10) : ''" />
+          <n-input-number v-else-if="getFieldConfig(row.field)?.fieldType === 'number'" v-model:value="row.value" :min="0" placeholder="输入数值" style="min-width:140px;max-width:180px" />
+          <n-select v-else-if="hasOptions(row.field)" v-model:value="row.value" :options="getFieldOptions(row.field)" placeholder="选择值" clearable filterable style="min-width:160px;max-width:280px" />
+          <n-input v-else v-model:value="row.value" placeholder="输入筛选值" clearable style="min-width:160px;max-width:280px" />
           <n-button type="error" text size="small" @click="removeDynamicFilter(idx)">
             <template #icon>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </template>
           </n-button>
         </div>
 
-        <n-button dashed size="small" @click="addDynamicFilter">
+        <n-button dashed size="small" class="add-filter-btn" @click="addDynamicFilter">
           <template #icon>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v16m8-8H4" />
             </svg>
           </template>
@@ -127,32 +103,26 @@
       </div>
 
       <!-- No template hint -->
-      <div v-else class="text-center py-6 text-sm text-corporate-400 bg-corporate-50 rounded-lg mb-4">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mx-auto mb-2 text-corporate-300" fill="none"
-          viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      <div v-else class="no-template-hint">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 no-template-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
-        选择表单模板后，可使用模板的自定义字段进行精确筛选
+        <p class="no-template-text">选择表单模板后，可使用模板的自定义字段进行精确筛选</p>
       </div>
 
-      <div class="flex justify-end pt-4 border-t border-corporate-100 gap-2">
-        <n-button type="default" @click="handleReset">
+      <div class="filter-actions">
+        <n-button @click="handleReset">
           <template #icon>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </template>
           重置全部
         </n-button>
         <n-button type="primary" @click="handleSearch">
           <template #icon>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </template>
           查询
@@ -161,12 +131,12 @@
     </div>
 
     <!-- Batch actions bar -->
-    <div v-if="checkedRowKeys.length > 0" class="card mb-4 bg-primary-50 border-primary-200">
-      <div class="flex items-center justify-between">
-        <span class="text-sm font-medium text-primary-700">
-          已选择 <span class="font-bold">{{ checkedRowKeys.length }}</span> 条记录
+    <div v-if="checkedRowKeys.length > 0" class="batch-actions-card">
+      <div class="batch-actions-content">
+        <span class="batch-info">
+          已选择 <span class="batch-count">{{ checkedRowKeys.length }}</span> 条记录
         </span>
-        <div class="flex items-center gap-2">
+        <div class="batch-buttons">
           <n-button type="primary" size="small" :loading="batchProcessing" @click="batchMarkProcessed">
             批量标记已处理
           </n-button>
@@ -179,20 +149,16 @@
     </div>
 
     <!-- Table -->
-    <div class="card overflow-hidden">
-      <div class="overflow-x-auto">
-        <n-data-table :columns="columns" :data="tableData" :loading="loading" :pagination="false"
-          :row-key="(row: any) => row.id" :checked-row-keys="checkedRowKeys" :scroll-x="900" @update:sorter="handleSort"
-          @update:checked-row-keys="(keys: any) => checkedRowKeys = keys" />
+    <div class="table-card">
+      <div class="table-wrapper">
+        <n-data-table :columns="columns" :data="tableData" :loading="loading" :pagination="false" :row-key="(row: any) => row.id" :checked-row-keys="checkedRowKeys" :scroll-x="900" @update:sorter="handleSort" @update:checked-row-keys="(keys: any) => checkedRowKeys = keys" />
       </div>
 
-      <div class="flex items-center justify-between mt-4 pt-4 border-t border-corporate-100">
-        <p class="text-sm text-corporate-500">
-          共 <span class="font-medium text-corporate-900">{{ pagination.total }}</span> 条记录
+      <div class="table-footer">
+        <p class="table-total">
+          共 <span class="table-total-count">{{ pagination.total }}</span> 条记录
         </p>
-        <n-pagination v-model:page="pagination.page" :page-count="pagination.totalPages"
-          :page-size="pagination.pageSize" show-size-picker :page-sizes="[10, 20, 50, 100]" @update:page="loadData"
-          @update:page-size="handlePageSizeChange" />
+        <n-pagination v-model:page="pagination.page" :page-count="pagination.totalPages" :page-size="pagination.pageSize" show-size-picker :page-sizes="[10, 20, 50, 100]" @update:page="loadData" @update:page-size="handlePageSizeChange" />
       </div>
     </div>
   </div>
@@ -713,3 +679,257 @@ async function handleExport() {
   }
 }
 </script>
+
+<style scoped>
+.data-management-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.page-header {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.page-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.page-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.page-icon-wrapper {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 0.875rem;
+  background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.2), 0 2px 4px -1px rgba(14, 165, 233, 0.1);
+}
+
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.page-subtitle {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-top: 0.25rem;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+}
+
+.filter-card {
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.filter-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.filter-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2563eb;
+}
+
+.filter-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.filter-count {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.125rem 0.5rem;
+  background: rgba(14, 165, 233, 0.1);
+  color: #0ea5e9;
+  border-radius: 9999px;
+}
+
+.filter-row {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+@media (min-width: 768px) {
+  .filter-row {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.dynamic-filters-section {
+  margin-bottom: 1rem;
+}
+
+.dynamic-filters-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.dynamic-filters-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.dynamic-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 0.75rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.add-filter-btn {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.no-template-hint {
+  text-align: center;
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 0.75rem;
+  margin-bottom: 1rem;
+  border: 1px dashed rgba(0, 0, 0, 0.1);
+}
+
+.no-template-icon {
+  color: #cbd5e1;
+  margin: 0 auto 0.5rem;
+}
+
+.no-template-text {
+  font-size: 0.875rem;
+  color: #94a3b8;
+}
+
+.filter-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.batch-actions-card {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-radius: 1rem;
+  padding: 1rem 1.5rem;
+  box-shadow: 0 1px 3px rgba(14, 165, 233, 0.1), 0 1px 2px rgba(14, 165, 233, 0.05);
+  border: 1px solid rgba(14, 165, 233, 0.2);
+}
+
+.batch-actions-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.batch-info {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e40af;
+}
+
+.batch-count {
+  font-weight: 700;
+  color: #0ea5e9;
+}
+
+.batch-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.table-card {
+  background: #ffffff;
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.table-total {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.table-total-count {
+  font-weight: 600;
+  color: #0f172a;
+}
+</style>

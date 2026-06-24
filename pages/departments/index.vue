@@ -1,16 +1,35 @@
 <template>
-  <div class="animate-fade-in">
-    <div class="mb-4">
-      <h1 class="page-title">部门与人员管理</h1>
-      <p class="page-subtitle">管理部门组织架构，查看人员分配</p>
+  <div class="department-management-page animate-fade-in">
+    <!-- Page header -->
+    <div class="page-header">
+      <div class="page-header-content">
+        <div class="page-header-left">
+          <div class="page-icon-wrapper">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </div>
+          <div>
+            <h1 class="page-title">部门与人员管理</h1>
+            <p class="page-subtitle">管理部门组织架构，查看人员分配</p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <!-- Left: Department List -->
-      <div class="card">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="section-title mb-0">部门架构</h3>
-          <n-button v-if="isSuperAdmin" size="small" type="primary" @click="openDeptModal()">
+      <div class="dept-list-card">
+        <div class="card-header">
+          <div class="flex items-center gap-2">
+            <div class="header-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            </div>
+            <h3 class="card-title">部门架构</h3>
+          </div>
+          <n-button v-if="isSuperAdmin" size="small" class="add-btn" @click="openDeptModal()">
             <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
                 stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -19,19 +38,32 @@
           </n-button>
         </div>
         <n-spin :show="deptLoading">
-          <div class="space-y-1 max-h-[600px] overflow-y-auto">
+          <div class="dept-list">
             <div v-for="d in departments" :key="d.id"
-              class="flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition-colors border"
-              :class="selectedDeptId === d.id ? 'border-primary-300 bg-primary-50' : 'border-transparent hover:bg-gray-50'"
+              class="dept-item"
+              :class="{ 'dept-item-active': selectedDeptId === d.id }"
               @click="selectDept(d)">
-              <div class="min-w-0">
-                <p class="text-sm font-medium text-gray-800">{{ d.name }}</p>
-                <p class="text-xs text-gray-400">{{ d._count?.userDepartments || 0 }}人 · {{ d._count?.datas || 0
-                  }}条记录</p>
+              <div class="dept-item-content">
+                <p class="dept-item-name">{{ d.name }}</p>
+                <p class="dept-item-stats">
+                  <span class="stat-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    {{ d._count?.userDepartments || 0 }}人
+                  </span>
+                  <span class="stat-divider">·</span>
+                  <span class="stat-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    {{ d._count?.datas || 0 }}条记录
+                  </span>
+                </p>
               </div>
-              <div v-if="isSuperAdmin" class="flex gap-0.5 shrink-0 ml-2">
-                <n-button size="tiny" quaternary @click.stop="openDeptModal(d)">
-                  <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none"
+              <div v-if="isSuperAdmin" class="dept-item-actions">
+                <n-button size="tiny" quaternary class="action-icon-btn" @click.stop="openDeptModal(d)">
+                  <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none"
                       viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -39,8 +71,8 @@
                 </n-button>
                 <n-popconfirm @positive-click="deleteDept(d.id)">
                   <template #trigger>
-                    <n-button size="tiny" quaternary type="error">
-                      <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none"
+                    <n-button size="tiny" quaternary type="error" class="action-icon-btn">
+                      <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none"
                           viewBox="0 0 24 24" stroke="currentColor">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -51,18 +83,28 @@
                 </n-popconfirm>
               </div>
             </div>
-            <div v-if="!departments.length && !deptLoading" class="text-center py-8 text-gray-400 text-sm">
-              暂无部门数据
+            <div v-if="!departments.length && !deptLoading" class="empty-state">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 mx-auto mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              <p>暂无部门数据</p>
             </div>
           </div>
         </n-spin>
       </div>
 
       <!-- Right: Users in selected department -->
-      <div class="lg:col-span-2 card">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="section-title mb-0">{{ selectedDept ? selectedDept.name + ' - 人员' : '选择部门查看人员' }}</h3>
-          <n-button v-if="isSuperAdmin && selectedDept" size="small" type="primary" @click="openUserModal()">
+      <div class="lg:col-span-2 user-list-card">
+        <div class="card-header">
+          <div class="flex items-center gap-2">
+            <div class="header-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </div>
+            <h3 class="card-title">{{ selectedDept ? selectedDept.name + ' - 人员' : '选择部门查看人员' }}</h3>
+          </div>
+          <n-button v-if="isSuperAdmin && selectedDept" size="small" class="add-btn" @click="openUserModal()">
             <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
                 stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -75,13 +117,16 @@
         <template v-if="selectedDept">
           <n-spin :show="userLoading">
             <n-data-table :columns="userCols" :data="deptUsers" size="small" :bordered="false" />
-            <div v-if="!deptUsers.length && !userLoading" class="text-center py-8 text-gray-400 text-sm">
-              该部门暂无人员
+            <div v-if="!deptUsers.length && !userLoading" class="empty-state">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 mx-auto mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              <p>该部门暂无人员</p>
             </div>
           </n-spin>
         </template>
-        <div v-else class="text-center py-12 text-gray-400">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-3 opacity-30" fill="none"
+        <div v-else class="empty-state-large">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 mx-auto mb-4 opacity-20" fill="none"
             viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
               d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -316,3 +361,250 @@ onMounted(async () => {
   if (departments.value.length) selectDept(departments.value[0])
 })
 </script>
+
+<style scoped>
+.department-management-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.page-header {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.page-header-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.page-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.page-icon-wrapper {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.2), 0 2px 4px -1px rgba(245, 158, 11, 0.1);
+}
+
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.page-subtitle {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0.25rem 0 0 0;
+}
+
+.dept-list-card,
+.user-list-card {
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.3s ease;
+}
+
+.dept-list-card:hover,
+.user-list-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.header-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0ea5e9;
+}
+
+.card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.add-btn {
+  height: 2rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border: none;
+  color: white;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.2);
+  transition: all 0.2s ease;
+}
+
+.add-btn:hover {
+  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
+  transform: translateY(-1px);
+}
+
+.dept-list {
+  max-height: 600px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dept-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 1rem;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  background: #f8fafc;
+}
+
+.dept-item:hover {
+  background: #f1f5f9;
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+.dept-item-active {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-color: rgba(14, 165, 233, 0.3);
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.1);
+}
+
+.dept-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.dept-item-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #0f172a;
+  margin: 0;
+}
+
+.dept-item-stats {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin: 0.25rem 0 0 0;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.stat-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.stat-divider {
+  color: #cbd5e1;
+}
+
+.dept-item-actions {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: 0.75rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.dept-item:hover .dept-item-actions {
+  opacity: 1;
+}
+
+.action-icon-btn {
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border-radius: 0.375rem;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+.empty-state-large {
+  text-align: center;
+  padding: 4rem 1rem;
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+/* Modal styling */
+:deep(.n-modal .n-card) {
+  border-radius: 1rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+:deep(.n-modal .n-card-header) {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+:deep(.n-modal .n-card-header__main) {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+:deep(.n-modal .n-card__content) {
+  padding: 1.5rem;
+}
+
+:deep(.n-form-item .n-form-item-label) {
+  font-weight: 500;
+  color: #334155;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .dept-item-actions {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-title {
+    font-size: 1.25rem;
+  }
+}
+</style>

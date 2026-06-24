@@ -5,6 +5,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "understand:graph": "node scripts/understand-generate-graph.mjs",
     "prisma:prepare": "node scripts/prepare-prisma-schema.mjs",
     "init": "node scripts/init.mjs",
     "build": "npm run prisma:prepare && node scripts/build.mjs",
