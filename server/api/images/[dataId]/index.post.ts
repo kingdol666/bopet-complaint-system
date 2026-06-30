@@ -3,17 +3,22 @@
  * 支持 multipart/form-data，字段名 "file"（单张）或 "files"（多张）
  */
 import { prisma } from '~/server/utils/prisma'
-import { requireWritePermission } from '~/server/utils/auth'
-import { ossStore, ALLOWED_IMAGE_TYPES, MAX_FILE_SIZE } from '~/server/utils/oss'
+import { requireWritePermission, canAccessDepartment } from '~/server/utils/auth'
+import { ossStore, ALLOWED_IMAGE_TYPES, ALLOWED_DOC_TYPES, MAX_FILE_SIZE } from '~/server/utils/oss'
+
+const ALLOWED_TYPES = [...ALLOWED_IMAGE_TYPES, ...ALLOWED_DOC_TYPES]
 
 export default defineEventHandler(async (event) => {
   try {
     const currentUser = await requireWritePermission(event)
     const dataId = Number(getRouterParam(event, 'dataId') || '0')
 
-    // 验证记录存在
+    // 验证记录存在且当前用户有权访问该记录所属部门
     const record = await prisma.dataRecord.findUnique({ where: { id: dataId } })
     if (!record) throw createError({ statusCode: 404, message: '数据记录不存在' })
+    if (!canAccessDepartment(currentUser, record.responsibleDeptId)) {
+      throw createError({ statusCode: 403, message: '您没有向该记录上传附件的权限' })
+    }
 
     const formData = await readMultipartFormData(event)
     if (!formData?.length) throw createError({ statusCode: 400, message: '未选择文件' })
@@ -27,9 +32,9 @@ export default defineEventHandler(async (event) => {
 
     for (const file of files) {
       try {
-        // 验证类型
+        // 验证类型（图片 + 文档）
         const mimeType = file.type || 'application/octet-stream'
-        if (!ALLOWED_IMAGE_TYPES.includes(mimeType)) {
+        if (!ALLOWED_TYPES.includes(mimeType)) {
           errors.push(`${file.filename}: 不支持的格式 ${mimeType}`)
           continue
         }
@@ -63,6 +68,7 @@ export default defineEventHandler(async (event) => {
           id: attachment.id,
           fileName: attachment.fileName,
           fileUrl: attachment.fileUrl,
+          storagePath: attachment.storagePath,
           fileType: attachment.fileType,
           fileSize: attachment.fileSize,
           width: attachment.width,

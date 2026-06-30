@@ -1,3 +1,4 @@
+// @ts-ignore - @css-render/vue3-ssr is a dependency of naive-ui
 import { setup } from '@css-render/vue3-ssr'
 import naive from 'naive-ui'
 

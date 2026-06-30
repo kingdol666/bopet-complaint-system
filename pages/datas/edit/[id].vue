@@ -72,11 +72,11 @@ const dataId = computed(() => Number.parseInt(String(route.params.id || '0'), 10
 // Standard field keys that map directly to DataRecord columns
 const STANDARD_FIELD_KEYS = new Set([
   'feedbackDate', 'productionTime', 'customerId', 'productModelId', 'thickness',
-  'rollNo', 'quantityInvolved', 'application', 'productionLineId', 'shiftTeam',
-  'machineNo', 'batchNo', 'feedbackContent',
-  'closureStatus', 'responsibleDeptId',
-  'responsibleProcessId', 'rootCauseAnalysis', 'correctiveAction',
-  'lessonsLearned', 'reviewConclusion', 'remark'
+  'specification', 'rollNo', 'quantityInvolved', 'application', 'productionLineId',
+  'shiftTeam', 'machineNo', 'batchNo', 'feedbackContent', 'category',
+  'closureStatus', 'responsibleDeptId', 'responsibleProcessId',
+  'rootCauseAnalysis', 'correctiveAction', 'lessonsLearned', 'reviewConclusion',
+  'productUsage', 'improvementAction', 'remark'
 ])
 
 const DATE_FIELDS = new Set(['feedbackDate', 'productionTime'])
@@ -124,11 +124,7 @@ function buildPayload(data: Record<string, any>) {
     }
   }
 
-  for (const dateField of DATE_FIELDS) {
-    if (!standardPayload[dateField]) {
-      standardPayload[dateField] = dayjs().format('YYYY-MM-DD')
-    }
-  }
+  // 编辑场景：不默认填充日期，避免覆盖原值；仅当表单显式包含日期字段时才更新
 
   return {
     ...standardPayload,

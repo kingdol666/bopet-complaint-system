@@ -27,16 +27,20 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // 删除 OSS 文件
-    // @ts-ignore - storagePath 字段在数据库迁移后添加，Prisma 客户端可能未更新
-    if ((attachment as any).storagePath) {
-      await ossDelete((attachment as any).storagePath)
-    } else {
-      const oldPath = attachment.fileUrl?.replace('/oss/', '')
-      if (oldPath) await ossDelete(oldPath)
-    }
-
+    // 先删除数据库记录，保证数据一致性
     await prisma.dataAttachment.delete({ where: { id: imageId } })
+
+    // 再删除 OSS 文件（失败不影响 DB 一致性）
+    try {
+      if (attachment.storagePath) {
+        await ossDelete(attachment.storagePath)
+      } else {
+        const oldPath = attachment.fileUrl?.replace('/oss/', '')
+        if (oldPath) await ossDelete(oldPath)
+      }
+    } catch {
+      // OSS 删除失败仅记录，不阻断接口返回成功
+    }
 
     return { success: true, message: '图片已删除' }
   } catch (error: any) {

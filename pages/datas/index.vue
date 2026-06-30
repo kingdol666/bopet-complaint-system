@@ -489,7 +489,7 @@ async function loadData() {
       }
     })
 
-    const response = await $fetch('/api/datas', { params })
+    const response = await $fetch('/api/datas', { params, headers: authStore.getAuthHeaders() })
 
     if (response.success) {
       tableData.value = response.data.records

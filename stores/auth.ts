@@ -116,6 +116,12 @@ export const useAuthStore = defineStore('auth', {
             return
           }
         }
+      } else if (import.meta.server) {
+        // SSR 场景：从请求 cookie 中恢复 token，避免直接刷新页面时被误判为未登录
+        const cookie = useCookie('auth_token')
+        if (cookie.value) {
+          this.token = cookie.value
+        }
       }
 
       if (this.token) {

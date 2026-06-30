@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
 import { requireSessionUser, requireWritePermission, canAccessDepartment, isNormalUser } from '~/server/utils/auth'
+import { ossDelete } from '~/server/utils/oss'
 
 const updateSchema = z.object({
   feedbackDate: z.string().transform((v) => new Date(v)).optional(),
@@ -37,7 +38,9 @@ const updateSchema = z.object({
     storagePath: z.string().optional().default(''),
     fileType: z.string(),
     fileSize: z.number(),
-    contentHash: z.string().optional().default('')
+    contentHash: z.string().optional().default(''),
+    width: z.number().int().nullable().optional(),
+    height: z.number().int().nullable().optional()
   })).optional().nullable()
 })
 
@@ -152,7 +155,13 @@ export default defineEventHandler(async (event) => {
       })
 
       // Handle attachments: delete old, create new (in transaction)
+      let oldAttachmentPaths: { storagePath: string | null; fileUrl: string }[] = []
       if (attachments !== undefined) {
+        oldAttachmentPaths = await prisma.dataAttachment.findMany({
+          where: { dataId: id },
+          select: { storagePath: true, fileUrl: true }
+        })
+
         await prisma.$transaction(async (tx) => {
           await tx.dataAttachment.deleteMany({ where: { dataId: id } })
           if (attachments && attachments.length > 0) {
@@ -165,11 +174,27 @@ export default defineEventHandler(async (event) => {
                 fileType: a.fileType,
                 fileSize: a.fileSize,
                 contentHash: a.contentHash || '',
+                width: a.width,
+                height: a.height,
                 uploadedById: currentUser.id
               }))
             })
           }
         })
+
+        // 事务成功后清理旧 OSS 文件（失败不影响业务）
+        for (const att of oldAttachmentPaths) {
+          try {
+            if (att.storagePath) {
+              await ossDelete(att.storagePath)
+            } else {
+              const oldPath = att.fileUrl?.replace('/oss/', '')
+              if (oldPath) await ossDelete(oldPath)
+            }
+          } catch {
+            // 忽略 OSS 清理失败
+          }
+        }
       }
 
       await prisma.operationLog.create({
@@ -230,6 +255,12 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    // 删除前先记录需要清理的 OSS 文件路径（级联删除会清掉附件表记录）
+    const attachmentsToClean = await prisma.dataAttachment.findMany({
+      where: { dataId: id },
+      select: { storagePath: true, fileUrl: true }
+    })
+
     await prisma.$transaction([
       prisma.dataRecord.delete({ where: { id } }),
       prisma.operationLog.create({
@@ -243,6 +274,20 @@ export default defineEventHandler(async (event) => {
         }
       })
     ])
+
+    // 事务成功后异步清理 OSS 物理文件（失败不影响业务）
+    for (const att of attachmentsToClean) {
+      try {
+        if (att.storagePath) {
+          await ossDelete(att.storagePath)
+        } else {
+          const oldPath = att.fileUrl?.replace('/oss/', '')
+          if (oldPath) await ossDelete(oldPath)
+        }
+      } catch {
+        // 忽略 OSS 清理失败
+      }
+    }
 
     return {
       success: true,

@@ -281,8 +281,12 @@ model DataAttachment {
   dataId       Int
   fileName     String   // 文件名
   fileUrl      String   // 文件路径/URL
+  storagePath  String   // OSS 内部存储路径（相对 OSS_ROOT）
   fileType     String   // image/png, application/pdf, video/mp4
   fileSize     Int      // 文件大小(字节)
+  contentHash  String   // 文件内容 SHA-256
+  width        Int?     // 图片宽度（仅图片）
+  height       Int?     // 图片高度（仅图片）
   uploadedById Int?
   createdAt    DateTime @default(now())
 

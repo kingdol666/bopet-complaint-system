@@ -38,7 +38,9 @@ const createSchema = z.object({
     storagePath: z.string().optional().default(''),
     fileType: z.string(),
     fileSize: z.number(),
-    contentHash: z.string().optional().default('')
+    contentHash: z.string().optional().default(''),
+    width: z.number().int().nullable().optional(),
+    height: z.number().int().nullable().optional()
   })).optional().nullable()
 })
 
@@ -149,6 +151,8 @@ export default defineEventHandler(async (event) => {
                 fileType: a.fileType,
                 fileSize: a.fileSize,
                 contentHash: a.contentHash || '',
+                width: a.width ?? null,
+                height: a.height ?? null,
                 uploadedById: currentUser.id
               }))
             })

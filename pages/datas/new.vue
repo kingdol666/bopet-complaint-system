@@ -109,11 +109,11 @@ const templateOptions = computed(() =>
 // Standard field keys that map directly to DataRecord columns
 const STANDARD_FIELD_KEYS = new Set([
   'feedbackDate', 'productionTime', 'customerId', 'productModelId', 'thickness',
-  'rollNo', 'quantityInvolved', 'application', 'productionLineId', 'shiftTeam',
-  'machineNo', 'batchNo', 'feedbackContent',
-  'closureStatus', 'responsibleDeptId',
-  'responsibleProcessId', 'rootCauseAnalysis', 'correctiveAction',
-  'lessonsLearned', 'reviewConclusion', 'remark'
+  'specification', 'rollNo', 'quantityInvolved', 'application', 'productionLineId',
+  'shiftTeam', 'machineNo', 'batchNo', 'feedbackContent', 'category',
+  'closureStatus', 'responsibleDeptId', 'responsibleProcessId',
+  'rootCauseAnalysis', 'correctiveAction', 'lessonsLearned', 'reviewConclusion',
+  'productUsage', 'improvementAction', 'remark'
 ])
 
 const DATE_FIELDS = new Set(['feedbackDate', 'productionTime'])
@@ -149,8 +149,9 @@ function buildPayload(data: Record<string, any>) {
 
 onMounted(async () => {
   try {
+    await authStore.checkAuth()
     await configStore.loadConfig()
-    const response = await $fetch('/api/templates')
+    const response = await $fetch('/api/templates', { headers: authStore.getAuthHeaders() })
     if (response.success) {
       templates.value = response.data
       const defaultTemplate = response.data.find((t: any) => t.isDefault)
@@ -188,8 +189,8 @@ async function handleSubmit() {
     })
 
     if (response.success) {
-      if (response.warning) {
-        message.warning(response.warning)
+      if (response.message) {
+        message.warning(response.message)
       } else {
         message.success('数据记录创建成功')
       }
