@@ -11,6 +11,7 @@ interface User {
   name: string
   role: string
   departments: Department[]
+  grantedDepartments?: Department[]
 }
 
 interface AuthState {
@@ -33,6 +34,13 @@ export const useAuthStore = defineStore('auth', {
     canWrite: (state) => state.user?.role === 'superadmin' || state.user?.role === 'admin',
     /** 获取用户所属部门ID列表 */
     departmentIds: (state) => state.user?.departments?.map(d => d.id) || [],
+    /** 获取跨部门授权可查看的部门ID列表 */
+    grantedDepartmentIds: (state) => state.user?.grantedDepartments?.map(d => d.id) || [],
+    /** 获取所有可查看部门ID列表（本部门 + 跨部门授权） */
+    viewableDepartmentIds: (state) => [
+      ...(state.user?.departments?.map(d => d.id) || []),
+      ...(state.user?.grantedDepartments?.map(d => d.id) || [])
+    ],
     roleLabel: (state) => {
       const map: Record<string, string> = {
         superadmin: '超级管理员',

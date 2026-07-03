@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
-import { requireWritePermission, isSuperAdmin, canAccessDepartment } from '~/server/utils/auth'
+import { requireWritePermission, isSuperAdmin, canModifyDepartment } from '~/server/utils/auth'
 
 const fieldSchema = z.object({
   fieldKey: z.string().min(1).max(100),
@@ -29,10 +29,8 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event)
     const data = createTemplateSchema.parse(body)
 
-    // Validate department access
-    // superadmin can create templates for any department
-    // admin can only create templates for their own departments
-    if (data.departmentId && !isSuperAdmin(user) && !canAccessDepartment(user, data.departmentId)) {
+    // Validate department access (modify level: admin can only create templates for their own departments)
+    if (data.departmentId && !isSuperAdmin(user) && !canModifyDepartment(user, data.departmentId)) {
       throw createError({ statusCode: 403, message: '无权为该部门创建模板' })
     }
 

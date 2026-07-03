@@ -1,5 +1,5 @@
 import { prisma } from '~/server/utils/prisma'
-import { requireSessionUser, isSuperAdmin, getVisibleDepartmentIds } from '~/server/utils/auth'
+import { requireSessionUser, isSuperAdmin, getViewableDepartmentIds } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
 
     // Department scoping: users can see global + own department + public
     if (!isSuperAdmin(user)) {
-      const deptIds = getVisibleDepartmentIds(user) || []
+      const deptIds = getViewableDepartmentIds(user) || []
       where.OR = [
         { departmentId: null },
         ...(deptIds.length > 0 ? [{ departmentId: { in: deptIds } }] : [])

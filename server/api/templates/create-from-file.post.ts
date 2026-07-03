@@ -1,5 +1,5 @@
 import { prisma } from '~/server/utils/prisma'
-import { requireWritePermission, isSuperAdmin, getVisibleDepartmentIds } from '~/server/utils/auth'
+import { requireWritePermission, isSuperAdmin, canModifyDepartment } from '~/server/utils/auth'
 
 function detectType(values: any[], rowCount: number, selectThreshold: number = 5): string {
   const nonEmpty = values.filter(v => v !== null && v !== undefined && String(v).trim() !== '')
@@ -117,11 +117,10 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, message: '仅支持 .xlsx / .xls / .csv' })
     }
 
-    // Permission
+    // Permission: admin can only create templates for their own departments (not cross-dept granted)
     if (!isSuperAdmin(currentUser)) {
-      const depts = getVisibleDepartmentIds(currentUser) || []
-      if (departmentId && !depts.includes(departmentId)) throw createError({ statusCode: 403, message: '无权在该部门创建' })
-      if (!departmentId && depts.length > 0) departmentId = depts[0]
+      if (departmentId && !canModifyDepartment(currentUser, departmentId)) throw createError({ statusCode: 403, message: '无权在该部门创建模板' })
+      if (!departmentId && currentUser.departmentIds.length > 0) departmentId = currentUser.departmentIds[0]
     }
 
     // Parse file

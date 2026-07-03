@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
 
     // Department filter: buildDepartmentFilter returns { responsibleDeptId: { in: [...] } } or {}
     const deptFilter = buildDepartmentFilter(currentUser)
-    const deptIds = currentUser.role === 'superadmin' ? null : currentUser.departmentIds
+    const deptIds = currentUser.role === 'superadmin' ? null : [...new Set([...currentUser.departmentIds, ...currentUser.grantedDepartmentIds])]
 
     // Dates are stored as Unix millisecond integers in SQLite
     const yearStart = new Date(year, 0, 1).getTime()

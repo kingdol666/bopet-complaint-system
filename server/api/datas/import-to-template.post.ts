@@ -1,7 +1,7 @@
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat.js'
 import { prisma } from '~/server/utils/prisma'
-import { requireWritePermission, canAccessDepartment } from '~/server/utils/auth'
+import { requireWritePermission, canModifyDepartment } from '~/server/utils/auth'
 
 dayjs.extend(customParseFormat)
 
@@ -214,6 +214,12 @@ export default defineEventHandler(async (event) => {
       include: { fields: { orderBy: { sortOrder: 'asc' } } }
     })
     if (!template) throw createError({ statusCode: 404, message: '模板不存在' })
+    if (!template.enabled) throw createError({ statusCode: 400, message: '模板已停用' })
+
+    // Check template access: non-superadmin users can only import to templates they can access
+    if (template.departmentId && !template.isPublic && !canAccessDepartment(currentUser, template.departmentId)) {
+      throw createError({ statusCode: 403, message: '无权使用该模板导入数据' })
+    }
 
     // Build header → fieldKey mapping from template field definitions
     // Match by fieldLabel (what the user sees / what matches file headers)
@@ -356,8 +362,8 @@ export default defineEventHandler(async (event) => {
           recordData.productionTime = new Date(recordData.productionTime)
         }
 
-        // 校验导入部门权限
-        if (recordData.responsibleDeptId && !canAccessDepartment(currentUser, recordData.responsibleDeptId)) {
+        // 校验导入部门权限（仅本部门管理员可导入）
+        if (recordData.responsibleDeptId && !canModifyDepartment(currentUser, recordData.responsibleDeptId)) {
           throw new Error(`无权导入到责任部门 ID ${recordData.responsibleDeptId}`)
         }
 

@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client'
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
-import { requireWritePermission, canAccessDepartment } from '~/server/utils/auth'
+import { requireWritePermission, canModifyDepartment } from '~/server/utils/auth'
 
 const createSchema = z.object({
   feedbackDate: z.string().transform((v) => new Date(v)),
@@ -90,10 +90,10 @@ export default defineEventHandler(async (event) => {
     const data = createSchema.parse(body)
 
     // Check department access: admin can only create records for their own departments
-    if (data.responsibleDeptId && !canAccessDepartment(currentUser, data.responsibleDeptId)) {
+    if (data.responsibleDeptId && !canModifyDepartment(currentUser, data.responsibleDeptId)) {
       throw createError({
         statusCode: 403,
-        message: '您没有该部门的操作权限'
+        message: '您没有该部门的操作权限（仅本部门管理员可创建）'
       })
     }
 

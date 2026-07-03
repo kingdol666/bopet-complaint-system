@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
   try {
     const user = await requireSessionUser(event)
     const deptFilter = buildDepartmentFilter(user)
-    const deptIds = user.role === 'superadmin' ? null : user.departmentIds
+    const deptIds = user.role === 'superadmin' ? null : [...new Set([...user.departmentIds, ...user.grantedDepartmentIds])]
     const query = getQuery(event)
 
     const groupByRaw = (query.groupBy as string) || ''

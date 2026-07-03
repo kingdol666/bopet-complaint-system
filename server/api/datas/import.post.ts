@@ -149,6 +149,7 @@ export default defineEventHandler(async (event) => {
           data: {
             dataNo,
             feedbackDate: new Date(),
+            responsibleDeptId: currentUser.departmentIds?.[0] ?? null,
             createdById: currentUser.id,
             updatedById: currentUser.id,
             templateData: JSON.stringify({

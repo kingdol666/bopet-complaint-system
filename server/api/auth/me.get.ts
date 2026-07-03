@@ -5,10 +5,22 @@ export default defineEventHandler(async (event) => {
   try {
     const user = await requireSessionUser(event)
 
-    const userDepts = await prisma.userDepartment.findMany({
-      where: { userId: user.id },
-      include: { department: { select: { id: true, name: true } } }
-    })
+    const [userDepts, grantedDepts] = await Promise.all([
+      prisma.userDepartment.findMany({
+        where: { userId: user.id },
+        include: { department: { select: { id: true, name: true } } }
+      }),
+      prisma.crossDepartmentAccess.findMany({
+        where: {
+          userId: user.id,
+          OR: [
+            { expiresAt: null },
+            { expiresAt: { gt: new Date() } }
+          ]
+        },
+        include: { department: { select: { id: true, name: true } } }
+      })
+    ])
 
     return {
       success: true,
@@ -20,6 +32,10 @@ export default defineEventHandler(async (event) => {
         departments: userDepts.map(d => ({
           id: d.department.id,
           name: d.department.name
+        })),
+        grantedDepartments: grantedDepts.map(g => ({
+          id: g.department.id,
+          name: g.department.name
         }))
       }
     }

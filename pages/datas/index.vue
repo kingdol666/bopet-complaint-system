@@ -23,7 +23,7 @@
             </template>
             导出CSV
           </n-button>
-          <n-button class="action-btn" @click="navigateTo('/datas/import')">
+          <n-button v-if="authStore.canWrite" class="action-btn" @click="navigateTo('/datas/import')">
             <template #icon>
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -31,7 +31,7 @@
             </template>
             批量导入
           </n-button>
-          <n-button type="primary" class="action-btn" @click="navigateTo('/datas/new')">
+          <n-button v-if="authStore.canWrite" type="primary" class="action-btn" @click="navigateTo('/datas/new')">
             <template #icon>
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v16m8-8H4" />
@@ -684,7 +684,7 @@ async function handleExport() {
 .data-management-page {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
 }
 
 .page-header {
@@ -693,6 +693,19 @@ async function handleExport() {
   padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.page-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #0ea5e9, #6366f1, #0ea5e9);
+  opacity: 0.8;
 }
 
 .page-header-content {
@@ -719,6 +732,7 @@ async function handleExport() {
   justify-content: center;
   color: white;
   box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.2), 0 2px 4px -1px rgba(14, 165, 233, 0.1);
+  flex-shrink: 0;
 }
 
 .page-title {
@@ -755,6 +769,11 @@ async function handleExport() {
   padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
   border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.3s ease;
+}
+
+.filter-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
 }
 
 .filter-header {
@@ -908,6 +927,11 @@ async function handleExport() {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
   border: 1px solid rgba(0, 0, 0, 0.05);
   overflow: hidden;
+  transition: box-shadow 0.3s ease;
+}
+
+.table-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
 }
 
 .table-wrapper {

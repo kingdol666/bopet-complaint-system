@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
 import {
   requireSessionUser, requireWritePermission,
-  isSuperAdmin, canAccessDepartment
+  isSuperAdmin, canViewDepartment, canModifyDepartment
 } from '~/server/utils/auth'
 
 const fieldSchema = z.object({
@@ -52,7 +52,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Allow access if: superadmin, same department, template is public, or template is global
-    const hasAccess = !template.departmentId || template.isPublic || canAccessDepartment(user, template.departmentId)
+    const hasAccess = !template.departmentId || template.isPublic || canViewDepartment(user, template.departmentId)
     if (!hasAccess) {
       throw createError({ statusCode: 403, message: '无权访问该模板' })
     }
@@ -72,9 +72,9 @@ export default defineEventHandler(async (event) => {
     }
 
     // superadmin can modify any template
-    // admin can only modify templates in their own departments
+    // admin can only modify templates in their own departments (not cross-dept granted)
     if (!isSuperAdmin(user)) {
-      if (existing.departmentId && !canAccessDepartment(user, existing.departmentId)) {
+      if (existing.departmentId && !canModifyDepartment(user, existing.departmentId)) {
         throw createError({ statusCode: 403, message: '无权修改该模板' })
       }
       // If template is global (departmentId=null), only superadmin can modify
@@ -83,8 +83,8 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // Validate new departmentId access
-    if (data.departmentId !== undefined && data.departmentId && !isSuperAdmin(user) && !canAccessDepartment(user, data.departmentId)) {
+    // Validate new departmentId access (modify level)
+    if (data.departmentId !== undefined && data.departmentId && !isSuperAdmin(user) && !canModifyDepartment(user, data.departmentId)) {
       throw createError({ statusCode: 403, message: '无权将模板分配到该部门' })
     }
 
@@ -172,9 +172,9 @@ export default defineEventHandler(async (event) => {
     }
 
     // superadmin can delete any template
-    // admin can only delete templates in their own departments
+    // admin can only delete templates in their own departments (not cross-dept granted)
     if (!isSuperAdmin(user)) {
-      if (existing.departmentId && !canAccessDepartment(user, existing.departmentId)) {
+      if (existing.departmentId && !canModifyDepartment(user, existing.departmentId)) {
         throw createError({ statusCode: 403, message: '无权删除该模板' })
       }
       if (!existing.departmentId) {

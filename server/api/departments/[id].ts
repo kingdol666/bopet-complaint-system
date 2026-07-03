@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
-import { requireSessionUser, isSuperAdmin } from '~/server/utils/auth'
+import { requireSessionUser, isSuperAdmin, canViewDepartment } from '~/server/utils/auth'
 
 const updateSchema = z.object({
   code: z.string().min(1).max(20).optional(),
@@ -23,11 +23,16 @@ export default defineEventHandler(async (event) => {
         }
       })
       if (!dept) throw createError({ statusCode: 404, message: '部门不存在' })
+
+      // Check department view access: non-superadmin users can view own departments + cross-dept granted
+      if (!isSuperAdmin(user) && !canViewDepartment(user, dept.id)) {
+        throw createError({ statusCode: 403, message: '无权查看该部门' })
+      }
+
       return { success: true, data: dept }
     } catch (error: any) {
       throw createError({ statusCode: error.statusCode || 500, message: error.message || '获取失败' })
-    }
-  }
+    }  }
 
   if (!isSuperAdmin(user)) {
     throw createError({ statusCode: 403, message: '仅超级管理员可操作' })

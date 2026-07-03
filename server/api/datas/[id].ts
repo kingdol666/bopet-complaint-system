@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
-import { requireSessionUser, requireWritePermission, canAccessDepartment, isNormalUser } from '~/server/utils/auth'
+import { requireSessionUser, requireWritePermission, canViewDepartment, canModifyDepartment, isNormalUser } from '~/server/utils/auth'
 import { ossDelete } from '~/server/utils/oss'
 
 const updateSchema = z.object({
@@ -82,8 +82,8 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // Check department access
-    if (!canAccessDepartment(currentUser, record.responsibleDeptId)) {
+    // Check department access (view: own + cross-dept granted)
+    if (!canViewDepartment(currentUser, record.responsibleDeptId)) {
       throw createError({
         statusCode: 403,
         message: '您没有查看该记录的权限'
@@ -113,24 +113,24 @@ export default defineEventHandler(async (event) => {
         })
       }
 
-      // Check department access for existing record
-      if (!canAccessDepartment(currentUser, existing.responsibleDeptId)) {
+      // Check department access for existing record (modify: own dept only)
+      if (!canModifyDepartment(currentUser, existing.responsibleDeptId)) {
         throw createError({
           statusCode: 403,
-          message: '您没有修改该记录的权限'
+          message: '您没有修改该记录的权限（仅本部门管理员可修改）'
         })
       }
 
-      // Normal users can only modify their own records
-      if (isNormalUser(currentUser) && existing.createdById !== currentUser.id) {
+      // Normal users cannot modify records
+      if (isNormalUser(currentUser)) {
         throw createError({
           statusCode: 403,
-          message: '普通用户只能修改自己创建的记录'
+          message: '普通用户没有修改权限'
         })
       }
 
-      // If changing department, check access to new department
-      if (data.responsibleDeptId !== undefined && !canAccessDepartment(currentUser, data.responsibleDeptId)) {
+      // If changing department, check modify access to new department
+      if (data.responsibleDeptId !== undefined && !canModifyDepartment(currentUser, data.responsibleDeptId)) {
         throw createError({
           statusCode: 403,
           message: '您没有将该记录分配到该部门的权限'
@@ -239,16 +239,16 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // Check department access
-    if (!canAccessDepartment(currentUser, existing.responsibleDeptId)) {
-      throw createError({
-        statusCode: 403,
-        message: '您没有删除该记录的权限'
-      })
-    }
+      // Check department access (modify: own dept only)
+      if (!canModifyDepartment(currentUser, existing.responsibleDeptId)) {
+        throw createError({
+          statusCode: 403,
+          message: '您没有删除该记录的权限（仅本部门管理员可删除）'
+        })
+      }
 
-    // Normal users cannot delete records
-    if (isNormalUser(currentUser)) {
+      // Normal users cannot delete records
+      if (isNormalUser(currentUser)) {
       throw createError({
         statusCode: 403,
         message: '普通用户没有删除权限'

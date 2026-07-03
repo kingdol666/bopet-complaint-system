@@ -164,9 +164,20 @@ onMounted(async () => {
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle at 30% 50%, rgba(14, 165, 233, 0.08) 0%, transparent 50%),
-              radial-gradient(circle at 70% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 50%);
+  background: radial-gradient(circle at 30% 50%, rgba(14, 165, 233, 0.1) 0%, transparent 50%),
+              radial-gradient(circle at 70% 50%, rgba(99, 102, 241, 0.1) 0%, transparent 50%);
   animation: float 20s ease-in-out infinite;
+}
+
+.login-page::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, #0ea5e9, #6366f1, transparent);
+  opacity: 0.5;
 }
 
 @keyframes float {
@@ -228,12 +239,12 @@ onMounted(async () => {
 }
 
 .brand-title {
-  font-size: 2.5rem;
+  font-size: 2.75rem;
   font-weight: 800;
   color: #0f172a;
   line-height: 1.1;
   margin-bottom: 0.75rem;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.03em;
 }
 
 .brand-title-highlight {
@@ -296,13 +307,26 @@ onMounted(async () => {
 }
 
 .login-card {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(24px) saturate(2);
-  -webkit-backdrop-filter: blur(24px) saturate(2);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(28px) saturate(2);
+  -webkit-backdrop-filter: blur(28px) saturate(2);
   border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: 1.5rem;
   padding: 2.5rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  position: relative;
+  overflow: hidden;
+}
+
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #0ea5e9, #6366f1, #0ea5e9);
+  opacity: 0.8;
 }
 
 .mobile-logo {
@@ -323,10 +347,11 @@ onMounted(async () => {
 }
 
 .login-title {
-  font-size: 1.5rem;
+  font-size: 1.625rem;
   font-weight: 700;
   color: #0f172a;
   margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
 }
 
 .login-subtitle {
@@ -344,26 +369,29 @@ onMounted(async () => {
   margin-top: 0.5rem;
   height: 3rem;
   font-weight: 600;
+  font-size: 0.9375rem;
   border-radius: 0.75rem;
   background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
   border: none;
   box-shadow: 0 4px 12px rgba(14, 165, 233, 0.25);
   transition: all 0.3s ease;
+  letter-spacing: 0.02em;
 }
 
 .login-btn:hover {
-  box-shadow: 0 6px 16px rgba(14, 165, 233, 0.35);
+  box-shadow: 0 8px 20px rgba(14, 165, 233, 0.35);
   transform: translateY(-2px);
 }
 
 .login-btn:active {
   transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.2);
 }
 
 .demo-section {
   margin-top: 1.5rem;
   padding: 1.25rem;
-  background: rgba(255, 255, 255, 0.6);
+  background: linear-gradient(135deg, rgba(248, 250, 252, 0.8) 0%, rgba(241, 245, 249, 0.8) 100%);
   border-radius: 1rem;
   border: 1px solid rgba(0, 0, 0, 0.06);
 }

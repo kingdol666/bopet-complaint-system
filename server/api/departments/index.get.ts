@@ -1,12 +1,12 @@
 import { prisma } from '~/server/utils/prisma'
-import { requireSessionUser, isSuperAdmin, getVisibleDepartmentIds } from '~/server/utils/auth'
+import { requireSessionUser, isSuperAdmin, getViewableDepartmentIds } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   try {
     const user = await requireSessionUser(event)
 
     const where: any = { enabled: true }
-    const visibleDepts = getVisibleDepartmentIds(user)
+    const visibleDepts = getViewableDepartmentIds(user)
     if (visibleDepts !== null) {
       where.id = { in: visibleDepts }
     }

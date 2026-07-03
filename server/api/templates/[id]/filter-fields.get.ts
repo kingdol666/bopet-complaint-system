@@ -1,5 +1,5 @@
 import { prisma } from '~/server/utils/prisma'
-import { requireSessionUser, canAccessDepartment } from '~/server/utils/auth'
+import { requireSessionUser, canViewDepartment } from '~/server/utils/auth'
 
 // Returns only template-specific fields for custom analysis
 export default defineEventHandler(async (event) => {
@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 404, message: '模板不存在' })
     }
 
-    if (template.departmentId && !template.isPublic && !canAccessDepartment(user, template.departmentId)) {
+    if (template.departmentId && !template.isPublic && !canViewDepartment(user, template.departmentId)) {
       throw createError({ statusCode: 403, message: '无权访问该模板' })
     }
 

@@ -1,10 +1,10 @@
 <template>
   <div class="department-management-page animate-fade-in">
     <!-- Page header -->
-    <div class="page-header">
+    <div class="enterprise-page-header">
       <div class="page-header-content">
         <div class="page-header-left">
-          <div class="page-icon-wrapper">
+          <div class="enterprise-icon-wrapper amber">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
@@ -366,15 +366,7 @@ onMounted(async () => {
 .department-management-page {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-}
-
-.page-header {
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  border-radius: 1rem;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  gap: 1.25rem;
 }
 
 .page-header-content {
@@ -387,18 +379,6 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 1rem;
-}
-
-.page-icon-wrapper {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 0.75rem;
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.2), 0 2px 4px -1px rgba(245, 158, 11, 0.1);
 }
 
 .page-title {
@@ -566,33 +546,6 @@ onMounted(async () => {
   padding: 4rem 1rem;
   color: #94a3b8;
   font-size: 0.875rem;
-}
-
-/* Modal styling */
-:deep(.n-modal .n-card) {
-  border-radius: 1rem;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 8px 20px rgba(0, 0, 0, 0.1);
-}
-
-:deep(.n-modal .n-card-header) {
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-:deep(.n-modal .n-card-header__main) {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #0f172a;
-}
-
-:deep(.n-modal .n-card__content) {
-  padding: 1.5rem;
-}
-
-:deep(.n-form-item .n-form-item-label) {
-  font-weight: 500;
-  color: #334155;
 }
 
 /* Responsive */
