@@ -33,12 +33,6 @@ model User {
   savedAnalyses     SavedAnalysis[]
   dashboards        AnalysisDashboard[]
 
-  // 跨部门权限
-  accessRequestsMade  CrossDepartmentAccessRequest[] @relation("AccessRequester")
-  accessRequestsApproved CrossDepartmentAccessRequest[] @relation("AccessApprover")
-  grantedAccess      CrossDepartmentAccess[]       @relation("GrantedAccessUser")
-  grantedAccessBy    CrossDepartmentAccess[]       @relation("GrantedAccessBy")
-
   @@map("users")
 }
 
@@ -127,10 +121,6 @@ model ResponsibleDepartment {
   userDepartments UserDepartment[]
   formTemplates  FormTemplate[]
   fieldOptionConfigs FieldOptionConfig[]
-
-  // 跨部门权限
-  accessRequests    CrossDepartmentAccessRequest[] @relation("AccessRequestDept")
-  grantedAccess     CrossDepartmentAccess[]       @relation("GrantedAccessDept")
 
   @@index([enabled, sortOrder])
   @@map("responsible_departments")
@@ -325,49 +315,6 @@ model FieldOptionConfig {
   @@index([departmentId, enabled])
   @@index([configKey])
   @@map("field_option_configs")
-}
-
-// ==================== 跨部门数据查看请求表 ====================
-model CrossDepartmentAccessRequest {
-  id              Int      @id @default(autoincrement())
-  requesterId     Int
-  departmentId    Int      // 目标部门（被请求查看的部门）
-  status          String   @default("pending") // pending, approved, rejected
-  reason          String?  // 申请理由
-  approverId      Int?     // 审批人
-  approvedAt      DateTime?
-  rejectedReason  String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  requester       User                  @relation("AccessRequester", fields: [requesterId], references: [id], onDelete: Cascade)
-  department      ResponsibleDepartment @relation("AccessRequestDept", fields: [departmentId], references: [id], onDelete: Cascade)
-  approver        User?                 @relation("AccessApprover", fields: [approverId], references: [id], onDelete: SetNull)
-
-  @@index([requesterId])
-  @@index([departmentId, status])
-  @@index([status])
-  @@map("cross_dept_access_requests")
-}
-
-// ==================== 跨部门数据查看授权表（已批准） ====================
-model CrossDepartmentAccess {
-  id              Int      @id @default(autoincrement())
-  userId          Int      // 被授权的用户
-  departmentId    Int      // 可查看的目标部门
-  grantedById     Int      // 授权人
-  requestId       Int?     // 来源请求ID（可空，支持直接授权）
-  expiresAt       DateTime? // 过期时间（null = 永久）
-  createdAt       DateTime @default(now())
-
-  user            User                  @relation("GrantedAccessUser", fields: [userId], references: [id], onDelete: Cascade)
-  department      ResponsibleDepartment @relation("GrantedAccessDept", fields: [departmentId], references: [id], onDelete: Cascade)
-  grantedBy       User                  @relation("GrantedAccessBy", fields: [grantedById], references: [id], onDelete: Cascade)
-
-  @@unique([userId, departmentId])
-  @@index([userId])
-  @@index([departmentId])
-  @@map("cross_dept_access")
 }
 
 // ==================== 批量导入日志表 ====================

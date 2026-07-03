@@ -16,6 +16,94 @@ const FK_META: Record<string, { prismaModel: string; sqlTable: string; fkColumn:
   responsibleDepartments: { prismaModel: 'responsibleDepartment', sqlTable: 'responsible_departments', fkColumn: 'responsibleDeptId',  nameColumn: 'name' },
 }
 
+// ─── 字段过滤辅助（完全基于模板字段类型驱动，无内置字段） ───
+interface ParsedFilter {
+  field: string
+  operator: 'eq' | 'contains' | 'in' | 'gt' | 'lt' | 'gte' | 'lte' | 'date_range'
+  value?: any
+  valueEnd?: any
+  values?: any[]
+}
+
+// DB 上的整数时间戳列（仅用于 SQL 路由，不是假设字段存在）
+const DB_TIMESTAMP_COLUMNS = new Set(['feedbackDate', 'productionTime', 'createdAt'])
+
+function buildFilterSQL(
+  filters: ParsedFilter[],
+  templateFieldMap: Map<string, any>,
+  tableRef: string
+): { parts: string[]; params: any[] } {
+  const parts: string[] = []
+  const params: any[] = []
+  for (const f of filters) {
+    if (!f.field || !f.operator) continue
+    // 完全从模板字段定义获取类型信息
+    const tplField = templateFieldMap.get(f.field)
+    if (!tplField) continue // 模板中未定义此字段，跳过
+
+    const fieldType = tplField.fieldType
+    const configType = tplField.configType
+    const isDateField = fieldType === 'date'
+    const isFKField = configType && FK_META[configType]
+    const isColumnField = COLUMN_FIELDS.has(f.field) || DB_TIMESTAMP_COLUMNS.has(f.field)
+    const fkMeta = isFKField ? FK_META[configType] : null
+
+    // 构建 SQL 表达式：DB 列 vs JSON templateData
+    let fieldExpr: string
+    if (isColumnField) {
+      fieldExpr = `${tableRef}."${f.field}"`
+    } else {
+      const safeKey = f.field.replace(/[^\w一-鿿-]/g, '')
+      if (!safeKey) continue
+      fieldExpr = `json_extract(${tableRef}.templateData, '$.${safeKey}')`
+    }
+
+    if (f.operator === 'date_range' && isDateField) {
+      // 日期范围过滤
+      const isTimestamp = DB_TIMESTAMP_COLUMNS.has(f.field)
+      if (f.value) {
+        if (isTimestamp) { parts.push(`${fieldExpr} >= ?`); params.push(new Date(f.value).getTime()) }
+        else { parts.push(`date(${fieldExpr}) >= date(?)`); params.push(f.value) }
+      }
+      if (f.valueEnd) {
+        if (isTimestamp) { parts.push(`${fieldExpr} <= ?`); params.push(new Date(f.valueEnd).getTime()) }
+        else { parts.push(`date(${fieldExpr}) <= date(?)`); params.push(f.valueEnd) }
+      }
+    } else if (f.operator === 'in' && f.values?.length) {
+      // 多选过滤
+      const ph = f.values.map(() => '?').join(',')
+      if (fkMeta && isColumnField) {
+        parts.push(`${tableRef}."${fkMeta.fkColumn}" IN (SELECT id FROM ${fkMeta.sqlTable} WHERE name IN (${ph}))`)
+        params.push(...f.values.map((v: any) => String(v)))
+      } else {
+        parts.push(`CAST(${fieldExpr} AS TEXT) IN (${ph})`)
+        params.push(...f.values.map((v: any) => String(v)))
+      }
+    } else if (f.operator === 'eq') {
+      if (fkMeta && isColumnField) {
+        parts.push(`${tableRef}."${fkMeta.fkColumn}" = (SELECT id FROM ${fkMeta.sqlTable} WHERE name = ? LIMIT 1)`)
+        params.push(String(f.value))
+      } else {
+        parts.push(`CAST(${fieldExpr} AS TEXT) = ?`)
+        params.push(String(f.value))
+      }
+    } else if (f.operator === 'contains') {
+      if (fkMeta && isColumnField) {
+        parts.push(`${tableRef}."${fkMeta.fkColumn}" IN (SELECT id FROM ${fkMeta.sqlTable} WHERE name LIKE ?)`)
+        params.push(`%${String(f.value)}%`)
+      } else {
+        parts.push(`CAST(${fieldExpr} AS TEXT) LIKE ?`)
+        params.push(`%${String(f.value)}%`)
+      }
+    } else if (['gt', 'lt', 'gte', 'lte'].includes(f.operator)) {
+      const opMap: Record<string, string> = { gt: '>', lt: '<', gte: '>=', lte: '<=' }
+      const op = opMap[f.operator]
+      if (op) { parts.push(`CAST(${fieldExpr} AS REAL) ${op} ?`); params.push(Number(f.value)) }
+    }
+  }
+  return { parts, params }
+}
+
 export default defineEventHandler(async (event) => {
   try {
     const user = await requireSessionUser(event)
@@ -26,8 +114,6 @@ export default defineEventHandler(async (event) => {
     const groupByRaw = (query.groupBy as string) || ''
     const groupByFields = groupByRaw.split(',').map(s => s.trim()).filter(Boolean)
     const templateId = query.templateId ? Number(query.templateId) : undefined
-    const startDate = query.startDate ? new Date(query.startDate as string) : undefined
-    const endDate = query.endDate ? (() => { const d = new Date(query.endDate as string); d.setHours(23, 59, 59, 999); return d })() : undefined
     const limit = Math.min(Math.max(Number(query.limit) || 30, 1), 200)
     const mode = (query.mode as string) || 'group'
     const timeFieldRaw = (query.timeField as string) || undefined
@@ -38,11 +124,21 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, message: '缺少groupBy参数' })
     }
 
+    // Parse field filters
+    const filtersRaw = (query.filters as string) || ''
+    let fieldFilters: ParsedFilter[] = []
+    if (filtersRaw) {
+      try { fieldFilters = JSON.parse(filtersRaw) } catch {}
+    }
+
     // Fetch template field definitions (for labels, FK detection, and field types)
     let templateFieldMap = new Map<string, any>()
     if (templateId) {
       const lookupKeys = [...groupByFields]
       if (timeField && !lookupKeys.includes(timeField)) lookupKeys.push(timeField)
+      for (const ff of fieldFilters) {
+        if (ff.field && !lookupKeys.includes(ff.field)) lookupKeys.push(ff.field)
+      }
       const tplFields = await prisma.formTemplateField.findMany({
         where: { templateId, fieldKey: { in: lookupKeys } }
       })
@@ -55,7 +151,7 @@ export default defineEventHandler(async (event) => {
       const templateField = templateFieldMap.get(field) || null
       const isColumnField = COLUMN_FIELDS.has(field)
 
-      // Build date filter
+      // Build where clause (完全基于模板字段，无内置字段假设)
       const whereParts: string[] = ['1=1']
       const sqlParams: any[] = []
       if (deptIds && deptIds.length > 0) {
@@ -65,13 +161,11 @@ export default defineEventHandler(async (event) => {
       } else if (deptIds && deptIds.length === 0) {
         whereParts.push('responsibleDeptId = -1')
       }
-      if (startDate) {
-        whereParts.push('feedbackDate >= ?')
-        sqlParams.push(startDate.getTime())
-      }
-      if (endDate) {
-        whereParts.push('feedbackDate <= ?')
-        sqlParams.push(endDate.getTime())
+      // Apply field filters (date ranges are handled through the filter system)
+      if (fieldFilters.length > 0) {
+        const fr = buildFilterSQL(fieldFilters, templateFieldMap, 'data_records')
+        whereParts.push(...fr.parts)
+        sqlParams.push(...fr.params)
       }
 
       // Numeric value extraction
@@ -87,35 +181,32 @@ export default defineEventHandler(async (event) => {
 
       const whereClause = whereParts.join(' AND ')
 
-      // Resolve time field
-      const builtinTimeFields = new Set(['feedbackDate', 'createdAt'])
+      // Resolve time field — purely based on template field definitions
       let timeExpr = 'rowid'
       let timeLabel = '序号'
       let hasTimeField = false
 
       if (timeField) {
-        if (builtinTimeFields.has(timeField)) {
-          timeExpr = timeField === 'feedbackDate' ? 'feedbackDate' : 'createdAt'
-          timeLabel = timeField === 'feedbackDate' ? '反馈日期' : '创建时间'
-          hasTimeField = true
-        } else {
-          // Template date field stored in templateData JSON or column
-          const safeTimeKey = timeField.replace(/[^\w一-鿿-]/g, '')
-          if (COLUMN_FIELDS.has(timeField)) {
+        const tf = templateFieldMap.get(timeField)
+        if (tf && tf.fieldType === 'date') {
+          // Template date field — check if it's a DB timestamp column or JSON field
+          const isTimestamp = DB_TIMESTAMP_COLUMNS.has(timeField)
+          if (isTimestamp || COLUMN_FIELDS.has(timeField)) {
             timeExpr = `"${timeField}"`
           } else {
+            const safeTimeKey = timeField.replace(/[^\w一-鿿-]/g, '')
             timeExpr = `json_extract(templateData, '$.${safeTimeKey}')`
           }
-          const tf = templateFieldMap.get(timeField)
-          timeLabel = tf?.fieldLabel || timeField
+          timeLabel = tf.fieldLabel || timeField
           hasTimeField = true
         }
       }
 
       if (hasTimeField) {
         // Group by time field, AVG the numeric value
-        // Built-in date fields are stored as integer timestamps (Unix ms)
-        const timeSelect = builtinTimeFields.has(timeField!)
+        // DB timestamp columns are stored as integer (Unix ms), JSON date fields as string
+        const isTimestamp = DB_TIMESTAMP_COLUMNS.has(timeField!)
+        const timeSelect = isTimestamp
           ? `strftime('%Y-%m-%d', ${timeExpr}/1000, 'unixepoch') as time_val`
           : `CAST(${timeExpr} AS TEXT) as time_val`
 
@@ -182,14 +273,14 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // ─── Date group mode: group records by a date field (built-in or custom) ───
+    // ─── Date group mode: group records by a date field (from template) ───
     if (mode === 'date_group' && groupByFields.length === 1) {
       const field = groupByFields[0]
       const templateField = templateFieldMap.get(field) || null
-      const isBuiltinDate = ['feedbackDate', 'productionTime', 'createdAt'].includes(field)
-      const isColumnDate = isBuiltinDate || COLUMN_FIELDS.has(field)
+      const isTimestamp = DB_TIMESTAMP_COLUMNS.has(field)
+      const isColumnDate = isTimestamp || COLUMN_FIELDS.has(field)
 
-      // Build where clause
+      // Build where clause (完全基于模板字段，无内置字段假设)
       const whereParts: string[] = ['1=1']
       const sqlParams: any[] = []
       if (deptIds && deptIds.length > 0) {
@@ -199,20 +290,18 @@ export default defineEventHandler(async (event) => {
       } else if (deptIds && deptIds.length === 0) {
         whereParts.push('responsibleDeptId = -1')
       }
-      if (startDate) {
-        whereParts.push('feedbackDate >= ?')
-        sqlParams.push(startDate.getTime())
-      }
-      if (endDate) {
-        whereParts.push('feedbackDate <= ?')
-        sqlParams.push(endDate.getTime())
+      // Apply field filters (date ranges handled through filter system)
+      if (fieldFilters.length > 0) {
+        const fr = buildFilterSQL(fieldFilters, templateFieldMap, 'data_records')
+        whereParts.push(...fr.parts)
+        sqlParams.push(...fr.params)
       }
 
       // Determine date expression and ensure it's not null
-      // Built-in date fields are stored as integer timestamps (Unix ms) in SQLite
+      // DB timestamp columns store integer (Unix ms), JSON date fields store string
       let dateExpr: string
       let dateGroupExpr: string
-      if (isBuiltinDate) {
+      if (isTimestamp) {
         dateExpr = field
         dateGroupExpr = `strftime('%Y-%m-%d', ${field}/1000, 'unixepoch')`
       } else if (isColumnDate) {
@@ -259,21 +348,16 @@ export default defineEventHandler(async (event) => {
       const isColumnField = COLUMN_FIELDS.has(groupBy)
       const isFKField = templateField?.configType && FK_META[templateField.configType]
 
-      // Build date filter (dates stored as integer timestamps in SQLite)
-      const dateFilter: string[] = []
-      const dateParams: any[] = []
-      if (startDate) { dateFilter.push('feedbackDate >= ?'); dateParams.push(startDate.getTime()) }
-      if (endDate) { dateFilter.push('feedbackDate <= ?'); dateParams.push(endDate.getTime()) }
-
-      // Production date fields that exist as DB columns
-      const DB_DATE_FIELDS = new Set(['feedbackDate', 'productionTime', 'createdAt'])
-
       if (isColumnField) {
         const where: any = { ...deptFilter }
-        if (startDate || endDate) {
-          where.feedbackDate = {}
-          if (startDate) where.feedbackDate.gte = startDate
-          if (endDate) where.feedbackDate.lte = endDate
+        // Apply field filters via subquery (date ranges handled through filter system)
+        if (fieldFilters.length > 0) {
+          const fr = buildFilterSQL(fieldFilters, templateFieldMap, 'data_records')
+          if (fr.parts.length > 0) {
+            const idSQL = `SELECT id FROM data_records WHERE ${fr.parts.join(' AND ')}`
+            const idRows = await prisma.$queryRawUnsafe(idSQL, ...fr.params) as any[]
+            where.id = { in: idRows.map((r: any) => r.id) }
+          }
         }
         where[groupBy] = { not: null }
 
@@ -301,10 +385,14 @@ export default defineEventHandler(async (event) => {
       if (isFKField) {
         const meta = FK_META[templateField.configType]
         const where: any = { ...deptFilter }
-        if (startDate || endDate) {
-          where.feedbackDate = {}
-          if (startDate) where.feedbackDate.gte = startDate
-          if (endDate) where.feedbackDate.lte = endDate
+        // Apply field filters via subquery (date ranges handled through filter system)
+        if (fieldFilters.length > 0) {
+          const fr = buildFilterSQL(fieldFilters, templateFieldMap, 'data_records')
+          if (fr.parts.length > 0) {
+            const idSQL = `SELECT id FROM data_records WHERE ${fr.parts.join(' AND ')}`
+            const idRows = await prisma.$queryRawUnsafe(idSQL, ...fr.params) as any[]
+            where.id = { in: idRows.map((r: any) => r.id) }
+          }
         }
         where[groupBy] = { not: null }
 
@@ -339,7 +427,11 @@ export default defineEventHandler(async (event) => {
 
       let sql = `SELECT json_extract(templateData, '$.${safeFieldKey}') as value, COUNT(*) as _count FROM data_records WHERE templateData IS NOT NULL AND json_extract(templateData, '$.${safeFieldKey}') IS NOT NULL`
       const params: any[] = []
-      if (dateFilter.length) { sql += ' AND ' + dateFilter.join(' AND '); params.push(...dateParams) }
+      // Apply field filters (date ranges handled through filter system)
+      if (fieldFilters.length > 0) {
+        const fr = buildFilterSQL(fieldFilters, templateFieldMap, 'data_records')
+        if (fr.parts.length > 0) { sql += ' AND ' + fr.parts.join(' AND '); params.push(...fr.params) }
+      }
       sql += ` GROUP BY value ORDER BY _count DESC LIMIT ?`
       params.push(limit * 2)
 
@@ -347,7 +439,11 @@ export default defineEventHandler(async (event) => {
 
       let countSql = `SELECT COUNT(*) as total FROM data_records WHERE templateData IS NOT NULL AND json_extract(templateData, '$.${safeFieldKey}') IS NOT NULL`
       const countParams: any[] = []
-      if (dateFilter.length) { countSql += ' AND ' + dateFilter.join(' AND '); countParams.push(...dateParams) }
+      // Apply field filters to count query
+      if (fieldFilters.length > 0) {
+        const fr = buildFilterSQL(fieldFilters, templateFieldMap, 'data_records')
+        if (fr.parts.length > 0) { countSql += ' AND ' + fr.parts.join(' AND '); countParams.push(...fr.params) }
+      }
       const countResult = await prisma.$queryRawUnsafe(countSql, ...countParams) as any[]
       const total = Number(countResult[0]?.total || 0)
 
@@ -382,14 +478,13 @@ export default defineEventHandler(async (event) => {
     } else if (deptIds && deptIds.length === 0) {
       whereParts.push('cr.responsibleDeptId = -1')
     }
-    // Date filter (dates stored as integer timestamps in SQLite)
-    if (startDate) {
-      whereParts.push('cr.feedbackDate >= ?')
-      sqlParams.push(startDate.getTime())
-    }
-    if (endDate) {
-      whereParts.push('cr.feedbackDate <= ?')
-      sqlParams.push(endDate.getTime())
+    // Date filter removed — date ranges are handled entirely through the filter system
+    // based on template field definitions
+    // Apply field filters
+    if (fieldFilters.length > 0) {
+      const fr = buildFilterSQL(fieldFilters, templateFieldMap, 'cr')
+      whereParts.push(...fr.parts)
+      sqlParams.push(...fr.params)
     }
 
     for (const field of groupByFields) {

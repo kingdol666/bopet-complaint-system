@@ -35,12 +35,37 @@
         <n-select v-model:value="chartType" :options="chartOpts" size="small" class="control-select-chart" :disabled="!gField.length" />
       </div>
 
-      <div class="control-row">
+      <div v-if="isNumericField && chartType === 'line'" class="control-row">
         <div class="control-step-badge">3</div>
-        <n-date-picker v-model:value="dr" type="daterange" size="small" clearable placeholder="日期范围筛选" class="control-select" @update:value="onFilterChange" />
-        <Transition name="slide-fade">
-          <n-select v-if="isNumericField && chartType === 'line'" v-model:value="timeField" :options="timeOpts" size="small" class="control-select-time" placeholder="时间列（可选）" clearable @update:value="onFilterChange" />
-        </Transition>
+        <n-select v-model:value="timeField" :options="timeOpts" size="small" class="control-select-time" placeholder="时间列（可选）" clearable @update:value="onFilterChange" />
+      </div>
+
+      <!-- Step 4: Field filters -->
+      <div v-if="tid && allFilterFields.length" class="control-row control-row-filter">
+        <div class="control-step-badge">4</div>
+        <div class="filter-container">
+          <div class="filter-header-row">
+            <span class="filter-section-title">字段过滤</span>
+            <n-button size="tiny" quaternary type="primary" @click="addFilter">
+              <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg></template>
+              添加条件
+            </n-button>
+          </div>
+          <div v-for="(f, idx) in activeFilters" :key="idx" class="filter-item-row">
+            <n-select v-model:value="f.field" :options="filterFieldOpts" size="small" placeholder="选择字段" class="filter-field-select" @update:value="onFilterFieldChange(idx)" />
+            <template v-if="f.field">
+              <!-- Date range -->
+              <n-date-picker v-if="isFilterDateField(f.field)" v-model:value="f.dateRange" type="daterange" size="small" clearable class="filter-value-input" @update:value="onFilterChange" />
+              <!-- Multi-select -->
+              <n-select v-else-if="isFilterSelectField(f.field)" v-model:value="f.values" :options="getFilterOptions(f.field)" size="small" multiple filterable class="filter-value-input" placeholder="选择值" @update:value="onFilterChange" />
+              <!-- Text input -->
+              <n-input v-else v-model:value="f.value" size="small" placeholder="输入过滤值" clearable class="filter-value-input" @update:value="onFilterChange" />
+            </template>
+            <n-button size="tiny" quaternary type="error" @click="removeFilter(idx)">
+              <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></template>
+            </n-button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -189,7 +214,7 @@ const fields = ref<any[]>([])
 const tid = ref<number | null>(props.initialConfig?.templateId || null)
 const gField = ref<string[]>(Array.isArray(props.initialConfig?.groupByField) ? props.initialConfig.groupByField : (props.initialConfig?.groupByField ? [props.initialConfig.groupByField] : []))
 const chartType = ref<string>(props.initialConfig?.chartType || 'bar')
-const dr = ref<[number, number] | null>(props.initialConfig?.dateRange ? [new Date(props.initialConfig.dateRange.start).getTime(), new Date(props.initialConfig.dateRange.end).getTime()] : null)
+// dr removed — date filtering is now handled entirely through the template field filter system
 const timeFieldInit = props.initialConfig?.timeField || null
 const loading = ref(false)
 const data = ref<any[]>([])
@@ -200,6 +225,7 @@ const trendStats = ref<{ avg: number; min: number; max: number; count: number } 
 const isTrendMode = ref(false)
 const isDateGroupMode = ref(false)
 const timeField = ref<string | null>(null)
+const activeFilters = ref<Array<{ field: string; value: string; values: string[]; dateRange: [number, number] | null }>>([])
 
 const selectedTemplateName = computed(() => {
   if (!tid.value) return ''
@@ -244,19 +270,79 @@ const chartOpts = computed(() => {
 })
 const isDateField = computed(() => {
   if (!gField.value.length) return false
-  return gField.value.some(k => {
-    // Built-in date fields
-    if (k === 'feedbackDate' || k === 'productionTime' || k === 'createdAt') return true
-    // Template date fields
-    return fields.value.find((f: any) => f.fieldKey === k)?.fieldType === 'date'
-  })
+  return gField.value.some(k => fields.value.find((f: any) => f.fieldKey === k)?.fieldType === 'date')
 })
+
+// ─── 过滤条件辅助（完全基于模板字段，无内置字段） ───
+const allFilterFields = computed(() => fields.value)
+
+const filterFieldOpts = computed(() =>
+  allFilterFields.value.map((f: any) => ({ label: f.fieldLabel, value: f.fieldKey }))
+)
+
+function isFilterDateField(fieldKey: string): boolean {
+  const f = allFilterFields.value.find((x: any) => x.fieldKey === fieldKey)
+  return f?.fieldType === 'date'
+}
+
+function isFilterSelectField(fieldKey: string): boolean {
+  const f = allFilterFields.value.find((x: any) => x.fieldKey === fieldKey)
+  return f?.fieldType === 'select' || f?.fieldType === 'select-config'
+}
+
+function getFilterOptions(fieldKey: string): { label: string; value: string }[] {
+  const f = allFilterFields.value.find((x: any) => x.fieldKey === fieldKey)
+  if (f?.options) return f.options
+  return []
+}
+
+function addFilter() {
+  activeFilters.value.push({ field: '', value: '', values: [], dateRange: null })
+}
+
+function removeFilter(idx: number) {
+  activeFilters.value.splice(idx, 1)
+  onFilterChange()
+}
+
+function onFilterFieldChange(idx: number) {
+  const f = activeFilters.value[idx]
+  f.value = ''
+  f.values = []
+  f.dateRange = null
+  onFilterChange()
+}
+
+function buildFiltersParam(): any[] | undefined {
+  const result: any[] = []
+  for (const f of activeFilters.value) {
+    if (!f.field) continue
+    if (isFilterDateField(f.field)) {
+      if (f.dateRange && f.dateRange.length === 2) {
+        result.push({
+          field: f.field,
+          operator: 'date_range',
+          value: dayjs(f.dateRange[0]).format('YYYY-MM-DD'),
+          valueEnd: dayjs(f.dateRange[1]).format('YYYY-MM-DD')
+        })
+      }
+    } else if (isFilterSelectField(f.field)) {
+      if (f.values.length > 0) {
+        result.push({ field: f.field, operator: 'in', values: f.values })
+      }
+    } else {
+      if (f.value && f.value.trim()) {
+        result.push({ field: f.field, operator: 'contains', value: f.value.trim() })
+      }
+    }
+  }
+  return result.length > 0 ? result : undefined
+}
 const timeOpts = computed(() => {
   const opts: { label: string; value: string }[] = [
     { label: '按数据顺序', value: '' },
-    { label: '反馈日期', value: '__feedbackDate' },
-    { label: '创建时间', value: '__createdAt' },
   ]
+  // 仅显示模板中定义的日期类型字段
   for (const f of fields.value) {
     if ((f as any).fieldType === 'date') {
       opts.push({ label: f.fieldLabel, value: f.fieldKey })
@@ -290,8 +376,15 @@ const filteredData = computed(() => {
 
 const currentConfig = computed(() => ({
   templateId: tid.value, groupByField: gField.value, fieldLabel: fLabel.value, chartType: chartType.value,
-  dateRange: dr.value ? { start: dayjs(dr.value[0]).format('YYYY-MM-DD'), end: dayjs(dr.value[1]).format('YYYY-MM-DD') } : null,
   timeField: timeField.value,
+  filters: activeFilters.value.map(f => ({
+    field: f.field,
+    isDate: isFilterDateField(f.field),
+    isSelect: isFilterSelectField(f.field),
+    value: f.value,
+    values: f.values,
+    dateRange: f.dateRange
+  })),
   limit: 30
 }))
 
@@ -386,7 +479,7 @@ function scheduleRun() {
 }
 
 async function onTemplateChange(val: number | null) {
-  fields.value = []; gField.value = []; result.value = false; data.value = []; trendStats.value = null; isTrendMode.value = false; timeField.value = null
+  fields.value = []; gField.value = []; result.value = false; data.value = []; trendStats.value = null; isTrendMode.value = false; timeField.value = null; activeFilters.value = []
   if (!val) return
   try {
     const resp = await $fetch(`/api/templates/${val}/filter-fields`) as any
@@ -416,7 +509,8 @@ async function run() {
     const useDateGroup = isDateField.value && chartType.value === 'date_group'
     const params: any = { groupBy: gField.value.join(','), limit: 50 }
     if (tid.value) params.templateId = tid.value
-    if (dr.value) { params.startDate = dayjs(dr.value[0]).format('YYYY-MM-DD'); params.endDate = dayjs(dr.value[1]).format('YYYY-MM-DD') }
+    const filtersParam = buildFiltersParam()
+    if (filtersParam) params.filters = JSON.stringify(filtersParam)
     if (useTrend) {
       params.mode = 'trend'
       if (timeField.value) params.timeField = timeField.value
@@ -469,6 +563,15 @@ onMounted(async () => {
     const gbf = props.initialConfig.groupByField
     gField.value = Array.isArray(gbf) ? gbf : (gbf ? [gbf] : [])
     if (timeFieldInit) timeField.value = timeFieldInit
+    // Restore filters
+    if (props.initialConfig.filters && Array.isArray(props.initialConfig.filters)) {
+      activeFilters.value = props.initialConfig.filters.map((f: any) => ({
+        field: f.field || '',
+        value: f.value || '',
+        values: f.values || [],
+        dateRange: f.dateRange || null
+      }))
+    }
     await nextTick()
     if (gField.value.length) run()
   }
@@ -588,6 +691,46 @@ onBeforeUnmount(() => {
 .control-select-time {
   width: 150px;
   flex-shrink: 0;
+}
+
+/* Filter section */
+.control-row-filter {
+  align-items: flex-start;
+}
+
+.filter-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.filter-section-title {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.filter-item-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-field-select {
+  width: 140px;
+  flex-shrink: 0;
+}
+
+.filter-value-input {
+  flex: 1;
+  min-width: 0;
 }
 
 .panel-loading {
