@@ -2,7 +2,7 @@
  * GET /api/images/[dataId] — 获取记录的所有图片
  */
 import { prisma } from '~/server/utils/prisma'
-import { requireSessionUser, canAccessDepartment } from '~/server/utils/auth'
+import { requireSessionUser, canViewDepartment } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
     // 校验部门访问权限
     const record = await prisma.dataRecord.findUnique({ where: { id: dataId }, select: { responsibleDeptId: true } })
     if (!record) throw createError({ statusCode: 404, message: '数据记录不存在' })
-    if (!canAccessDepartment(currentUser, record.responsibleDeptId)) {
+    if (!canViewDepartment(currentUser, record.responsibleDeptId)) {
       throw createError({ statusCode: 403, message: '您没有查看该记录附件的权限' })
     }
 

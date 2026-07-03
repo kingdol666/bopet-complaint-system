@@ -217,7 +217,7 @@ export default defineEventHandler(async (event) => {
     if (!template.enabled) throw createError({ statusCode: 400, message: '模板已停用' })
 
     // Check template access: non-superadmin users can only import to templates they can access
-    if (template.departmentId && !template.isPublic && !canAccessDepartment(currentUser, template.departmentId)) {
+    if (template.departmentId && !template.isPublic && !canModifyDepartment(currentUser, template.departmentId)) {
       throw createError({ statusCode: 403, message: '无权使用该模板导入数据' })
     }
 

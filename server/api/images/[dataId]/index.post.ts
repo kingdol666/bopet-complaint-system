@@ -3,7 +3,7 @@
  * 支持 multipart/form-data，字段名 "file"（单张）或 "files"（多张）
  */
 import { prisma } from '~/server/utils/prisma'
-import { requireWritePermission, canAccessDepartment } from '~/server/utils/auth'
+import { requireWritePermission, canModifyDepartment } from '~/server/utils/auth'
 import { ossStore, ALLOWED_IMAGE_TYPES, ALLOWED_DOC_TYPES, MAX_FILE_SIZE } from '~/server/utils/oss'
 
 const ALLOWED_TYPES = [...ALLOWED_IMAGE_TYPES, ...ALLOWED_DOC_TYPES]
@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
     // 验证记录存在且当前用户有权访问该记录所属部门
     const record = await prisma.dataRecord.findUnique({ where: { id: dataId } })
     if (!record) throw createError({ statusCode: 404, message: '数据记录不存在' })
-    if (!canAccessDepartment(currentUser, record.responsibleDeptId)) {
+    if (!canModifyDepartment(currentUser, record.responsibleDeptId)) {
       throw createError({ statusCode: 403, message: '您没有向该记录上传附件的权限' })
     }
 

@@ -2,7 +2,7 @@
  * DELETE /api/images/[dataId]/[imageId] — 删除指定图片
  */
 import { prisma } from '~/server/utils/prisma'
-import { requireWritePermission, canAccessDepartment } from '~/server/utils/auth'
+import { requireWritePermission, canModifyDepartment } from '~/server/utils/auth'
 import { ossDelete } from '~/server/utils/oss'
 
 export default defineEventHandler(async (event) => {
@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
     // Check department access
     if (dataId) {
       const record = await prisma.dataRecord.findUnique({ where: { id: dataId }, select: { responsibleDeptId: true } })
-      if (record && !canAccessDepartment(currentUser, record.responsibleDeptId)) {
+      if (record && !canModifyDepartment(currentUser, record.responsibleDeptId)) {
         throw createError({ statusCode: 403, message: '无权删除该记录的图片' })
       }
     }
