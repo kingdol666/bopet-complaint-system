@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
     const currentUser = await requireSessionUser(event)
     const query = getQuery(event)
     const startDate = query.startDate ? new Date(query.startDate as string) : undefined
-    const endDate = query.endDate ? new Date(query.endDate as string) : undefined
+    const endDate = query.endDate ? (() => { const d = new Date(query.endDate as string); d.setHours(23, 59, 59, 999); return d })() : undefined
 
     // Department filter
     const deptFilter = buildDepartmentFilter(currentUser)

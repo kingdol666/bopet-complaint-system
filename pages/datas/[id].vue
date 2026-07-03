@@ -278,25 +278,32 @@ function parseTemplateData(): Record<string, any> {
   }
 }
 
+// FK column names → relation path on the record object
+const FK_COLUMNS: Record<string, string> = {
+  customerId: 'customer',
+  productModelId: 'productModel',
+  productionLineId: 'productionLine',
+  responsibleDeptId: 'responsibleDept',
+  responsibleProcessId: 'responsibleProcess'
+}
+
 function resolveDisplayValue(field: any, rec: any): string {
-  // Get value from record column or templateData
-  let value = rec[field.fieldKey]
+  // 1. Try templateData by fieldKey (the single source of truth for imported data)
+  const data = parseTemplateData()
+  let value = data[field.fieldKey]
+
+  // 2. Try record by fieldKey directly (works when fieldKey is a DB column name)
   if (value === null || value === undefined) {
-    const data = parseTemplateData()
-    value = data[field.fieldKey]
+    value = rec[field.fieldKey]
   }
 
   if (value === null || value === undefined || value === '') return '-'
 
-  // FK name resolution
-  const fkMap: Record<string, any> = {
-    customerId: rec.customer?.name,
-    productModelId: rec.productModel?.name,
-    productionLineId: rec.productionLine?.name,
-    responsibleDeptId: rec.responsibleDept?.name,
-    responsibleProcessId: rec.responsibleProcess?.name
+  // FK name resolution: if fieldKey is an FK column, resolve through the relation
+  if (FK_COLUMNS[field.fieldKey]) {
+    const relation = rec[FK_COLUMNS[field.fieldKey]]
+    if (relation?.name) return relation.name
   }
-  if (fkMap[field.fieldKey]) return fkMap[field.fieldKey]
 
   // Type-based formatting
   if (field.fieldType === 'date') {

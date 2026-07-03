@@ -92,6 +92,28 @@
         </div>
       </div>
 
+      <div v-else-if="isDateGroupMode" class="stats-bar date-group-bar">
+        <div class="stat-item">
+          <p class="stat-label">总计</p>
+          <p class="stat-value">{{ total }}</p>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <p class="stat-label">日期数</p>
+          <p class="stat-value text-primary-600">{{ data.length }}</p>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item stat-item-wide">
+          <p class="stat-label">最高日</p>
+          <p class="stat-value stat-value-truncate" :title="topItem?.name">{{ topItem?.name || '-' }}</p>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <p class="stat-label">占比</p>
+          <p class="stat-value text-amber-600">{{ topItem?.percentage || '0' }}%</p>
+        </div>
+      </div>
+
       <div v-else class="stats-bar">
         <div class="stat-item">
           <p class="stat-label">总计</p>
@@ -123,7 +145,7 @@
 
       <div class="table-section">
         <div class="table-header">
-          <span class="table-title">{{ isTrendMode ? '趋势' : '分布' }}明细</span>
+          <span class="table-title">{{ isTrendMode ? '趋势' : isDateGroupMode ? '日期分布' : '分布' }}明细</span>
           <n-input v-model:value="tableSearch" size="small" placeholder="搜索..." clearable class="table-search" />
         </div>
         <n-data-table
@@ -176,6 +198,7 @@ const result = ref(false)
 const tableSearch = ref('')
 const trendStats = ref<{ avg: number; min: number; max: number; count: number } | null>(null)
 const isTrendMode = ref(false)
+const isDateGroupMode = ref(false)
 const timeField = ref<string | null>(null)
 
 const selectedTemplateName = computed(() => {
@@ -214,7 +237,19 @@ const chartOpts = computed(() => {
   if (isNumericField.value) {
     opts.push({ label: '趋势图', value: 'line' })
   }
+  if (isDateField.value) {
+    opts.push({ label: '日期分布', value: 'date_group' })
+  }
   return opts
+})
+const isDateField = computed(() => {
+  if (!gField.value.length) return false
+  return gField.value.some(k => {
+    // Built-in date fields
+    if (k === 'feedbackDate' || k === 'productionTime' || k === 'createdAt') return true
+    // Template date fields
+    return fields.value.find((f: any) => f.fieldKey === k)?.fieldType === 'date'
+  })
 })
 const timeOpts = computed(() => {
   const opts: { label: string; value: string }[] = [
@@ -264,8 +299,9 @@ const COLORS = ['#ef4444','#f97316','#f59e0b','#84cc16','#22c55e','#14b8a6','#06
 
 const chartOption = computed(() => {
   const d = data.value; if (!d.length) return {}
-  if (chartType.value === 'line') {
+  if (chartType.value === 'line' || (isDateGroupMode.value && chartType.value === 'date_group')) {
     const isDateX = d.length > 0 && /^\d{4}-\d{2}-\d{2}/.test(String(d[0].name))
+    const values = isDateGroupMode.value ? d.map((x: any) => x.count) : d.map((x: any) => x.value)
     return {
       tooltip: {
         trigger: 'axis',
@@ -290,7 +326,7 @@ const chartOption = computed(() => {
       },
       series: [{
         type: 'line',
-        data: d.map((x: any) => x.value),
+        data: values,
         smooth: d.length < 50,
         symbol: d.length > 30 ? 'none' : 'circle',
         symbolSize: 4,
@@ -304,7 +340,7 @@ const chartOption = computed(() => {
             ]
           }
         },
-        markLine: trendStats.value ? {
+        markLine: (isTrendMode.value && trendStats.value) ? {
           silent: true, symbol: 'none',
           lineStyle: { type: 'dashed', color: '#9ca3af', width: 1 },
           data: [{ yAxis: trendStats.value.avg, label: { formatter: `均值 ${trendStats.value.avg}`, fontSize: 10, color: '#6b7280' } }],
@@ -359,9 +395,11 @@ async function onTemplateChange(val: number | null) {
 }
 
 function onFieldChange() {
-  if (isNumericField.value && chartType.value !== 'line') {
+  if (isNumericField.value && chartType.value !== 'line' && chartType.value !== 'date_group') {
     chartType.value = 'line'
-  } else if (!isNumericField.value && chartType.value === 'line') {
+  } else if (isDateField.value && !isNumericField.value && chartType.value === 'line') {
+    chartType.value = 'date_group'
+  } else if (!isNumericField.value && !isDateField.value && (chartType.value === 'line' || chartType.value === 'date_group')) {
     chartType.value = 'bar'
   }
   scheduleRun()
@@ -372,15 +410,18 @@ function onFilterChange() {
 }
 
 async function run() {
-  if (!gField.value.length) return; loading.value = true; result.value = false; data.value = []; trendStats.value = null; isTrendMode.value = false
+  if (!gField.value.length) return; loading.value = true; result.value = false; data.value = []; trendStats.value = null; isTrendMode.value = false; isDateGroupMode.value = false
   try {
     const useTrend = isNumericField.value && chartType.value === 'line'
+    const useDateGroup = isDateField.value && chartType.value === 'date_group'
     const params: any = { groupBy: gField.value.join(','), limit: 50 }
     if (tid.value) params.templateId = tid.value
     if (dr.value) { params.startDate = dayjs(dr.value[0]).format('YYYY-MM-DD'); params.endDate = dayjs(dr.value[1]).format('YYYY-MM-DD') }
     if (useTrend) {
       params.mode = 'trend'
       if (timeField.value) params.timeField = timeField.value
+    } else if (useDateGroup) {
+      params.mode = 'date_group'
     }
     const resp = await $fetch('/api/stats/custom', { params }) as any
     if (resp.success) {
@@ -389,6 +430,9 @@ async function run() {
       if (resp.data.mode === 'trend' && resp.data.stats) {
         isTrendMode.value = true
         trendStats.value = resp.data.stats
+      }
+      if (resp.data.mode === 'date_group') {
+        isDateGroupMode.value = true
       }
       result.value = true
     }
@@ -646,6 +690,10 @@ onBeforeUnmount(() => {
 
 .stats-bar.trend-bar {
   background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+}
+
+.stats-bar.date-group-bar {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
 }
 
 .stat-item {

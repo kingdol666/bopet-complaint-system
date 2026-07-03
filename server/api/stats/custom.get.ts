@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
     const groupByFields = groupByRaw.split(',').map(s => s.trim()).filter(Boolean)
     const templateId = query.templateId ? Number(query.templateId) : undefined
     const startDate = query.startDate ? new Date(query.startDate as string) : undefined
-    const endDate = query.endDate ? new Date(query.endDate as string) : undefined
+    const endDate = query.endDate ? (() => { const d = new Date(query.endDate as string); d.setHours(23, 59, 59, 999); return d })() : undefined
     const limit = Math.min(Math.max(Number(query.limit) || 30, 1), 200)
     const mode = (query.mode as string) || 'group'
     const timeFieldRaw = (query.timeField as string) || undefined
@@ -67,11 +67,11 @@ export default defineEventHandler(async (event) => {
       }
       if (startDate) {
         whereParts.push('feedbackDate >= ?')
-        sqlParams.push(startDate.toISOString().split('T')[0])
+        sqlParams.push(startDate.getTime())
       }
       if (endDate) {
         whereParts.push('feedbackDate <= ?')
-        sqlParams.push(endDate.toISOString().split('T')[0])
+        sqlParams.push(endDate.getTime())
       }
 
       // Numeric value extraction
@@ -114,8 +114,9 @@ export default defineEventHandler(async (event) => {
 
       if (hasTimeField) {
         // Group by time field, AVG the numeric value
+        // Built-in date fields are stored as integer timestamps (Unix ms)
         const timeSelect = builtinTimeFields.has(timeField!)
-          ? `strftime('%Y-%m-%d', ${timeExpr}) as time_val`
+          ? `strftime('%Y-%m-%d', ${timeExpr}/1000, 'unixepoch') as time_val`
           : `CAST(${timeExpr} AS TEXT) as time_val`
 
         const statsSQL = `SELECT COUNT(*) as cnt, AVG(${valueExpr}) as avg_val, MIN(${valueExpr}) as min_val, MAX(${valueExpr}) as max_val FROM data_records WHERE ${whereClause}`
@@ -181,6 +182,75 @@ export default defineEventHandler(async (event) => {
       }
     }
 
+    // ─── Date group mode: group records by a date field (built-in or custom) ───
+    if (mode === 'date_group' && groupByFields.length === 1) {
+      const field = groupByFields[0]
+      const templateField = templateFieldMap.get(field) || null
+      const isBuiltinDate = ['feedbackDate', 'productionTime', 'createdAt'].includes(field)
+      const isColumnDate = isBuiltinDate || COLUMN_FIELDS.has(field)
+
+      // Build where clause
+      const whereParts: string[] = ['1=1']
+      const sqlParams: any[] = []
+      if (deptIds && deptIds.length > 0) {
+        const placeholders = deptIds.map(() => '?').join(',')
+        whereParts.push(`responsibleDeptId IN (${placeholders})`)
+        sqlParams.push(...deptIds)
+      } else if (deptIds && deptIds.length === 0) {
+        whereParts.push('responsibleDeptId = -1')
+      }
+      if (startDate) {
+        whereParts.push('feedbackDate >= ?')
+        sqlParams.push(startDate.getTime())
+      }
+      if (endDate) {
+        whereParts.push('feedbackDate <= ?')
+        sqlParams.push(endDate.getTime())
+      }
+
+      // Determine date expression and ensure it's not null
+      // Built-in date fields are stored as integer timestamps (Unix ms) in SQLite
+      let dateExpr: string
+      let dateGroupExpr: string
+      if (isBuiltinDate) {
+        dateExpr = field
+        dateGroupExpr = `strftime('%Y-%m-%d', ${field}/1000, 'unixepoch')`
+      } else if (isColumnDate) {
+        dateExpr = `"${field}"`
+        dateGroupExpr = `strftime('%Y-%m-%d', "${field}"/1000, 'unixepoch')`
+      } else {
+        // Custom date field stored in templateData JSON (string format)
+        const safeKey = field.replace(/[^\w一-鿿-]/g, '')
+        dateExpr = `json_extract(templateData, '$.${safeKey}')`
+        dateGroupExpr = `strftime('%Y-%m-%d', json_extract(templateData, '$.${safeKey}'))`
+      }
+      whereParts.push(`${dateExpr} IS NOT NULL`)
+
+      const whereClause = whereParts.join(' AND ')
+
+      // Group by date string (YYYY-MM-DD format)
+      const dataSQL = `SELECT ${dateGroupExpr} as date_val, COUNT(*) as cnt FROM data_records WHERE ${whereClause} GROUP BY date_val ORDER BY date_val ASC LIMIT ?`
+      const rows = await prisma.$queryRawUnsafe(dataSQL, ...sqlParams, limit) as any[]
+
+      const total = rows.reduce((sum, r) => sum + Number(r.cnt), 0)
+      const results = rows.map((r: any) => ({
+        name: r.date_val || '(空)',
+        value: r.date_val,
+        count: Number(r.cnt),
+        percentage: total > 0 ? (Number(r.cnt) / total * 100).toFixed(1) : '0'
+      }))
+
+      return {
+        success: true,
+        data: {
+          groupBy: field, fields: [field],
+          fieldLabels: [templateField?.fieldLabel || field],
+          total, mode: 'date_group',
+          results
+        }
+      }
+    }
+
     // ─── Single-field path (keep existing logic) ───
     if (groupByFields.length === 1) {
       const groupBy = groupByFields[0]
@@ -189,11 +259,14 @@ export default defineEventHandler(async (event) => {
       const isColumnField = COLUMN_FIELDS.has(groupBy)
       const isFKField = templateField?.configType && FK_META[templateField.configType]
 
-      // Build date filter
+      // Build date filter (dates stored as integer timestamps in SQLite)
       const dateFilter: string[] = []
       const dateParams: any[] = []
-      if (startDate) { dateFilter.push('feedbackDate >= ?'); dateParams.push(startDate) }
-      if (endDate) { dateFilter.push('feedbackDate <= ?'); dateParams.push(endDate) }
+      if (startDate) { dateFilter.push('feedbackDate >= ?'); dateParams.push(startDate.getTime()) }
+      if (endDate) { dateFilter.push('feedbackDate <= ?'); dateParams.push(endDate.getTime()) }
+
+      // Production date fields that exist as DB columns
+      const DB_DATE_FIELDS = new Set(['feedbackDate', 'productionTime', 'createdAt'])
 
       if (isColumnField) {
         const where: any = { ...deptFilter }
@@ -309,14 +382,14 @@ export default defineEventHandler(async (event) => {
     } else if (deptIds && deptIds.length === 0) {
       whereParts.push('cr.responsibleDeptId = -1')
     }
-    // Date filter
+    // Date filter (dates stored as integer timestamps in SQLite)
     if (startDate) {
       whereParts.push('cr.feedbackDate >= ?')
-      sqlParams.push(startDate.toISOString().split('T')[0])
+      sqlParams.push(startDate.getTime())
     }
     if (endDate) {
       whereParts.push('cr.feedbackDate <= ?')
-      sqlParams.push(endDate.toISOString().split('T')[0])
+      sqlParams.push(endDate.getTime())
     }
 
     for (const field of groupByFields) {

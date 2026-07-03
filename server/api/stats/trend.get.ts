@@ -7,31 +7,30 @@ export default defineEventHandler(async (event) => {
     const query = getQuery(event)
     const year = parseInt(query.year as string) || new Date().getFullYear()
 
-    // Department filter
+    // Department filter: buildDepartmentFilter returns { responsibleDeptId: { in: [...] } } or {}
     const deptFilter = buildDepartmentFilter(currentUser)
+    const deptIds = currentUser.role === 'superadmin' ? null : currentUser.departmentIds
 
-    // Get monthly counts for the specified year using raw SQL (avoids loading all records into memory)
-    const yearStart = `${year}-01-01`
-    const yearEnd = `${year + 1}-01-01`
+    // Dates are stored as Unix millisecond integers in SQLite
+    const yearStart = new Date(year, 0, 1).getTime()
+    const yearEnd = new Date(year + 1, 0, 1).getTime()
 
     // Build department filter SQL clause
     let deptSql = ''
     const sqlParams: any[] = [yearStart, yearEnd]
-    if (deptFilter.departmentId) {
-      deptSql = 'AND departmentId = ?'
-      sqlParams.push(deptFilter.departmentId)
-    } else if (deptFilter.departmentId && (deptFilter as any).departmentId?.in) {
-      const ids = (deptFilter as any).departmentId.in as number[]
-      if (ids.length > 0) {
-        deptSql = `AND departmentId IN (${ids.map(() => '?').join(',')})`
-        sqlParams.push(...ids)
-      }
+    if (deptIds && deptIds.length > 0) {
+      const placeholders = deptIds.map(() => '?').join(',')
+      deptSql = `AND responsibleDeptId IN (${placeholders})`
+      sqlParams.push(...deptIds)
+    } else if (deptIds && deptIds.length === 0) {
+      // No departments assigned — show nothing
+      deptSql = 'AND responsibleDeptId = -1'
     }
 
     const rawResults = await prisma.$queryRawUnsafe<
       Array<{ month: string; closureStatus: string; count: bigint }>
     >(
-      `SELECT strftime('%m', feedbackDate) as month, closureStatus, COUNT(*) as count
+      `SELECT strftime('%m', feedbackDate/1000, 'unixepoch') as month, closureStatus, COUNT(*) as count
        FROM data_records
        WHERE feedbackDate >= ? AND feedbackDate < ? ${deptSql}
        GROUP BY month, closureStatus

@@ -43,21 +43,39 @@ async function parseFileContent(file: { filename: string; data: Buffer }): Promi
   const XLSX = await import('xlsx')
   if (file.filename.endsWith('.csv')) {
     const text = file.data.toString('utf-8')
-    const lines = text.split(/\r?\n/).filter(r => r.trim())
-    if (lines.length === 0) return { headers: [], rows: [] }
-    const parseCSVLine = (line: string) => {
-      const result: string[] = []
-      let current = '', inQuote = false
-      for (const ch of line) {
-        if (ch === '"') { inQuote = !inQuote }
-        else if (ch === ',' && !inQuote) { result.push(current.trim()); current = '' }
-        else { current += ch }
+    const cleanText = text.charCodeAt(0) === 0xFEFF ? text.slice(1) : text
+    // Proper CSV parser handling multiline quoted values and escaped quotes
+    const allRows: string[][] = []
+    let currentRow: string[] = []
+    let currentField = ''
+    let inQuotes = false
+    let i = 0
+    while (i < cleanText.length) {
+      const char = cleanText[i]
+      if (inQuotes) {
+        if (char === '"') {
+          if (cleanText[i + 1] === '"') { currentField += '"'; i += 2; continue }
+          else { inQuotes = false; i++; continue }
+        } else { currentField += char; i++; continue }
+      } else {
+        if (char === '"') { inQuotes = true; i++; continue }
+        else if (char === ',') { currentRow.push(currentField.trim()); currentField = ''; i++; continue }
+        else if (char === '\r') {
+          currentRow.push(currentField.trim()); currentField = ''
+          allRows.push(currentRow); currentRow = []
+          i++; if (cleanText[i] === '\n') i++; continue
+        } else if (char === '\n') {
+          currentRow.push(currentField.trim()); currentField = ''
+          allRows.push(currentRow); currentRow = []
+          i++; continue
+        } else { currentField += char; i++; continue }
       }
-      result.push(current.trim())
-      return result
     }
-    const headers = parseCSVLine(lines[0]).map(h => h.replace(/^"|"$/g, ''))
-    const rows = lines.slice(1, 50).map(l => parseCSVLine(l))
+    if (currentField !== '' || currentRow.length > 0) { currentRow.push(currentField.trim()); allRows.push(currentRow) }
+    const filtered = allRows.filter(row => row.some(v => v !== ''))
+    if (filtered.length === 0) return { headers: [], rows: [] }
+    const headers = filtered[0].map(h => h.replace(/^"|"$/g, ''))
+    const rows = filtered.slice(1, 50)
     return { headers, rows }
   }
 

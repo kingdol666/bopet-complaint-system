@@ -69,33 +69,13 @@ const templateOptions = computed(() =>
 
 const dataId = computed(() => Number.parseInt(String(route.params.id || '0'), 10))
 
-// Standard field keys that map directly to DataRecord columns
-const STANDARD_FIELD_KEYS = new Set([
-  'feedbackDate', 'productionTime', 'customerId', 'productModelId', 'thickness',
-  'specification', 'rollNo', 'quantityInvolved', 'application', 'productionLineId',
-  'shiftTeam', 'machineNo', 'batchNo', 'feedbackContent', 'category',
-  'closureStatus', 'responsibleDeptId', 'responsibleProcessId',
-  'rootCauseAnalysis', 'correctiveAction', 'lessonsLearned', 'reviewConclusion',
-  'productUsage', 'improvementAction', 'remark'
-])
-
+// Date-type DB columns that need timestamp conversion for the form
 const DATE_FIELDS = new Set(['feedbackDate', 'productionTime'])
 
 function buildTemplateDataFromRecord(record: any): Record<string, any> {
   const data: Record<string, any> = {}
 
-  // Standard fields - convert to DynamicFormFields format
-  for (const key of STANDARD_FIELD_KEYS) {
-    if (record[key] !== null && record[key] !== undefined) {
-      if (DATE_FIELDS.has(key)) {
-        data[key] = new Date(record[key]).getTime()
-      } else {
-        data[key] = record[key]
-      }
-    }
-  }
-
-  // Custom fields from templateData
+  // Start with templateData JSON (the primary source for all field values)
   if (record.templateData) {
     try {
       const custom = typeof record.templateData === 'string'
@@ -105,26 +85,55 @@ function buildTemplateDataFromRecord(record: any): Record<string, any> {
     } catch { }
   }
 
+  // Fill in DB column values directly by fieldKey
+  // (works when template fieldKey matches a DB column name)
+  for (const key of Object.keys(record)) {
+    if (key === 'templateData' || key === 'templateIds') continue
+    const val = record[key]
+    if (val === null || val === undefined) continue
+    // Only set if not already in templateData (templateData takes priority)
+    if (data[key] === undefined || data[key] === null || data[key] === '') {
+      if (DATE_FIELDS.has(key) && val instanceof Date) {
+        data[key] = val.getTime()
+      } else if (val instanceof Date) {
+        data[key] = val.getTime()
+      } else {
+        data[key] = val
+      }
+    }
+  }
+
   return data
 }
+
+// Known DB column names on DataRecord
+const DB_COLUMNS = new Set([
+  'dataNo', 'feedbackDate', 'productionTime', 'customerId', 'productModelId', 'shaftCount',
+  'thickness', 'rollNo', 'specification', 'quantityInvolved', 'application',
+  'productionLineId', 'shiftTeam', 'machineNo', 'batchNo',
+  'feedbackContent', 'category', 'closureStatus',
+  'responsibleDeptId', 'responsibleProcessId',
+  'rootCauseAnalysis', 'correctiveAction', 'lessonsLearned', 'reviewConclusion',
+  'productUsage', 'improvementAction', 'remark'
+])
 
 function buildPayload(data: Record<string, any>) {
   const standardPayload: Record<string, any> = {}
   const customData: Record<string, any> = {}
 
   for (const [key, value] of Object.entries(data)) {
-    if (STANDARD_FIELD_KEYS.has(key)) {
+    if (DB_COLUMNS.has(key)) {
+      // Write known DB columns directly
       if (DATE_FIELDS.has(key)) {
         standardPayload[key] = value ? dayjs(value).format('YYYY-MM-DD') : null
       } else {
         standardPayload[key] = value ?? null
       }
     } else {
+      // Everything else goes to templateData JSON
       customData[key] = value
     }
   }
-
-  // 编辑场景：不默认填充日期，避免覆盖原值；仅当表单显式包含日期字段时才更新
 
   return {
     ...standardPayload,

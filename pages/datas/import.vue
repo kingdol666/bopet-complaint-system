@@ -149,17 +149,72 @@ const previewData = computed(() => {
   })
 })
 
-// Parse CSV line
-function parseCSVLine(line: string): string[] {
-  const result: string[] = []
-  let current = '', inQuote = false
-  for (const ch of line) {
-    if (ch === '"') { inQuote = !inQuote }
-    else if (ch === ',' && !inQuote) { result.push(current.trim()); current = '' }
-    else { current += ch }
+// Parse CSV text with proper multiline handling and escaped quotes
+function parseCSVText(text: string): string[][] {
+  const rows: string[][] = []
+  let currentRow: string[] = []
+  let currentField = ''
+  let inQuotes = false
+  let i = 0
+
+  while (i < text.length) {
+    const char = text[i]
+
+    if (inQuotes) {
+      if (char === '"') {
+        if (text[i + 1] === '"') {
+          currentField += '"'
+          i += 2
+          continue
+        } else {
+          inQuotes = false
+          i++
+          continue
+        }
+      } else {
+        currentField += char
+        i++
+        continue
+      }
+    } else {
+      if (char === '"') {
+        inQuotes = true
+        i++
+        continue
+      } else if (char === ',') {
+        currentRow.push(currentField.trim())
+        currentField = ''
+        i++
+        continue
+      } else if (char === '\r') {
+        currentRow.push(currentField.trim())
+        currentField = ''
+        rows.push(currentRow)
+        currentRow = []
+        i++
+        if (text[i] === '\n') i++
+        continue
+      } else if (char === '\n') {
+        currentRow.push(currentField.trim())
+        currentField = ''
+        rows.push(currentRow)
+        currentRow = []
+        i++
+        continue
+      } else {
+        currentField += char
+        i++
+        continue
+      }
+    }
   }
-  result.push(current.trim())
-  return result
+
+  if (currentField !== '' || currentRow.length > 0) {
+    currentRow.push(currentField.trim())
+    rows.push(currentRow)
+  }
+
+  return rows.filter(row => row.some(v => v !== ''))
 }
 
 // Parse uploaded file (XLSX or CSV) and store as rows
@@ -174,10 +229,19 @@ async function handleFileUpload(opts: UploadCustomRequestOptions) {
 
     if (isCSV) {
       const text = await rawFile.text()
-      const lines = text.split(/\r?\n/).filter(r => r.trim())
-      if (lines.length < 2) { message.error('文件中没有数据行'); opts.onError(); return }
-      headers = parseCSVLine(lines[0]).map(h => h.replace(/^"|"$/g, '').trim())
-      rows = lines.slice(1).map(l => parseCSVLine(l))
+      const cleanText = text.charCodeAt(0) === 0xFEFF ? text.slice(1) : text
+      const allRows = parseCSVText(cleanText)
+      if (allRows.length < 2) { message.error('文件中没有数据行'); opts.onError(); return }
+      headers = allRows[0].map(h => h.replace(/^"|"$/g, '').trim()).filter((h: string) => h !== '')
+      // Re-align data rows to valid (non-empty) header columns
+      const fullHeaders = allRows[0].map(h => h.replace(/^"|"$/g, '').trim())
+      const validIndices: number[] = []
+      fullHeaders.forEach((h: string, i: number) => { if (h !== '') validIndices.push(i) })
+      rows = allRows.slice(1).map(row => validIndices.map(i => {
+        const v = row[i]
+        if (typeof v === 'string' && v.startsWith('=')) return ''
+        return v ?? ''
+      }))
     } else {
       // Parse XLSX with raw:false to get formatted date strings
       const XLSX = await import('xlsx')

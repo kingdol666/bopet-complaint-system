@@ -132,7 +132,10 @@ export default defineEventHandler(async (event) => {
         where.feedbackDate.gte = new Date(params.startDate)
       }
       if (params.endDate) {
-        where.feedbackDate.lte = new Date(params.endDate)
+        // Include the entire end date day (up to 23:59:59.999)
+        const endOfDay = new Date(params.endDate)
+        endOfDay.setHours(23, 59, 59, 999)
+        where.feedbackDate.lte = endOfDay
       }
     }
 
@@ -145,8 +148,19 @@ export default defineEventHandler(async (event) => {
     if (params.responsibleDeptId) where.responsibleDeptId = params.responsibleDeptId
 
     // Template filter: search templateIds JSON string for the given templateId
+    // templateIds is stored as JSON array of numbers, e.g. "[1,2,3]"
+    // We need to match the number in any position to avoid false positives (e.g., 1 matching 11)
     if (params.templateId) {
-      where.templateIds = { contains: `"${params.templateId}"` }
+      const tid = String(params.templateId)
+      if (!where.AND) where.AND = []
+      where.AND.push({
+        OR: [
+          { templateIds: { contains: `[${tid}]` } },   // only template in list
+          { templateIds: { contains: `[${tid},` } },    // first in list
+          { templateIds: { contains: `,${tid}]` } },    // last in list
+          { templateIds: { contains: `,${tid},` } }     // middle in list
+        ]
+      })
     }
 
     // Dynamic filters: parse JSON string
