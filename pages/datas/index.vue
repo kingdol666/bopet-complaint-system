@@ -21,7 +21,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
             </template>
-            导出CSV
+            导出Excel
           </n-button>
           <n-button v-if="authStore.canWrite" class="action-btn" @click="navigateTo('/datas/import')">
             <template #icon>
@@ -652,12 +652,38 @@ function batchDelete() {
 async function handleExport() {
   exporting.value = true
   try {
-    const params: any = { ...filters }
+    // Build params with ALL current filter conditions (same as loadData)
+    const params: any = {
+      sortBy: sorting.sortBy,
+      sortOrder: sorting.sortOrder,
+      ...filters
+    }
+
+    // Add template ID filter
+    if (selectedTemplateId.value) {
+      params.templateId = selectedTemplateId.value
+    }
+
+    // Add dynamic filters as JSON
+    const activeDynamicFilters = dynamicFilters.filter(r => r.field && (r.value || r._dateValue))
+    if (activeDynamicFilters.length > 0) {
+      const cleaned = activeDynamicFilters.map(r => ({
+        field: r.field,
+        operator: r.operator,
+        value: r.field && getFieldConfig(r.field)?.fieldType === 'date' && r._dateValue
+          ? new Date(r._dateValue).toISOString().slice(0, 10)
+          : r.value
+      }))
+      params.filters = JSON.stringify(cleaned)
+    }
+
+    // Remove empty filters
     Object.keys(params).forEach(key => {
       if (params[key] === '' || params[key] === null || params[key] === undefined) {
         delete params[key]
       }
     })
+
     const queryString = new URLSearchParams(params).toString()
     // Use fetch + blob to avoid exposing token in URL
     const resp = await fetch(`/api/datas/export?${queryString}`, {
@@ -668,7 +694,7 @@ async function handleExport() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `数据导出_${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `数据导出_${new Date().toISOString().slice(0, 10)}.xlsx`
     a.click()
     URL.revokeObjectURL(url)
     message.success('导出成功')

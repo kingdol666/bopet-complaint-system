@@ -42,6 +42,7 @@
     "@prisma/client": "^5.10.0",
     "dayjs": "^1.11.10",
     "echarts": "^5.5.0",
+    "exceljs": "^4.4.0",
     "naive-ui": "^2.38.1",
     "nuxt": "^3.10.0",
     "pinia": "^2.1.7",
