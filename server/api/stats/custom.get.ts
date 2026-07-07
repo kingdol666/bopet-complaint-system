@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client'
 import { prisma } from '~/server/utils/prisma'
 import { requireSessionUser, buildDepartmentFilter } from '~/server/utils/auth'
-import { GROUPABLE_STRING_COLUMNS, DB_DATE_COLUMNS, FK_META, CONFIG_TYPE_FK_MAP, isFKColumn, getFKMeta, getFKMetaByConfigType, DB_COLUMNS } from '~/server/utils/db-columns'
+import { GROUPABLE_STRING_COLUMNS, DB_DATE_COLUMNS, CONFIG_TYPE_FK_MAP, DB_COLUMNS } from '~/server/utils/db-columns'
 
 // 使用共享的 DB_DATE_COLUMNS 替代局部 DB_TIMESTAMP_COLUMNS
 const DB_TIMESTAMP_COLUMNS = DB_DATE_COLUMNS
@@ -32,7 +32,9 @@ function buildFilterSQL(
     const configType = tplField.configType
     const isDateField = fieldType === 'date'
     const isFKField = configType && CONFIG_TYPE_FK_MAP[configType]
-    const isColumnField = GROUPABLE_STRING_COLUMNS.has(f.field) || DB_TIMESTAMP_COLUMNS.has(f.field)
+    // 使用 DB_COLUMNS 判断是否为 DB 列（包含 FK 列、字符串列、时间戳列等），
+    // 确保 FK 字段过滤时走 DB 列路径而非 JSON 路径
+    const isColumnField = DB_COLUMNS.has(f.field)
     const fkMeta = isFKField ? CONFIG_TYPE_FK_MAP[configType] : null
 
     // 构建 SQL 表达式：DB 列 vs JSON templateData
@@ -98,8 +100,11 @@ export default defineEventHandler(async (event) => {
     const deptIds = user.role === 'superadmin' ? null : [...new Set([...user.departmentIds, ...user.grantedDepartmentIds])]
     const query = getQuery(event)
 
-    const groupByRaw = (query.groupBy as string) || ''
-    const groupByFields = groupByRaw.split(',').map(s => s.trim()).filter(Boolean)
+    // groupBy 可能是字符串（"field1,field2"）或数组（["field1","field2"]，当 URL 中出现多个 groupBy 参数时）
+    const groupByRaw = query.groupBy
+    const groupByFields = Array.isArray(groupByRaw)
+      ? groupByRaw.map(s => String(s).trim()).filter(Boolean)
+      : String(groupByRaw || '').split(',').map(s => s.trim()).filter(Boolean)
     const templateId = query.templateId ? Number(query.templateId) : undefined
     const limit = Math.min(Math.max(Number(query.limit) || 30, 1), 200)
     const mode = (query.mode as string) || 'group'

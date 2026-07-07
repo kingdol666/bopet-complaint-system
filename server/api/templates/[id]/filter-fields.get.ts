@@ -2,15 +2,6 @@ import { prisma } from '~/server/utils/prisma'
 import { requireSessionUser, canViewDepartment } from '~/server/utils/auth'
 import { CONFIG_TYPE_FK_MAP } from '~/server/utils/db-columns'
 
-// FK configType → Prisma model 名 映射
-const FK_CONFIG_TYPE_TO_PRISMA: Record<string, string> = {
-  customers: 'customer',
-  productModels: 'productModel',
-  productionLines: 'productionLine',
-  responsibleDepartments: 'responsibleDept',
-  responsibleProcesses: 'responsibleProcess'
-}
-
 // Returns only template-specific fields for custom analysis
 export default defineEventHandler(async (event) => {
   try {
@@ -45,9 +36,10 @@ export default defineEventHandler(async (event) => {
 
       // ─── 1. FK configType (customers / productModels / productionLines / responsibleDepartments / responsibleProcesses) ───
       // 优先处理 FK 类型，因为后端过滤 SQL 期望 name 而非 id
-      if (f.configType && FK_CONFIG_TYPE_TO_PRISMA[f.configType]) {
-        const prismaModel = FK_CONFIG_TYPE_TO_PRISMA[f.configType]
-        const entities = await (prisma as any)[prismaModel].findMany({
+      // 使用 db-columns.ts 中的统一映射，确保 prismaModel 名与 schema 一致
+      if (f.configType && CONFIG_TYPE_FK_MAP[f.configType]) {
+        const meta = CONFIG_TYPE_FK_MAP[f.configType]
+        const entities = await (prisma as any)[meta.prismaModel].findMany({
           where: { enabled: true },
           select: { name: true },
           orderBy: { sortOrder: 'asc' }

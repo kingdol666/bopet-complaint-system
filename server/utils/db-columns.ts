@@ -62,7 +62,7 @@ export const FK_META: Record<string, FKMeta> = {
     relationPath: 'productionLine'
   },
   responsibleDeptId: {
-    prismaModel: 'responsibleDept',
+    prismaModel: 'responsibleDepartment',
     sqlTable: 'responsible_departments',
     fkColumn: 'responsibleDeptId',
     nameColumn: 'name',
