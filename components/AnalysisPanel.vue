@@ -287,7 +287,12 @@ function isFilterDateField(fieldKey: string): boolean {
 
 function isFilterSelectField(fieldKey: string): boolean {
   const f = allFilterFields.value.find((x: any) => x.fieldKey === fieldKey)
-  return f?.fieldType === 'select' || f?.fieldType === 'select-config'
+  if (!f) return false
+  // select / select-config / auto-complete 类型，且拥有选项数据时，使用多选下拉
+  if (f.fieldType === 'select' || f.fieldType === 'select-config' || f.fieldType === 'auto-complete') {
+    return f.options && f.options.length > 0
+  }
+  return false
 }
 
 function getFilterOptions(fieldKey: string): { label: string; value: string }[] {

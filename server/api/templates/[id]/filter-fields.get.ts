@@ -1,5 +1,15 @@
 import { prisma } from '~/server/utils/prisma'
 import { requireSessionUser, canViewDepartment } from '~/server/utils/auth'
+import { CONFIG_TYPE_FK_MAP } from '~/server/utils/db-columns'
+
+// FK configType → Prisma model 名 映射
+const FK_CONFIG_TYPE_TO_PRISMA: Record<string, string> = {
+  customers: 'customer',
+  productModels: 'productModel',
+  productionLines: 'productionLine',
+  responsibleDepartments: 'responsibleDept',
+  responsibleProcesses: 'responsibleProcess'
+}
 
 // Returns only template-specific fields for custom analysis
 export default defineEventHandler(async (event) => {
@@ -33,24 +43,29 @@ export default defineEventHandler(async (event) => {
         configType: f.configType
       }
 
-      if (f.fieldType === 'select' && f.options) {
+      // ─── 1. FK configType (customers / productModels / productionLines / responsibleDepartments / responsibleProcesses) ───
+      // 优先处理 FK 类型，因为后端过滤 SQL 期望 name 而非 id
+      if (f.configType && FK_CONFIG_TYPE_TO_PRISMA[f.configType]) {
+        const prismaModel = FK_CONFIG_TYPE_TO_PRISMA[f.configType]
+        const entities = await (prisma as any)[prismaModel].findMany({
+          where: { enabled: true },
+          select: { name: true },
+          orderBy: { sortOrder: 'asc' }
+        })
+        ff.options = entities.map((e: any) => ({ label: e.name, value: e.name }))
+      }
+      // ─── 2. select 类型：直接解析 options JSON ───
+      else if (f.fieldType === 'select' && f.options) {
         try { ff.options = JSON.parse(f.options).map((v: string) => ({ label: v, value: v })) } catch {}
-      } else if (f.fieldType === 'select-config' && f.configType) {
+      }
+      // ─── 3. 其他 select-config 类型：从 FieldOptionConfig 表查找 ───
+      else if (f.fieldType === 'select-config' && f.configType) {
         const config = await prisma.fieldOptionConfig.findFirst({
           where: { configKey: f.configType, enabled: true }
         })
         if (config) {
           try { ff.options = JSON.parse(config.options).map((v: string) => ({ label: v, value: v })) } catch {}
         }
-      } else if (f.configType === 'customers') {
-        const customers = await prisma.customer.findMany({ where: { enabled: true }, select: { id: true, name: true } })
-        ff.options = customers.map((c: any) => ({ label: c.name, value: c.id }))
-      } else if (f.configType === 'productModels') {
-        const models = await prisma.productModel.findMany({ where: { enabled: true }, select: { id: true, name: true } })
-        ff.options = models.map((m: any) => ({ label: m.name, value: m.id }))
-      } else if (f.configType === 'responsibleDepartments') {
-        const depts = await prisma.responsibleDepartment.findMany({ where: { enabled: true }, select: { id: true, name: true } })
-        ff.options = depts.map((d: any) => ({ label: d.name, value: d.id }))
       }
 
       filterFields.push(ff)
