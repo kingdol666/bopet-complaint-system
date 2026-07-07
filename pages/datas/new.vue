@@ -94,6 +94,8 @@ const configStore = useConfigStore()
 const router = useRouter()
 const message = useMessage()
 
+const { dbColumns, editableDateColumns, ensureLoaded: ensureDBMetaLoaded } = useDBMeta()
+
 const formRef = ref<FormInst | null>(null)
 const submitting = ref(false)
 const selectedTemplateIds = ref<number[]>([])
@@ -106,25 +108,16 @@ const templateOptions = computed(() =>
   }))
 )
 
-// Standard field keys that map directly to DataRecord columns
-const STANDARD_FIELD_KEYS = new Set([
-  'feedbackDate', 'productionTime', 'customerId', 'productModelId', 'thickness',
-  'specification', 'rollNo', 'quantityInvolved', 'application', 'productionLineId',
-  'shiftTeam', 'machineNo', 'batchNo', 'feedbackContent', 'category',
-  'closureStatus', 'responsibleDeptId', 'responsibleProcessId',
-  'rootCauseAnalysis', 'correctiveAction', 'lessonsLearned', 'reviewConclusion',
-  'productUsage', 'improvementAction', 'remark'
-])
-
-const DATE_FIELDS = new Set(['feedbackDate', 'productionTime'])
+// Date fields and standard field keys are now loaded dynamically from /api/config/db-meta
+// No more hardcoded STANDARD_FIELD_KEYS or DATE_FIELDS sets
 
 function buildPayload(data: Record<string, any>) {
   const standardPayload: Record<string, any> = {}
   const customData: Record<string, any> = {}
 
   for (const [key, value] of Object.entries(data)) {
-    if (STANDARD_FIELD_KEYS.has(key)) {
-      if (DATE_FIELDS.has(key)) {
+    if (dbColumns.value.has(key)) {
+      if (editableDateColumns.value.has(key)) {
         standardPayload[key] = value ? dayjs(value).format('YYYY-MM-DD') : null
       } else {
         standardPayload[key] = value ?? null
@@ -134,10 +127,9 @@ function buildPayload(data: Record<string, any>) {
     }
   }
 
-  for (const dateField of DATE_FIELDS) {
-    if (!standardPayload[dateField]) {
-      standardPayload[dateField] = dayjs().format('YYYY-MM-DD')
-    }
+  // Ensure required feedbackDate has a default
+  if (!standardPayload.feedbackDate) {
+    standardPayload.feedbackDate = dayjs().format('YYYY-MM-DD')
   }
 
   return {
@@ -151,6 +143,7 @@ onMounted(async () => {
   try {
     await authStore.checkAuth()
     await configStore.loadConfig()
+    await ensureDBMetaLoaded()
     const response = await $fetch('/api/templates', { headers: authStore.getAuthHeaders() })
     if (response.success) {
       templates.value = response.data

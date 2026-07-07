@@ -2,29 +2,9 @@ import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat.js'
 import { prisma } from '~/server/utils/prisma'
 import { requireWritePermission, canModifyDepartment } from '~/server/utils/auth'
+import { DB_COLUMNS, FK_META, EDITABLE_DATE_COLUMNS, DB_INT_COLUMNS, isFKColumn, getFKMeta } from '~/server/utils/db-columns'
 
 dayjs.extend(customParseFormat)
-
-// ─── DB column names on DataRecord ───
-const DB_COLUMNS = new Set([
-  'dataNo', 'feedbackDate', 'productionTime', 'customerId', 'productModelId', 'shaftCount',
-  'thickness', 'rollNo', 'specification', 'quantityInvolved', 'application',
-  'productionLineId', 'shiftTeam', 'machineNo', 'batchNo',
-  'feedbackContent', 'category',
-  'closureStatus',
-  'responsibleDeptId', 'responsibleProcessId',
-  'rootCauseAnalysis', 'correctiveAction', 'lessonsLearned', 'reviewConclusion',
-  'productUsage', 'improvementAction', 'remark'
-])
-
-// FK columns → lookup table name for resolving names to IDs
-const FK_COLUMNS: Record<string, 'customers' | 'product_models' | 'responsible_departments' | 'responsible_processes' | 'production_lines'> = {
-  customerId: 'customers',
-  productModelId: 'product_models',
-  responsibleDeptId: 'responsible_departments',
-  responsibleProcessId: 'responsible_processes',
-  productionLineId: 'production_lines',
-}
 
 // Date formats to try parsing
 const DATE_FORMATS = [
@@ -326,22 +306,22 @@ export default defineEventHandler(async (event) => {
 
           // 2. If fieldKey is a DB column, also write to DB column
           if (DB_COLUMNS.has(fieldKey)) {
-            if (FK_COLUMNS[fieldKey]) {
+            const fkMeta = isFKColumn(fieldKey) ? getFKMeta(fieldKey) : null
+            if (fkMeta) {
               // FK field: resolve name → ID
-              const tableName = FK_COLUMNS[fieldKey]
-              const lookupList = fkLookupMap[tableName]
+              const lookupList = fkLookupMap[fkMeta.sqlTable]
               if (lookupList) {
                 const fkId = findByName(lookupList, String(rawValue).trim())
                 if (fkId !== null) {
                   recordData[fieldKey] = fkId
                 }
               }
-            } else if (fieldKey === 'feedbackDate' || fieldKey === 'productionTime') {
+            } else if (EDITABLE_DATE_COLUMNS.has(fieldKey)) {
               const parsed = parseDate(rawValue)
               if (parsed) {
                 recordData[fieldKey] = new Date(parsed)
               }
-            } else if (fieldKey === 'quantityInvolved' || fieldKey === 'shaftCount') {
+            } else if (DB_INT_COLUMNS.has(fieldKey)) {
               const firstLine = String(rawValue).trim().split(/[\n\r]+/)[0].trim()
               const n = parseInt(firstLine, 10)
               if (!isNaN(n)) {

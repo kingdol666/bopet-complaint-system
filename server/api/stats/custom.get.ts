@@ -1,22 +1,10 @@
 import { Prisma } from '@prisma/client'
 import { prisma } from '~/server/utils/prisma'
 import { requireSessionUser, buildDepartmentFilter } from '~/server/utils/auth'
+import { GROUPABLE_STRING_COLUMNS, DB_DATE_COLUMNS, FK_META, CONFIG_TYPE_FK_MAP, isFKColumn, getFKMeta, getFKMetaByConfigType, DB_COLUMNS } from '~/server/utils/db-columns'
 
-// Direct string columns on DataRecord that can be grouped
-const COLUMN_FIELDS = new Set([
-  'category', 'closureStatus',
-  'thickness', 'rollNo', 'specification', 'shiftTeam', 'machineNo',
-  'feedbackContent', 'productUsage', 'improvementAction', 'batchNo', 'application'
-])
-
-// FK configType → { prismaModel, sqlTable, fkColumn, nameColumn }
-const FK_META: Record<string, { prismaModel: string; sqlTable: string; fkColumn: string; nameColumn: string }> = {
-  customers:              { prismaModel: 'customer',              sqlTable: 'customers',               fkColumn: 'customerId',        nameColumn: 'name' },
-  productModels:          { prismaModel: 'productModel',          sqlTable: 'product_models',          fkColumn: 'productModelId',    nameColumn: 'name' },
-  responsibleDepartments: { prismaModel: 'responsibleDepartment', sqlTable: 'responsible_departments', fkColumn: 'responsibleDeptId',  nameColumn: 'name' },
-}
-
-// ─── 字段过滤辅助（完全基于模板字段类型驱动，无内置字段） ───
+// 使用共享的 DB_DATE_COLUMNS 替代局部 DB_TIMESTAMP_COLUMNS
+const DB_TIMESTAMP_COLUMNS = DB_DATE_COLUMNS
 interface ParsedFilter {
   field: string
   operator: 'eq' | 'contains' | 'in' | 'gt' | 'lt' | 'gte' | 'lte' | 'date_range'
@@ -25,8 +13,7 @@ interface ParsedFilter {
   values?: any[]
 }
 
-// DB 上的整数时间戳列（仅用于 SQL 路由，不是假设字段存在）
-const DB_TIMESTAMP_COLUMNS = new Set(['feedbackDate', 'productionTime', 'createdAt'])
+// ─── 字段过滤辅助（完全基于模板字段类型驱动，无内置字段） ───
 
 function buildFilterSQL(
   filters: ParsedFilter[],
@@ -44,9 +31,9 @@ function buildFilterSQL(
     const fieldType = tplField.fieldType
     const configType = tplField.configType
     const isDateField = fieldType === 'date'
-    const isFKField = configType && FK_META[configType]
-    const isColumnField = COLUMN_FIELDS.has(f.field) || DB_TIMESTAMP_COLUMNS.has(f.field)
-    const fkMeta = isFKField ? FK_META[configType] : null
+    const isFKField = configType && CONFIG_TYPE_FK_MAP[configType]
+    const isColumnField = GROUPABLE_STRING_COLUMNS.has(f.field) || DB_TIMESTAMP_COLUMNS.has(f.field)
+    const fkMeta = isFKField ? CONFIG_TYPE_FK_MAP[configType] : null
 
     // 构建 SQL 表达式：DB 列 vs JSON templateData
     let fieldExpr: string
@@ -149,7 +136,7 @@ export default defineEventHandler(async (event) => {
     if (mode === 'trend' && groupByFields.length === 1) {
       const field = groupByFields[0]
       const templateField = templateFieldMap.get(field) || null
-      const isColumnField = COLUMN_FIELDS.has(field)
+      const isColumnField = GROUPABLE_STRING_COLUMNS.has(field)
 
       // Build where clause (完全基于模板字段，无内置字段假设)
       const whereParts: string[] = ['1=1']
@@ -191,7 +178,7 @@ export default defineEventHandler(async (event) => {
         if (tf && tf.fieldType === 'date') {
           // Template date field — check if it's a DB timestamp column or JSON field
           const isTimestamp = DB_TIMESTAMP_COLUMNS.has(timeField)
-          if (isTimestamp || COLUMN_FIELDS.has(timeField)) {
+          if (isTimestamp || GROUPABLE_STRING_COLUMNS.has(timeField)) {
             timeExpr = `"${timeField}"`
           } else {
             const safeTimeKey = timeField.replace(/[^\w一-鿿-]/g, '')
@@ -278,7 +265,7 @@ export default defineEventHandler(async (event) => {
       const field = groupByFields[0]
       const templateField = templateFieldMap.get(field) || null
       const isTimestamp = DB_TIMESTAMP_COLUMNS.has(field)
-      const isColumnDate = isTimestamp || COLUMN_FIELDS.has(field)
+      const isColumnDate = isTimestamp || GROUPABLE_STRING_COLUMNS.has(field)
 
       // Build where clause (完全基于模板字段，无内置字段假设)
       const whereParts: string[] = ['1=1']
@@ -345,8 +332,8 @@ export default defineEventHandler(async (event) => {
       const groupBy = groupByFields[0]
       const templateField = templateFieldMap.get(groupBy) || null
 
-      const isColumnField = COLUMN_FIELDS.has(groupBy)
-      const isFKField = templateField?.configType && FK_META[templateField.configType]
+      const isColumnField = GROUPABLE_STRING_COLUMNS.has(groupBy)
+      const isFKField = templateField?.configType && CONFIG_TYPE_FK_MAP[templateField.configType]
 
       if (isColumnField) {
         const where: any = { ...deptFilter }
@@ -383,7 +370,7 @@ export default defineEventHandler(async (event) => {
       }
 
       if (isFKField) {
-        const meta = FK_META[templateField.configType]
+        const meta = CONFIG_TYPE_FK_MAP[templateField.configType]
         const where: any = { ...deptFilter }
         // Apply field filters via subquery (date ranges handled through filter system)
         if (fieldFilters.length > 0) {
@@ -492,14 +479,14 @@ export default defineEventHandler(async (event) => {
       const label = tf?.fieldLabel || field
       fieldLabels.push(label)
 
-      if (COLUMN_FIELDS.has(field)) {
+      if (GROUPABLE_STRING_COLUMNS.has(field)) {
         // Direct column
         selectParts.push(`COALESCE(CAST(cr."${field}" AS TEXT), '(空)') as v_${field}`)
         groupParts.push(`cr."${field}"`)
         whereParts.push(`cr."${field}" IS NOT NULL`)
-      } else if (tf?.configType && FK_META[tf.configType]) {
+      } else if (tf?.configType && CONFIG_TYPE_FK_MAP[tf.configType]) {
         // FK field: JOIN reference table
-        const meta = FK_META[tf.configType]
+        const meta = CONFIG_TYPE_FK_MAP[tf.configType]
         const alias = `j_${field}`
         joinClauses.push(`LEFT JOIN ${meta.sqlTable} ${alias} ON cr.${meta.fkColumn} = ${alias}.id`)
         selectParts.push(`COALESCE(${alias}.${meta.nameColumn}, '(空)') as v_${field}`)

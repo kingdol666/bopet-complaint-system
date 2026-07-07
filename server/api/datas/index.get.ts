@@ -1,18 +1,7 @@
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
 import { requireSessionUser, buildDepartmentFilter } from '~/server/utils/auth'
-
-// All known DB columns on DataRecord
-const DB_COLUMNS = new Set([
-  'dataNo', 'feedbackDate', 'productionTime', 'customerId', 'productModelId', 'shaftCount',
-  'thickness', 'rollNo', 'specification', 'quantityInvolved', 'application',
-  'productionLineId', 'shiftTeam', 'machineNo', 'batchNo',
-  'feedbackContent', 'category',
-  'closureStatus',
-  'responsibleDeptId', 'responsibleProcessId',
-  'rootCauseAnalysis', 'correctiveAction', 'lessonsLearned', 'reviewConclusion',
-  'productUsage', 'improvementAction', 'remark'
-])
+import { DB_COLUMNS, DB_INT_COLUMNS, EDITABLE_DATE_COLUMNS, DATA_INCLUDE_FULL } from '~/server/utils/db-columns'
 
 // Query schema for filtering and pagination
 const querySchema = z.object({
@@ -44,12 +33,11 @@ function applyDynamicFilter(where: any, fieldName: string, operator: string, val
     // Apply filter directly to DB column
     switch (operator) {
       case 'eq':
-        if (['shaftCount', 'quantityInvolved', 'productModelId', 'customerId', 'productionLineId',
-             'responsibleDeptId', 'responsibleProcessId'].includes(fieldName)) {
+        if (DB_INT_COLUMNS.has(fieldName)) {
           where[fieldName] = Number(val)
         } else if (fieldName === 'closureStatus') {
           where[fieldName] = val
-        } else if (fieldName === 'feedbackDate' || fieldName === 'productionTime') {
+        } else if (EDITABLE_DATE_COLUMNS.has(fieldName)) {
           where[fieldName] = {
             gte: new Date(val),
             lte: new Date(new Date(val).setHours(23, 59, 59, 999))
@@ -190,15 +178,7 @@ export default defineEventHandler(async (event) => {
       const CUSTOM_FILTER_MEMORY_LIMIT = 5000
       const allRecords = await prisma.dataRecord.findMany({
         where,
-        include: {
-          customer: true,
-          productModel: true,
-          productionLine: true,
-          responsibleDept: true,
-          responsibleProcess: true,
-          createdBy: { select: { id: true, name: true } },
-          updatedBy: { select: { id: true, name: true } }
-        },
+        include: DATA_INCLUDE_FULL,
         orderBy: {
           [sortBy]: sortOrder
         },
@@ -268,15 +248,7 @@ export default defineEventHandler(async (event) => {
 
       records = await prisma.dataRecord.findMany({
         where,
-        include: {
-          customer: true,
-          productModel: true,
-          productionLine: true,
-          responsibleDept: true,
-          responsibleProcess: true,
-          createdBy: { select: { id: true, name: true } },
-          updatedBy: { select: { id: true, name: true } }
-        },
+        include: DATA_INCLUDE_FULL,
         orderBy: {
           [sortBy]: sortOrder
         },

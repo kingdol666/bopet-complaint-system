@@ -697,7 +697,7 @@ async function handleExport() {
     a.download = `数据导出_${new Date().toISOString().slice(0, 10)}.xlsx`
     a.click()
     URL.revokeObjectURL(url)
-    message.success('导出成功')
+    message.success(`导出成功${params.templateId ? '（已按当前筛选条件导出）' : ''}`)
   } catch (e) {
     message.error('导出失败')
   } finally {

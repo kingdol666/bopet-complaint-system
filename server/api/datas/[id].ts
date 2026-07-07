@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
 import { requireSessionUser, requireWritePermission, canViewDepartment, canModifyDepartment, isNormalUser } from '~/server/utils/auth'
 import { ossDelete } from '~/server/utils/oss'
+import { DATA_INCLUDE, DATA_INCLUDE_FULL } from '~/server/utils/db-columns'
 
 const updateSchema = z.object({
   feedbackDate: z.string().transform((v) => new Date(v)).optional(),
@@ -45,11 +46,7 @@ const updateSchema = z.object({
 })
 
 const dataInclude = {
-  customer: true,
-  productModel: true,
-  productionLine: true,
-  responsibleDept: true,
-  responsibleProcess: true,
+  ...DATA_INCLUDE,
   attachments: true
 } as const
 
@@ -68,11 +65,7 @@ export default defineEventHandler(async (event) => {
 
     const record = await prisma.dataRecord.findUnique({
       where: { id },
-      include: {
-        ...dataInclude,
-        createdBy: { select: { id: true, name: true, username: true } },
-        updatedBy: { select: { id: true, name: true, username: true } }
-      }
+      include: DATA_INCLUDE_FULL
     })
 
     if (!record) {

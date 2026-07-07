@@ -52,6 +52,8 @@ const configStore = useConfigStore()
 const route = useRoute()
 const message = useMessage()
 
+const { dbColumns, editableDateColumns, ensureLoaded: ensureDBMetaLoaded } = useDBMeta()
+
 const formRef = ref<FormInst | null>(null)
 const loading = ref(true)
 const submitting = ref(false)
@@ -69,8 +71,8 @@ const templateOptions = computed(() =>
 
 const dataId = computed(() => Number.parseInt(String(route.params.id || '0'), 10))
 
-// Date-type DB columns that need timestamp conversion for the form
-const DATE_FIELDS = new Set(['feedbackDate', 'productionTime'])
+// Date fields are now loaded dynamically from /api/config/db-meta
+// No more hardcoded DATE_FIELDS or DB_COLUMNS sets
 
 function buildTemplateDataFromRecord(record: any): Record<string, any> {
   const data: Record<string, any> = {}
@@ -93,9 +95,7 @@ function buildTemplateDataFromRecord(record: any): Record<string, any> {
     if (val === null || val === undefined) continue
     // Only set if not already in templateData (templateData takes priority)
     if (data[key] === undefined || data[key] === null || data[key] === '') {
-      if (DATE_FIELDS.has(key) && val instanceof Date) {
-        data[key] = val.getTime()
-      } else if (val instanceof Date) {
+      if (val instanceof Date) {
         data[key] = val.getTime()
       } else {
         data[key] = val
@@ -106,25 +106,17 @@ function buildTemplateDataFromRecord(record: any): Record<string, any> {
   return data
 }
 
-// Known DB column names on DataRecord
-const DB_COLUMNS = new Set([
-  'dataNo', 'feedbackDate', 'productionTime', 'customerId', 'productModelId', 'shaftCount',
-  'thickness', 'rollNo', 'specification', 'quantityInvolved', 'application',
-  'productionLineId', 'shiftTeam', 'machineNo', 'batchNo',
-  'feedbackContent', 'category', 'closureStatus',
-  'responsibleDeptId', 'responsibleProcessId',
-  'rootCauseAnalysis', 'correctiveAction', 'lessonsLearned', 'reviewConclusion',
-  'productUsage', 'improvementAction', 'remark'
-])
+// Known DB column names are now loaded dynamically from /api/config/db-meta
+// No more hardcoded DB_COLUMNS set
 
 function buildPayload(data: Record<string, any>) {
   const standardPayload: Record<string, any> = {}
   const customData: Record<string, any> = {}
 
   for (const [key, value] of Object.entries(data)) {
-    if (DB_COLUMNS.has(key)) {
+    if (dbColumns.value.has(key)) {
       // Write known DB columns directly
-      if (DATE_FIELDS.has(key)) {
+      if (editableDateColumns.value.has(key)) {
         standardPayload[key] = value ? dayjs(value).format('YYYY-MM-DD') : null
       } else {
         standardPayload[key] = value ?? null
@@ -155,6 +147,8 @@ onMounted(async () => {
       await navigateTo('/login')
       return
     }
+
+    await ensureDBMetaLoaded()
 
     // Load available templates
     try {

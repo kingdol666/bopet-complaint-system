@@ -14,13 +14,15 @@
 import { randomBytes } from 'node:crypto'
 import { createHash } from 'node:crypto'
 import { mkdir, writeFile, readFile, unlink, stat } from 'node:fs/promises'
-import { join, extname, dirname } from 'node:path'
+import { join, extname, dirname, resolve } from 'node:path'
 import { existsSync } from 'node:fs'
 
 // ==================== 配置 ====================
 
-/** OSS 根目录（文件存储的物理路径） */
-const OSS_ROOT = join(process.cwd(), 'oss-storage')
+/** OSS 根目录（文件存储的物理路径，可通过环境变量 OSS_STORAGE_PATH 配置） */
+const OSS_ROOT = process.env.OSS_STORAGE_PATH
+  ? resolve(process.env.OSS_STORAGE_PATH)
+  : join(process.cwd(), 'oss-storage')
 
 /** 公开访问的基础 URL（Nuxt 静态资源代理） */
 const PUBLIC_BASE = '/oss'

@@ -193,6 +193,8 @@ const router = useRouter()
 const message = useMessage()
 const authStore = useAuthStore()
 
+const { fkRelationMap, ensureLoaded: ensureDBMetaLoaded } = useDBMeta()
+
 const loading = ref(true)
 const record = ref<any>(null)
 const templateFields = ref<any[]>([])
@@ -278,14 +280,8 @@ function parseTemplateData(): Record<string, any> {
   }
 }
 
-// FK column names → relation path on the record object
-const FK_COLUMNS: Record<string, string> = {
-  customerId: 'customer',
-  productModelId: 'productModel',
-  productionLineId: 'productionLine',
-  responsibleDeptId: 'responsibleDept',
-  responsibleProcessId: 'responsibleProcess'
-}
+// FK column → relation path mapping is now loaded dynamically from /api/config/db-meta
+// No more hardcoded FK_COLUMNS map
 
 function resolveDisplayValue(field: any, rec: any): string {
   // 1. Try templateData by fieldKey (the single source of truth for imported data)
@@ -300,8 +296,9 @@ function resolveDisplayValue(field: any, rec: any): string {
   if (value === null || value === undefined || value === '') return '-'
 
   // FK name resolution: if fieldKey is an FK column, resolve through the relation
-  if (FK_COLUMNS[field.fieldKey]) {
-    const relation = rec[FK_COLUMNS[field.fieldKey]]
+  const relationPath = fkRelationMap.value[field.fieldKey]
+  if (relationPath) {
+    const relation = rec[relationPath]
     if (relation?.name) return relation.name
   }
 
@@ -386,6 +383,8 @@ onMounted(async () => {
     router.push('/datas')
     return
   }
+
+  await ensureDBMetaLoaded()
 
   try {
     const [recordResp, templatesResp] = await Promise.all([

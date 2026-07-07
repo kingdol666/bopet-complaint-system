@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client'
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
 import { requireWritePermission, canModifyDepartment } from '~/server/utils/auth'
+import { DATA_INCLUDE } from '~/server/utils/db-columns'
 
 const createSchema = z.object({
   feedbackDate: z.string().transform((v) => new Date(v)),
@@ -44,13 +45,7 @@ const createSchema = z.object({
   })).optional().nullable()
 })
 
-const dataInclude = {
-  customer: true,
-  productModel: true,
-  productionLine: true,
-  responsibleDept: true,
-  responsibleProcess: true
-} as const
+const dataInclude = DATA_INCLUDE
 
 async function generateDataNo(): Promise<string> {
   const year = new Date().getFullYear()

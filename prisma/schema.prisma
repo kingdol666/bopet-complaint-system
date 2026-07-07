@@ -32,6 +32,12 @@ model User {
   fieldOptionConfigs FieldOptionConfig[]
   savedAnalyses     SavedAnalysis[]
   dashboards        AnalysisDashboard[]
+  // 跨部门访问授权
+  grantedAccess          CrossDepartmentAccess[]          @relation("CrossDeptAccessUser")
+  grantedByAccesses      CrossDepartmentAccess[]          @relation("CrossDeptAccessGranter")
+  // 跨部门访问申请
+  accessRequests         CrossDepartmentAccessRequest[]   @relation("AccessRequester")
+  approvedAccessRequests CrossDepartmentAccessRequest[]   @relation("AccessApprover")
 
   @@map("users")
 }
@@ -116,11 +122,13 @@ model ResponsibleDepartment {
   updatedAt DateTime @updatedAt
 
   // Relations
-  dataRecords     DataRecord[]
-  processes      ResponsibleProcess[]
-  userDepartments UserDepartment[]
-  formTemplates  FormTemplate[]
-  fieldOptionConfigs FieldOptionConfig[]
+  dataRecords            DataRecord[]
+  processes             ResponsibleProcess[]
+  userDepartments       UserDepartment[]
+  formTemplates         FormTemplate[]
+  fieldOptionConfigs    FieldOptionConfig[]
+  crossDepartmentAccesses CrossDepartmentAccess[]
+  accessRequests        CrossDepartmentAccessRequest[]
 
   @@index([enabled, sortOrder])
   @@map("responsible_departments")
@@ -331,6 +339,51 @@ model ImportLog {
   importedBy   User?    @relation(fields: [importedById], references: [id])
 
   @@map("import_logs")
+}
+
+// ==================== 跨部门访问授权表 ====================
+model CrossDepartmentAccess {
+  id           Int        @id @default(autoincrement())
+  userId       Int
+  departmentId Int
+  grantedById  Int?
+  requestId    Int?      @unique
+  expiresAt    DateTime?  // null = 永不过期
+  createdAt    DateTime   @default(now())
+
+  user         User                  @relation("CrossDeptAccessUser", fields: [userId], references: [id], onDelete: Cascade)
+  department   ResponsibleDepartment  @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  grantedBy    User?                 @relation("CrossDeptAccessGranter", fields: [grantedById], references: [id], onDelete: SetNull)
+  request      CrossDepartmentAccessRequest? @relation(fields: [requestId], references: [id])
+
+  @@unique([userId, departmentId])
+  @@index([userId])
+  @@index([departmentId])
+  @@map("cross_department_access")
+}
+
+// ==================== 跨部门访问申请表 ====================
+model CrossDepartmentAccessRequest {
+  id             Int       @id @default(autoincrement())
+  requesterId    Int
+  departmentId   Int
+  reason         String?
+  status         String    @default("pending") // pending, approved, rejected
+  approverId     Int?
+  approvedAt     DateTime?
+  rejectedReason String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  requester      User                  @relation("AccessRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  department     ResponsibleDepartment  @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  approver       User?                 @relation("AccessApprover", fields: [approverId], references: [id], onDelete: SetNull)
+  access         CrossDepartmentAccess?
+
+  @@index([requesterId])
+  @@index([departmentId])
+  @@index([status])
+  @@map("cross_department_access_requests")
 }
 
 // ==================== 用户保存的分析配置 ====================

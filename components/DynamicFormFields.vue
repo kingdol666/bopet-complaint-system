@@ -143,7 +143,9 @@ watch(modelData, () => {
 
 const message = useMessage()
 
-// Config type to store getter mapping
+// Config type to store getter mapping — now fully dynamic
+// Standard config types are resolved via the config store,
+// any unknown configType falls through to the dynamic /api/config/field-options endpoint
 const configGetterMap: Record<string, string> = {
   customers: 'customerOptions',
   productModels: 'productModelOptions',
@@ -153,10 +155,7 @@ const configGetterMap: Record<string, string> = {
 }
 
 // Stored options for auto-complete from server data
-const autoCompleteData = reactive<Record<string, string[]>>({
-  rollNos: [],
-  productModels: []
-})
+const autoCompleteData = reactive<Record<string, string[]>>({})
 
 function parseSelectOptions(optionsStr: string | null | undefined) {
   if (!optionsStr) return []
@@ -206,15 +205,18 @@ async function loadDynamicOptions(configType: string) {
 
 function getAutoCompleteOptions(configType: string | null | undefined) {
   if (!configType) return []
-  if (configType === 'productModels') {
-    const models = configStore.productModelOptions || []
-    const existing = autoCompleteData.productModels || []
-    const allOptions = [...new Set([...models.map((m: any) => m.label), ...existing])]
-    return allOptions.map((v: string) => ({ label: v, value: v }))
+  // For standard FK config types, use the config store options
+  if (configGetterMap[configType]) {
+    const getter = configGetterMap[configType]
+    const options = (configStore as any)[getter] || []
+    return options.map((m: any) => ({ label: m.label, value: m.label }))
   }
-  if (configType === 'rollNos') {
-    return (autoCompleteData.rollNos || []).map((v: string) => ({ label: v, value: v }))
+  // For dynamic config types, use the dynamic option cache
+  if (dynamicOptionCache[configType]) {
+    return dynamicOptionCache[configType]
   }
+  // Trigger async load for dynamic configs
+  loadDynamicOptions(configType)
   return []
 }
 
@@ -328,18 +330,15 @@ async function loadFields() {
     loadedIds.value = idKey
 
     // Check if any auto-complete fields need data loaded
-    const needsRollNos = allFields.some(f => f.fieldType === 'auto-complete' && f.configType === 'rollNos')
-    const needsProductModels = allFields.some(f => f.fieldType === 'auto-complete' && f.configType === 'productModels')
-
-    if (needsRollNos) {
-      try {
-        const resp = await $fetch('/api/datas/autocomplete-data')
-        if ((resp as any).success) {
-          if (needsRollNos) autoCompleteData.rollNos = (resp as any).data.rollNos || []
-        }
-      } catch (e) {
-        console.error('Failed to load autocomplete data:', e)
+    const autoCompleteConfigTypes = new Set<string>()
+    for (const f of allFields) {
+      if (f.fieldType === 'auto-complete' && f.configType && !configGetterMap[f.configType]) {
+        autoCompleteConfigTypes.add(f.configType)
       }
+    }
+
+    for (const configType of autoCompleteConfigTypes) {
+      await loadDynamicOptions(configType)
     }
 
     // Initialize defaults for any missing values
