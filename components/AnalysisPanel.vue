@@ -558,7 +558,7 @@ function exportCSV() {
   URL.revokeObjectURL(url); message.success('导出成功')
 }
 
-function filterBy(name: string) { router.push(`/complaints?keyword=${encodeURIComponent(name)}`) }
+function filterBy(name: string) { router.push(`/datas?keyword=${encodeURIComponent(name)}`) }
 
 onMounted(async () => {
   try { const r = await $fetch('/api/templates') as any; if (r.success) templates.value = r.data } catch (e) { console.error(e) }

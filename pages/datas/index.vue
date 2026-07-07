@@ -444,10 +444,13 @@ onMounted(async () => {
     console.error('Failed to load templates:', e)
   }
 
-  // Parse query params
-  if (route.query.closureStatus) {
-    filters.closureStatus = route.query.closureStatus as string
-  }
+// Parse query params
+if (route.query.closureStatus) {
+filters.closureStatus = route.query.closureStatus as string
+}
+if (route.query.keyword) {
+filters.keyword = route.query.keyword as string
+}
 
   await loadData()
 })
