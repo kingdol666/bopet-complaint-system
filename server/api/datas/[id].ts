@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
-import { requireSessionUser, requireWritePermission, canViewDepartment, canModifyDepartment, isNormalUser } from '~/server/utils/auth'
+import { requireSessionUser, requireWritePermission, canViewDepartment, canModifyDepartment, isSuperAdmin } from '~/server/utils/auth'
 import { ossDelete } from '~/server/utils/oss'
 import { DATA_INCLUDE, DATA_INCLUDE_FULL } from '~/server/utils/db-columns'
 
@@ -33,6 +33,7 @@ const updateSchema = z.object({
   remark: z.string().nullable().optional(),
   templateIds: z.array(z.number().int()).optional().nullable(),
   templateData: z.record(z.any()).nullable().optional(),
+  isPublic: z.boolean().optional(),
   attachments: z.array(z.object({
     fileName: z.string(),
     fileUrl: z.string(),
@@ -75,12 +76,18 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // Check department access (view: own + cross-dept granted)
-    if (!canViewDepartment(currentUser, record.responsibleDeptId)) {
-      throw createError({
-        statusCode: 403,
-        message: '您没有查看该记录的权限'
-      })
+    // 权限检查：superadmin 可查看全部
+    if (!isSuperAdmin(currentUser)) {
+      // 私密数据：只有创建者可查看
+      // 公开数据：本部门 + 跨部门授权可查看
+      const isOwner = record.createdById === currentUser.id
+      const canViewDept = canViewDepartment(currentUser, record.responsibleDeptId)
+      if (!isOwner && !(canViewDept && record.isPublic)) {
+        throw createError({
+          statusCode: 403,
+          message: '您没有查看该记录的权限'
+        })
+      }
     }
 
     return {
@@ -106,19 +113,12 @@ export default defineEventHandler(async (event) => {
         })
       }
 
-      // Check department access for existing record (modify: own dept only)
-      if (!canModifyDepartment(currentUser, existing.responsibleDeptId)) {
+      // 权限检查：superadmin 可修改全部，admin 可修改本部门数据 + 自己创建的数据
+      const isOwner = existing.createdById === currentUser.id
+      if (!isSuperAdmin(currentUser) && !isOwner && !canModifyDepartment(currentUser, existing.responsibleDeptId)) {
         throw createError({
           statusCode: 403,
-          message: '您没有修改该记录的权限（仅本部门管理员可修改）'
-        })
-      }
-
-      // Normal users cannot modify records
-      if (isNormalUser(currentUser)) {
-        throw createError({
-          statusCode: 403,
-          message: '普通用户没有修改权限'
+          message: '您没有修改该记录的权限'
         })
       }
 
@@ -232,19 +232,12 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-      // Check department access (modify: own dept only)
-      if (!canModifyDepartment(currentUser, existing.responsibleDeptId)) {
-        throw createError({
-          statusCode: 403,
-          message: '您没有删除该记录的权限（仅本部门管理员可删除）'
-        })
-      }
-
-      // Normal users cannot delete records
-      if (isNormalUser(currentUser)) {
+    // 权限检查：superadmin 可删除全部，admin 可删除本部门数据 + 自己创建的数据
+    const isOwner = existing.createdById === currentUser.id
+    if (!isSuperAdmin(currentUser) && !isOwner && !canModifyDepartment(currentUser, existing.responsibleDeptId)) {
       throw createError({
         statusCode: 403,
-        message: '普通用户没有删除权限'
+        message: '您没有删除该记录的权限'
       })
     }
 
@@ -286,6 +279,47 @@ export default defineEventHandler(async (event) => {
       success: true,
       message: '数据记录已删除'
     }
+  }
+
+  // PATCH: 切换数据公开/私密状态
+  if (event.method === 'PATCH') {
+    const currentUser = await requireSessionUser(event)
+    const body = await readBody(event)
+    const { isPublic } = body as { isPublic?: boolean }
+
+    if (typeof isPublic !== 'boolean') {
+      throw createError({ statusCode: 400, message: '缺少 isPublic 参数' })
+    }
+
+    const existing = await prisma.dataRecord.findUnique({ where: { id } })
+    if (!existing) {
+      throw createError({ statusCode: 404, message: '数据记录不存在' })
+    }
+
+    // 权限：superadmin 或创建者或本部门 admin
+    const isOwner = existing.createdById === currentUser.id
+    if (!isSuperAdmin(currentUser) && !isOwner && !canModifyDepartment(currentUser, existing.responsibleDeptId)) {
+      throw createError({ statusCode: 403, message: '您没有修改该记录的权限' })
+    }
+
+    const record = await prisma.dataRecord.update({
+      where: { id },
+      data: { isPublic, updatedById: currentUser.id },
+      include: dataInclude
+    })
+
+    await prisma.operationLog.create({
+      data: {
+        userId: currentUser.id,
+        action: 'update',
+        module: 'data',
+        targetId: record.id,
+        targetName: record.dataNo,
+        detail: JSON.stringify({ isPublic })
+      }
+    })
+
+    return { success: true, data: record, message: isPublic ? '已设为公开' : '已设为私密' }
   }
 
   throw createError({

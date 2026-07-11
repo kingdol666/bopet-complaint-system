@@ -64,6 +64,33 @@
         </div>
       </div>
 
+      <!-- Data visibility setting -->
+      <div class="card mb-6">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          </div>
+          <h2 class="section-title mb-0">数据可见性</h2>
+        </div>
+        <n-form-item label="可见性设置">
+          <n-radio-group v-model:value="isPublic">
+            <n-space>
+              <n-radio :value="true">公开（同部门可见）</n-radio>
+              <n-radio :value="false">私密（仅自己可见）</n-radio>
+            </n-space>
+          </n-radio-group>
+        </n-form-item>
+        <p class="text-sm text-gray-500 mt-1">
+          公开数据可被同部门及其他被授权部门成员查看；私密数据仅创建者自己和系统管理员可见。
+        </p>
+      </div>
+
       <!-- Actions -->
       <div class="flex justify-end gap-2">
         <n-button type="default" size="large" @click="navigateTo('/datas')">
@@ -100,6 +127,7 @@ const formRef = ref<FormInst | null>(null)
 const submitting = ref(false)
 const selectedTemplateIds = ref<number[]>([])
 const templateData = ref<Record<string, any>>({})
+const isPublic = ref(true)
 const templates = ref<any[]>([])
 const templateOptions = computed(() =>
   templates.value.map(t => ({
@@ -135,7 +163,8 @@ function buildPayload(data: Record<string, any>) {
   return {
     ...standardPayload,
     templateIds: selectedTemplateIds.value.length > 0 ? selectedTemplateIds.value : null,
-    templateData: Object.keys(customData).length > 0 ? customData : null
+    templateData: Object.keys(customData).length > 0 ? customData : null,
+    isPublic: isPublic.value
   }
 }
 

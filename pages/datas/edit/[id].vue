@@ -31,6 +31,22 @@
         <DynamicFormFields v-model="templateData" :template-ids="selectedTemplateIds" />
       </div>
 
+      <!-- Data visibility setting -->
+      <div class="card mb-6">
+        <h2 class="section-title">数据可见性</h2>
+        <n-form-item label="可见性设置">
+          <n-radio-group v-model:value="isPublic">
+            <n-space>
+              <n-radio :value="true">公开（同部门可见）</n-radio>
+              <n-radio :value="false">私密（仅自己可见）</n-radio>
+            </n-space>
+          </n-radio-group>
+        </n-form-item>
+        <p class="text-sm text-gray-500 mt-1">
+          公开数据可被同部门及其他被授权部门成员查看；私密数据仅创建者自己和系统管理员可见。
+        </p>
+      </div>
+
       <div class="flex justify-end gap-2">
         <n-button type="default" @click="navigateTo(`/datas/${dataId}`)">取消</n-button>
         <n-button type="primary" :loading="submitting" @click="handleSubmit">
@@ -59,6 +75,7 @@ const loading = ref(true)
 const submitting = ref(false)
 const selectedTemplateIds = ref<number[]>([])
 const templateData = ref<Record<string, any>>({})
+const isPublic = ref(true)
 const templates = ref<any[]>([])
 const dataNo = ref('')
 
@@ -130,7 +147,8 @@ function buildPayload(data: Record<string, any>) {
   return {
     ...standardPayload,
     templateIds: selectedTemplateIds.value.length > 0 ? selectedTemplateIds.value : null,
-    templateData: Object.keys(customData).length > 0 ? customData : null
+    templateData: Object.keys(customData).length > 0 ? customData : null,
+    isPublic: isPublic.value
   }
 }
 
@@ -181,6 +199,7 @@ async function loadRecord() {
 
   const record = response.data
   dataNo.value = record.dataNo || ''
+  isPublic.value = record.isPublic !== false // default true if undefined
 
   // Restore template IDs
   if (record.templateIds) {

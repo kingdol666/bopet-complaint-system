@@ -15,13 +15,13 @@
           </div>
         </div>
         <div class="header-actions">
-          <n-button class="action-btn" @click="handleExport" :loading="exporting">
+          <n-button class="action-btn" @click="handleExport(false)" :loading="exporting">
             <template #icon>
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
             </template>
-            导出Excel
+            导出筛选结果
           </n-button>
           <n-button v-if="authStore.canWrite" class="action-btn" @click="navigateTo('/datas/import')">
             <template #icon>
@@ -137,6 +137,9 @@
           已选择 <span class="batch-count">{{ checkedRowKeys.length }}</span> 条记录
         </span>
         <div class="batch-buttons">
+          <n-button type="info" size="small" :loading="exporting" @click="handleExport(true)">
+            导出选中
+          </n-button>
           <n-button type="primary" size="small" :loading="batchProcessing" @click="batchMarkProcessed">
             批量标记已处理
           </n-button>
@@ -166,7 +169,7 @@
 
 <script setup lang="ts">
 import { h } from 'vue'
-import { NButton, NSpace, NSwitch } from 'naive-ui'
+import { NButton, NSpace, NSwitch, NTag, NTooltip } from 'naive-ui'
 import type { DataTableColumn } from 'naive-ui'
 import { useConfigStore } from '~/stores/config'
 import { useAuthStore } from '~/stores/auth'
@@ -398,9 +401,19 @@ const columns: DataTableColumn<any>[] = [
     })
   },
   {
+    title: '可见性',
+    key: 'isPublic',
+    width: 80,
+    render: (row) => h(NTag, {
+      size: 'small' as const,
+      type: row.isPublic ? 'success' : 'warning',
+      bordered: false
+    }, () => row.isPublic ? '公开' : '私密')
+  },
+  {
     title: '操作',
     key: 'actions',
-    width: 180,
+    width: 220,
     fixed: 'right',
     render: (row) => h(NSpace, { size: 'small' }, () => {
       const buttons = [
@@ -410,6 +423,18 @@ const columns: DataTableColumn<any>[] = [
           onClick: () => router.push(`/datas/${row.id}`)
         }, () => '查看')
       ]
+      // 公开/私密切换按钮（创建者或 admin/superadmin 可操作）
+      buttons.push(
+        h(NTooltip, { trigger: 'hover' }, {
+          trigger: () => h(NButton, {
+            size: 'small',
+            type: row.isPublic ? 'success' : 'warning',
+            ghost: true,
+            onClick: () => handleTogglePublic(row)
+          }, () => row.isPublic ? '公开' : '私密'),
+          default: () => row.isPublic ? '点击设为私密（仅自己可见）' : '点击设为公开（同部门可见）'
+        })
+      )
       if (authStore.canWrite) {
         buttons.push(
           h(NButton, {
@@ -591,6 +616,21 @@ async function handleProcessedChange(row: any, value: string) {
   }
 }
 
+async function handleTogglePublic(row: any) {
+  const newIsPublic = !row.isPublic
+  try {
+    await $fetch(`/api/datas/${row.id}`, {
+      method: 'PATCH',
+      headers: authStore.getAuthHeaders(),
+      body: { isPublic: newIsPublic }
+    })
+    row.isPublic = newIsPublic
+    message.success(newIsPublic ? '已设为公开（同部门可见）' : '已设为私密（仅自己可见）')
+  } catch (e: any) {
+    message.error(e?.data?.message || '切换失败')
+  }
+}
+
 async function batchMarkProcessed() {
   if (checkedRowKeys.value.length === 0) return
   batchProcessing.value = true
@@ -652,47 +692,63 @@ function batchDelete() {
   })
 }
 
-async function handleExport() {
+async function handleExport(exportSelected = false) {
   exporting.value = true
   try {
-    // Build params with ALL current filter conditions (same as loadData)
-    const params: any = {
+    // 构建请求体
+    const body: any = {
       sortBy: sorting.sortBy,
-      sortOrder: sorting.sortOrder,
-      ...filters
+      sortOrder: sorting.sortOrder
     }
 
-    // Add template ID filter
-    if (selectedTemplateId.value) {
-      params.templateId = selectedTemplateId.value
-    }
-
-    // Add dynamic filters as JSON
-    const activeDynamicFilters = dynamicFilters.filter(r => r.field && (r.value || r._dateValue))
-    if (activeDynamicFilters.length > 0) {
-      const cleaned = activeDynamicFilters.map(r => ({
-        field: r.field,
-        operator: r.operator,
-        value: r.field && getFieldConfig(r.field)?.fieldType === 'date' && r._dateValue
-          ? new Date(r._dateValue).toISOString().slice(0, 10)
-          : r.value
-      }))
-      params.filters = JSON.stringify(cleaned)
-    }
-
-    // Remove empty filters
-    Object.keys(params).forEach(key => {
-      if (params[key] === '' || params[key] === null || params[key] === undefined) {
-        delete params[key]
+    if (exportSelected) {
+      // 选中条目导出模式
+      if (checkedRowKeys.value.length === 0) {
+        message.warning('请先选择要导出的记录')
+        return
       }
-    })
+      body.selectedIds = checkedRowKeys.value
+    } else {
+      // 过滤条件导出模式
+      Object.assign(body, filters)
 
-    const queryString = new URLSearchParams(params).toString()
-    // Use fetch + blob to avoid exposing token in URL
-    const resp = await fetch(`/api/datas/export?${queryString}`, {
-      headers: authStore.getAuthHeaders()
+      if (selectedTemplateId.value) {
+        body.templateId = selectedTemplateId.value
+      }
+
+      const activeDynamicFilters = dynamicFilters.filter(r => r.field && (r.value || r._dateValue))
+      if (activeDynamicFilters.length > 0) {
+        const cleaned = activeDynamicFilters.map(r => ({
+          field: r.field,
+          operator: r.operator,
+          value: r.field && getFieldConfig(r.field)?.fieldType === 'date' && r._dateValue
+            ? new Date(r._dateValue).toISOString().slice(0, 10)
+            : r.value
+        }))
+        body.filters = JSON.stringify(cleaned)
+      }
+
+      // 移除空值
+      Object.keys(body).forEach(key => {
+        if (body[key] === '' || body[key] === null || body[key] === undefined) {
+          delete body[key]
+        }
+      })
+    }
+
+    // 使用 POST 请求避免 URL 长度限制
+    const resp = await fetch('/api/datas/export', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authStore.getAuthHeaders()
+      },
+      body: JSON.stringify(body)
     })
-    if (!resp.ok) throw new Error('Export failed')
+    if (!resp.ok) {
+      const errData = await resp.json().catch(() => null)
+      throw new Error(errData?.message || '导出失败')
+    }
     const blob = await resp.blob()
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -700,9 +756,12 @@ async function handleExport() {
     a.download = `数据导出_${new Date().toISOString().slice(0, 10)}.xlsx`
     a.click()
     URL.revokeObjectURL(url)
-    message.success(`导出成功${params.templateId ? '（已按当前筛选条件导出）' : ''}`)
-  } catch (e) {
-    message.error('导出失败')
+    message.success(exportSelected
+      ? `成功导出 ${checkedRowKeys.value.length} 条选中记录`
+      : '导出成功（已按当前筛选条件导出）'
+    )
+  } catch (e: any) {
+    message.error(e?.message || '导出失败')
   } finally {
     exporting.value = false
   }

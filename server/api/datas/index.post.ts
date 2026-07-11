@@ -33,6 +33,7 @@ const createSchema = z.object({
   remark: z.string().optional().nullable(),
   templateIds: z.array(z.number().int()).optional().nullable(),
   templateData: z.record(z.any()).optional().nullable(),
+  isPublic: z.boolean().default(true),
   attachments: z.array(z.object({
     fileName: z.string(),
     fileUrl: z.string(),
@@ -125,6 +126,7 @@ export default defineEventHandler(async (event) => {
         remark: data.remark,
         templateIds: data.templateIds ? JSON.stringify(data.templateIds) : null,
         templateData: data.templateData ? JSON.stringify(data.templateData) : null,
+        isPublic: data.isPublic,
         createdById: currentUser.id,
         updatedById: currentUser.id
       }

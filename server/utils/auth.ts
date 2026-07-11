@@ -300,18 +300,32 @@ export function getModifiableDepartmentIds(user: SessionUser): number[] | null {
 
 /**
  * 构建部门过滤的 where 条件（用于【查看】数据）。
- * 包含本部门 + 跨部门授权。
- * superadmin 不加过滤条件。
+ *
+ * 权限规则：
+ * - superadmin: 可查看全部数据，不加过滤条件
+ * - admin/normal: 可查看
+ *   1) 本部门 + 跨部门授权范围内的公开数据（isPublic=true）
+ *   2) 自己创建的数据（无论公开/私密）
+ *
+ * @param fieldName 部门字段名，默认 'responsibleDeptId'
  */
 export function buildDepartmentFilter(user: SessionUser, fieldName = 'responsibleDeptId'): Record<string, any> {
   const deptIds = getViewableDepartmentIds(user)
   if (deptIds === null) {
+    // superadmin 可看全部
     return {}
   }
   if (deptIds.length === 0) {
-    return { [fieldName]: { in: [-1] } }
+    // 没有部门权限，只能看自己创建的
+    return { createdById: user.id }
   }
-  return { [fieldName]: { in: deptIds } }
+  // 可查看：部门范围内的公开数据 + 自己创建的所有数据
+  return {
+    OR: [
+      { [fieldName]: { in: deptIds }, isPublic: true },
+      { createdById: user.id }
+    ]
+  }
 }
 
 /**
@@ -346,6 +360,7 @@ export function canViewDepartment(user: SessionUser, departmentId: number | null
 /**
  * 检查用户是否有权【修改/删除/创建】指定部门的数据。
  * superadmin 有全部权限。admin 仅限本部门。普通用户无权限。
+ * 注意：数据的创建者始终可以修改自己的私密数据，即使不是 admin。
  */
 export function canModifyDepartment(user: SessionUser, departmentId: number | null): boolean {
   if (isSuperAdmin(user)) {
