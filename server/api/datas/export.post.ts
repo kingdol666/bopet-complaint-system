@@ -119,7 +119,8 @@ function buildVisibilityFilter(user: any): Record<string, any> {
   return {
     OR: [
       { responsibleDeptId: { in: deptIds }, isPublic: true },
-      { createdById: user.id }
+      { createdById: user.id },
+      { responsibleDeptId: null, isPublic: true }
     ]
   }
 }

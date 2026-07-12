@@ -319,11 +319,15 @@ export function buildDepartmentFilter(user: SessionUser, fieldName = 'responsibl
     // 没有部门权限，只能看自己创建的
     return { createdById: user.id }
   }
-  // 可查看：部门范围内的公开数据 + 自己创建的所有数据
+  // 可查看：
+  // 1) 部门范围内的公开数据（isPublic=true）
+  // 2) 自己创建的所有数据
+  // 3) 没有指定部门但公开的数据（isPublic=true 且 responsibleDeptId 为 null）
   return {
     OR: [
       { [fieldName]: { in: deptIds }, isPublic: true },
-      { createdById: user.id }
+      { createdById: user.id },
+      { [fieldName]: null, isPublic: true }
     ]
   }
 }

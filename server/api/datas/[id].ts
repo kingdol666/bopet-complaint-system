@@ -79,10 +79,11 @@ export default defineEventHandler(async (event) => {
     // 权限检查：superadmin 可查看全部
     if (!isSuperAdmin(currentUser)) {
       // 私密数据：只有创建者可查看
-      // 公开数据：本部门 + 跨部门授权可查看
+      // 公开数据：本部门 + 跨部门授权 + 无部门公开数据 可查看
       const isOwner = record.createdById === currentUser.id
       const canViewDept = canViewDepartment(currentUser, record.responsibleDeptId)
-      if (!isOwner && !(canViewDept && record.isPublic)) {
+      const isPublicNoDept = !record.responsibleDeptId && record.isPublic
+      if (!isOwner && !isPublicNoDept && !(canViewDept && record.isPublic)) {
         throw createError({
           statusCode: 403,
           message: '您没有查看该记录的权限'

@@ -1,7 +1,7 @@
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat.js'
 import { prisma } from '~/server/utils/prisma'
-import { requireWritePermission, canModifyDepartment } from '~/server/utils/auth'
+import { requireSessionUser, canModifyDepartment, canCreateForDepartment } from '~/server/utils/auth'
 import { DB_COLUMNS, FK_META, EDITABLE_DATE_COLUMNS, DB_INT_COLUMNS, isFKColumn, getFKMeta } from '~/server/utils/db-columns'
 
 dayjs.extend(customParseFormat)
@@ -168,7 +168,7 @@ async function parseFile(file: { filename: string; data: Buffer }): Promise<{ he
 // ─── Main Handler ───
 export default defineEventHandler(async (event) => {
   try {
-    const currentUser = await requireWritePermission(event)
+    const currentUser = await requireSessionUser(event)
     const formData = await readMultipartFormData(event)
     if (!formData?.length) throw createError({ statusCode: 400, message: '未选择文件' })
 
@@ -270,9 +270,15 @@ export default defineEventHandler(async (event) => {
           dataNo: `${prefix}${String(nextSeq++).padStart(4, '0')}`,
           feedbackDate: new Date(),
           closureStatus: 'pending',
+          isPublic: true,
           createdById: currentUser.id,
           updatedById: currentUser.id,
           templateIds: JSON.stringify([templateId])
+        }
+
+        // 自动分配创建者的第一个部门（如果CSV中没有责任部门字段）
+        if (currentUser.departmentIds.length > 0) {
+          recordData.responsibleDeptId = currentUser.departmentIds[0]
         }
 
         for (let c = 0; c < Math.min(fileHeaders.length, row.length); c++) {
@@ -342,8 +348,8 @@ export default defineEventHandler(async (event) => {
           recordData.productionTime = new Date(recordData.productionTime)
         }
 
-        // 校验导入部门权限（仅本部门管理员可导入）
-        if (recordData.responsibleDeptId && !canModifyDepartment(currentUser, recordData.responsibleDeptId)) {
+        // 校验导入部门权限（仅可导入到自己所在部门）
+        if (recordData.responsibleDeptId && !canCreateForDepartment(currentUser, recordData.responsibleDeptId)) {
           throw new Error(`无权导入到责任部门 ID ${recordData.responsibleDeptId}`)
         }
 

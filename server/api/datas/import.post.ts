@@ -1,5 +1,5 @@
 import { prisma } from '~/server/utils/prisma'
-import { requireWritePermission } from '~/server/utils/auth'
+import { requireSessionUser, canCreateForDepartment } from '~/server/utils/auth'
 
 // Proper CSV parser that handles multiline quoted values and escaped quotes
 function parseCSVText(text: string): string[][] {
@@ -71,7 +71,7 @@ function parseCSVText(text: string): string[][] {
 
 export default defineEventHandler(async (event) => {
   try {
-    const currentUser = await requireWritePermission(event)
+    const currentUser = await requireSessionUser(event)
 
     const formData = await readMultipartFormData(event)
     if (!formData || formData.length === 0) {
@@ -150,6 +150,7 @@ export default defineEventHandler(async (event) => {
             dataNo,
             feedbackDate: new Date(),
             responsibleDeptId: currentUser.departmentIds?.[0] ?? null,
+            isPublic: true,
             createdById: currentUser.id,
             updatedById: currentUser.id,
             templateData: JSON.stringify({
