@@ -294,7 +294,8 @@ async function main() {
       improvementAction: '建立刀片寿命管理台账，预设更换周期。',
       createdById: operatorUser.id,
       updatedById: adminUser.id,
-      remark: '首次反馈，已闭环处理'
+      remark: '首次反馈，已闭环处理',
+      templateIds: JSON.stringify([template1.id])
     },
     {
       dataNo: 'DR-2025-0002',
@@ -318,7 +319,8 @@ async function main() {
       rootCauseAnalysis: '横拉工序温度波动导致拉伸不均匀，形成周期性条纹。',
       correctiveAction: '校准横拉段温控系统，增加温度监测点位。',
       createdById: operatorUser.id,
-      remark: '正在验证温控系统校准效果'
+      remark: '正在验证温控系统校准效果',
+      templateIds: JSON.stringify([template1.id])
     },
     {
       dataNo: 'DR-2025-0003',
@@ -340,7 +342,8 @@ async function main() {
       responsibleDeptId: deptMap['DEPT-01'],
       responsibleProcessId: procMap['PROC-04'],
       createdById: qualityUser.id,
-      remark: '待技术部联合分析涂布配方'
+      remark: '待技术部联合分析涂布配方',
+      templateIds: JSON.stringify([template1.id])
     }
   ]
 

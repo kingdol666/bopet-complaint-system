@@ -31,7 +31,7 @@ const createSchema = z.object({
   productUsage: z.string().max(200).optional().nullable(),
   improvementAction: z.string().optional().nullable(),
   remark: z.string().optional().nullable(),
-  templateIds: z.array(z.number().int()).optional().nullable(),
+  templateIds: z.array(z.number().int()).min(1, '必须选择至少一个表单模板'),
   templateData: z.record(z.any()).optional().nullable(),
   isPublic: z.boolean().default(true),
   attachments: z.array(z.object({
@@ -125,7 +125,7 @@ export default defineEventHandler(async (event) => {
         productUsage: data.productUsage,
         improvementAction: data.improvementAction,
         remark: data.remark,
-        templateIds: data.templateIds ? JSON.stringify(data.templateIds) : null,
+        templateIds: JSON.stringify(data.templateIds),
         templateData: data.templateData ? JSON.stringify(data.templateData) : null,
         isPublic: data.isPublic,
         createdById: currentUser.id,
