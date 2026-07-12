@@ -14,8 +14,8 @@ import { existsSync, mkdirSync } from "node:fs";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = resolve(__dirname, "..");
 
-// Resolve database path relative to project root (prisma/data/)
-const dbDir = resolve(rootDir, "prisma", "data");
+// Resolve database path relative to project root (data/)
+const dbDir = resolve(rootDir, "data");
 if (!existsSync(dbDir)) {
   mkdirSync(dbDir, { recursive: true });
 }

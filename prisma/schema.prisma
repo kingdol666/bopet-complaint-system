@@ -207,13 +207,13 @@ model DataRecord {
   templateIds             String?  // JSON 数组: "[1,2,3]" 关联的模板ID列表
   templateData            String?  // 自定义字段值 JSON
 
-  // 数据可见性：public=同部门可见, private=仅创建者可见
-  isPublic                Boolean  @default(true) // 默认公开，同部门可见
+// 数据可见性
+isPublic                Boolean  @default(true) // 是否公开（同部门可见）
 
-  // 附件
-  attachments             DataAttachment[]
+// 附件
+attachments             DataAttachment[]
 
-  @@index([feedbackDate])
+@@index([feedbackDate])
   @@index([customerId])
   @@index([productModelId])
   @@index([productionLineId])

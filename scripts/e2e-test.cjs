@@ -2,7 +2,7 @@
  * 端到端 API 测试脚本
  * 测试内容：登录、数据列表、数据可见性、导出（筛选+选中）、PATCH 切换公开/私密
  */
-const BASE = 'http://localhost:3000'
+const BASE = 'http://localhost:3001'
 
 let passCount = 0
 let failCount = 0
