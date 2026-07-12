@@ -1,7 +1,6 @@
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
-import { requireSessionUser } from '~/server/utils/auth'
-import { isSuperAdmin, canViewDepartment } from '~/server/utils/auth'
+import { requireSessionUser, isSuperAdmin } from '~/server/utils/auth'
 import { ossRetrieve } from '~/server/utils/oss'
 import {
   DB_COLUMNS,
@@ -153,15 +152,20 @@ export default defineEventHandler(async (event) => {
     // 关键词搜索（仅过滤模式）
     if (!params.selectedIds && params.keyword) {
       const kw = params.keyword
-      where.OR = [
-        { dataNo: { contains: kw } },
-        { feedbackContent: { contains: kw } },
-        { category: { contains: kw } },
-        { rootCauseAnalysis: { contains: kw } },
-        { correctiveAction: { contains: kw } },
-        { rollNo: { contains: kw } },
-        { batchNo: { contains: kw } }
-      ]
+      // 注意：不能直接用 where.OR = [...]，因为 buildVisibilityFilter 可能已设置了 where.OR
+      // 必须用 AND 包裹关键词搜索条件，避免覆盖可见性过滤
+      if (!where.AND) where.AND = []
+      where.AND.push({
+        OR: [
+          { dataNo: { contains: kw } },
+          { feedbackContent: { contains: kw } },
+          { category: { contains: kw } },
+          { rootCauseAnalysis: { contains: kw } },
+          { correctiveAction: { contains: kw } },
+          { rollNo: { contains: kw } },
+          { batchNo: { contains: kw } }
+        ]
+      })
     }
 
     // 日期范围

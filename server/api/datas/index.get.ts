@@ -102,15 +102,20 @@ export default defineEventHandler(async (event) => {
     // Keyword search
     if (params.keyword) {
       const keyword = params.keyword
-      where.OR = [
-        { dataNo: { contains: keyword } },
-        { feedbackContent: { contains: keyword } },
-        { category: { contains: keyword } },
-        { rootCauseAnalysis: { contains: keyword } },
-        { correctiveAction: { contains: keyword } },
-        { rollNo: { contains: keyword } },
-        { batchNo: { contains: keyword } }
-      ]
+      // 注意：不能直接用 where.OR = [...]，因为 buildDepartmentFilter 可能已设置了 where.OR
+      // 必须用 AND 包裹关键词搜索条件，避免覆盖可见性过滤
+      if (!where.AND) where.AND = []
+      where.AND.push({
+        OR: [
+          { dataNo: { contains: keyword } },
+          { feedbackContent: { contains: keyword } },
+          { category: { contains: keyword } },
+          { rootCauseAnalysis: { contains: keyword } },
+          { correctiveAction: { contains: keyword } },
+          { rollNo: { contains: keyword } },
+          { batchNo: { contains: keyword } }
+        ]
+      })
     }
 
     // Date range
