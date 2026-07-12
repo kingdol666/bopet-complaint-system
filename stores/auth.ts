@@ -30,8 +30,12 @@ export const useAuthStore = defineStore('auth', {
     isSuperAdmin: (state) => state.user?.role === 'superadmin',
     isAdmin: (state) => state.user?.role === 'admin',
     isNormal: (state) => state.user?.role === 'normal',
-    /** 是否拥有写权限（superadmin 或 admin） */
+    /** 是否拥有写权限（superadmin 或 admin）— 用于管理部门设置等管理功能 */
     canWrite: (state) => state.user?.role === 'superadmin' || state.user?.role === 'admin',
+    /** 是否可以创建数据（所有登录用户都可以） */
+    canCreateData: (state) => !!state.user,
+    /** 是否可以审批跨部门访问请求（仅 admin 和 superadmin） */
+    canApproveAccess: (state) => state.user?.role === 'superadmin' || state.user?.role === 'admin',
     /** 获取用户所属部门ID列表 */
     departmentIds: (state) => state.user?.departments?.map(d => d.id) || [],
     /** 获取跨部门授权可查看的部门ID列表 */

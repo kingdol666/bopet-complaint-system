@@ -31,7 +31,7 @@
             </template>
             批量导入
           </n-button>
-          <n-button v-if="authStore.canWrite" type="primary" class="action-btn" @click="navigateTo('/datas/new')">
+          <n-button v-if="authStore.canCreateData" type="primary" class="action-btn" @click="navigateTo('/datas/new')">
             <template #icon>
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v16m8-8H4" />
@@ -423,19 +423,24 @@ const columns: DataTableColumn<any>[] = [
           onClick: () => router.push(`/datas/${row.id}`)
         }, () => '查看')
       ]
+      // 判断当前用户是否可操作此记录（创建者或 admin/superadmin）
+      const isOwner = row.createdById === authStore.user?.id
+      const canManage = authStore.canWrite || isOwner
       // 公开/私密切换按钮（创建者或 admin/superadmin 可操作）
-      buttons.push(
-        h(NTooltip, { trigger: 'hover' }, {
-          trigger: () => h(NButton, {
-            size: 'small',
-            type: row.isPublic ? 'success' : 'warning',
-            ghost: true,
-            onClick: () => handleTogglePublic(row)
-          }, () => row.isPublic ? '公开' : '私密'),
-          default: () => row.isPublic ? '点击设为私密（仅自己可见）' : '点击设为公开（同部门可见）'
-        })
-      )
-      if (authStore.canWrite) {
+      if (canManage) {
+        buttons.push(
+          h(NTooltip, { trigger: 'hover' }, {
+            trigger: () => h(NButton, {
+              size: 'small',
+              type: row.isPublic ? 'success' : 'warning',
+              ghost: true,
+              onClick: () => handleTogglePublic(row)
+            }, () => row.isPublic ? '公开' : '私密'),
+            default: () => row.isPublic ? '点击设为私密（仅自己可见）' : '点击设为公开（同部门可见）'
+          })
+        )
+      }
+      if (canManage) {
         buttons.push(
           h(NButton, {
             size: 'small',

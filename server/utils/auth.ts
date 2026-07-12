@@ -377,6 +377,22 @@ export function canModifyDepartment(user: SessionUser, departmentId: number | nu
 }
 
 /**
+ * 检查用户是否有权为指定部门【创建】数据。
+ * superadmin: 可为任意部门创建。
+ * admin: 仅可为本部门创建。
+ * normal: 仅可为本部门创建（普通员工可以上传自己部门的数据）。
+ */
+export function canCreateForDepartment(user: SessionUser, departmentId: number | null): boolean {
+  if (isSuperAdmin(user)) {
+    return true
+  }
+  if (!departmentId) {
+    return true // 未指定部门时允许创建（后续由 createdById 记录归属）
+  }
+  return user.departmentIds.includes(departmentId)
+}
+
+/**
  * 向后兼容：canAccessDepartment 等同于 canViewDepartment。
  * @deprecated 请使用 canViewDepartment 或 canModifyDepartment 以明确语义。
  */

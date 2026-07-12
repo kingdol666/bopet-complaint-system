@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client'
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
-import { requireWritePermission, canModifyDepartment } from '~/server/utils/auth'
+import { requireSessionUser, canCreateForDepartment } from '~/server/utils/auth'
 import { DATA_INCLUDE } from '~/server/utils/db-columns'
 
 const createSchema = z.object({
@@ -81,15 +81,16 @@ function isDataNoConflict(error: unknown): error is Prisma.PrismaClientKnownRequ
 
 export default defineEventHandler(async (event) => {
   try {
-    const currentUser = await requireWritePermission(event)
+    const currentUser = await requireSessionUser(event)
     const body = await readBody(event)
     const data = createSchema.parse(body)
 
-    // Check department access: admin can only create records for their own departments
-    if (data.responsibleDeptId && !canModifyDepartment(currentUser, data.responsibleDeptId)) {
+    // 部门权限检查：所有用户只能为自己所在的部门创建数据
+    // superadmin 可为任意部门创建
+    if (data.responsibleDeptId && !canCreateForDepartment(currentUser, data.responsibleDeptId)) {
       throw createError({
         statusCode: 403,
-        message: '您没有该部门的操作权限（仅本部门管理员可创建）'
+        message: '您只能为自己所在的部门创建数据'
       })
     }
 

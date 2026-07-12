@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
-import { requireSessionUser, requireWritePermission, canViewDepartment, canModifyDepartment, isSuperAdmin } from '~/server/utils/auth'
+import { requireSessionUser, canViewDepartment, canModifyDepartment, isSuperAdmin, isNormalUser } from '~/server/utils/auth'
 import { ossDelete } from '~/server/utils/oss'
 import { DATA_INCLUDE, DATA_INCLUDE_FULL } from '~/server/utils/db-columns'
 
@@ -98,7 +98,7 @@ export default defineEventHandler(async (event) => {
 
   if (event.method === 'PUT') {
     try {
-      const currentUser = await requireWritePermission(event)
+      const currentUser = await requireSessionUser(event)
       const body = await readBody(event)
       const data = updateSchema.parse(body)
 
@@ -113,7 +113,10 @@ export default defineEventHandler(async (event) => {
         })
       }
 
-      // 权限检查：superadmin 可修改全部，admin 可修改本部门数据 + 自己创建的数据
+      // 权限检查：
+      // - superadmin: 可修改全部
+      // - admin: 可修改本部门数据 + 自己创建的数据
+      // - normal: 只能修改自己创建的数据
       const isOwner = existing.createdById === currentUser.id
       if (!isSuperAdmin(currentUser) && !isOwner && !canModifyDepartment(currentUser, existing.responsibleDeptId)) {
         throw createError({
@@ -122,12 +125,18 @@ export default defineEventHandler(async (event) => {
         })
       }
 
-      // If changing department, check modify access to new department
-      if (data.responsibleDeptId !== undefined && !canModifyDepartment(currentUser, data.responsibleDeptId)) {
-        throw createError({
-          statusCode: 403,
-          message: '您没有将该记录分配到该部门的权限'
-        })
+      // 如果要更改责任部门，检查新部门的修改权限
+      if (data.responsibleDeptId !== undefined && data.responsibleDeptId !== existing.responsibleDeptId) {
+        // 普通用户不能更改部门
+        if (isNormalUser(currentUser) && !isSuperAdmin(currentUser)) {
+          throw createError({ statusCode: 403, message: '您无权更改数据的责任部门' })
+        }
+        if (!canModifyDepartment(currentUser, data.responsibleDeptId)) {
+          throw createError({
+            statusCode: 403,
+            message: '您没有将该记录分配到该部门的权限'
+          })
+        }
       }
 
       const { attachments, ...updateFields } = data
@@ -219,7 +228,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (event.method === 'DELETE') {
-    const currentUser = await requireWritePermission(event)
+    const currentUser = await requireSessionUser(event)
 
     const existing = await prisma.dataRecord.findUnique({
       where: { id }
@@ -232,7 +241,10 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 权限检查：superadmin 可删除全部，admin 可删除本部门数据 + 自己创建的数据
+    // 权限检查：
+    // - superadmin: 可删除全部
+    // - admin: 可删除本部门数据 + 自己创建的数据
+    // - normal: 只能删除自己创建的数据
     const isOwner = existing.createdById === currentUser.id
     if (!isSuperAdmin(currentUser) && !isOwner && !canModifyDepartment(currentUser, existing.responsibleDeptId)) {
       throw createError({

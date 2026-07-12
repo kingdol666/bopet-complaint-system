@@ -2,12 +2,12 @@
  * DELETE /api/images/[dataId]/[imageId] — 删除指定图片
  */
 import { prisma } from '~/server/utils/prisma'
-import { requireWritePermission, canModifyDepartment } from '~/server/utils/auth'
+import { requireSessionUser, canModifyDepartment, isSuperAdmin } from '~/server/utils/auth'
 import { ossDelete } from '~/server/utils/oss'
 
 export default defineEventHandler(async (event) => {
   try {
-    const currentUser = await requireWritePermission(event)
+    const currentUser = await requireSessionUser(event)
     const dataId = Number(getRouterParam(event, 'dataId') || '0')
     const imageId = Number(getRouterParam(event, 'imageId') || '0')
 
@@ -19,11 +19,14 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, message: '图片与数据记录不匹配' })
     }
 
-    // Check department access
+    // 权限检查：创建者或本部门 admin 可删除附件
     if (dataId) {
-      const record = await prisma.dataRecord.findUnique({ where: { id: dataId }, select: { responsibleDeptId: true } })
-      if (record && !canModifyDepartment(currentUser, record.responsibleDeptId)) {
-        throw createError({ statusCode: 403, message: '无权删除该记录的图片' })
+      const record = await prisma.dataRecord.findUnique({ where: { id: dataId }, select: { responsibleDeptId: true, createdById: true } })
+      if (record) {
+        const isOwner = record.createdById === currentUser.id
+        if (!isSuperAdmin(currentUser) && !isOwner && !canModifyDepartment(currentUser, record.responsibleDeptId)) {
+          throw createError({ statusCode: 403, message: '无权删除该记录的图片' })
+        }
       }
     }
 
