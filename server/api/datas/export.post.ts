@@ -111,7 +111,6 @@ function buildVisibilityFilter(user: any): Record<string, any> {
     return {}
   }
 
-  // 合并本部门 + 跨部门授权
   const deptIds = [...new Set([...user.departmentIds, ...user.grantedDepartmentIds])]
   if (deptIds.length === 0) {
     return { createdById: user.id }
@@ -123,6 +122,213 @@ function buildVisibilityFilter(user: any): Record<string, any> {
       { responsibleDeptId: null, isPublic: true }
     ]
   }
+}
+
+// ─── 固定列（DB 字段）定义 ───
+const BASE_DB_COLUMNS: Array<{ header: string; key: string; width: number }> = [
+  { header: '记录编号', key: 'dataNo', width: 16 },
+  { header: '反馈日期', key: 'feedbackDate', width: 12 },
+  { header: '生产日期', key: 'productionTime', width: 12 },
+  { header: '客户名称', key: 'customerName', width: 14 },
+  { header: '产品型号', key: 'productModelName', width: 14 },
+  { header: '轴数', key: 'shaftCount', width: 8 },
+  { header: '厚度', key: 'thickness', width: 10 },
+  { header: '轴号', key: 'rollNo', width: 12 },
+  { header: '规格', key: 'specification', width: 12 },
+  { header: '涉及数量', key: 'quantityInvolved', width: 10 },
+  { header: '产线', key: 'productionLineName', width: 10 },
+  { header: '班组', key: 'shiftTeam', width: 8 },
+  { header: '机台', key: 'machineNo', width: 8 },
+  { header: '批次号', key: 'batchNo', width: 12 },
+  { header: '反馈内容', key: 'feedbackContent', width: 30 },
+  { header: '数据分类', key: 'category', width: 12 },
+  { header: '闭环状态', key: 'closureStatus', width: 10 },
+  { header: '责任部门', key: 'responsibleDeptName', width: 12 },
+  { header: '责任工序', key: 'responsibleProcessName', width: 12 },
+  { header: '原因分析', key: 'rootCauseAnalysis', width: 30 },
+  { header: '纠正措施', key: 'correctiveAction', width: 30 },
+  { header: '改善措施', key: 'improvementAction', width: 30 },
+  { header: '经验总结', key: 'lessonsLearned', width: 25 },
+  { header: '复盘结论', key: 'reviewConclusion', width: 25 },
+  { header: '公开状态', key: 'isPublic', width: 8 },
+  { header: '备注', key: 'remark', width: 20 }
+]
+
+// ─── Excel Sheet 名称安全化 ───
+function sanitizeSheetName(name: string): string {
+  // Excel sheet 名最多 31 字符，且不能包含 : \ / ? * [ ]
+  let safe = name.replace(/[:\\/?*[\]]/g, '_')
+  if (safe.length > 31) {
+    safe = safe.substring(0, 31)
+  }
+  return safe || 'Sheet'
+}
+
+/**
+ * 从记录的 templateIds 字段中解析出模板 ID 列表
+ */
+function parseTemplateIds(templateIds: string | null): number[] {
+  if (!templateIds) return []
+  try {
+    const ids = JSON.parse(templateIds)
+    if (Array.isArray(ids)) return ids
+    return []
+  } catch {
+    return []
+  }
+}
+
+/**
+ * 构建单条记录的行数据（DB 字段部分）
+ */
+function buildRowData(r: any): any {
+  return {
+    dataNo: r.dataNo || '',
+    feedbackDate: r.feedbackDate ? formatDateSafe(r.feedbackDate) : '',
+    productionTime: r.productionTime ? formatDateSafe(r.productionTime) : '',
+    customerName: r.customer?.name || '',
+    productModelName: r.productModel?.name || '',
+    shaftCount: r.shaftCount ?? '',
+    thickness: r.thickness || '',
+    rollNo: r.rollNo || '',
+    specification: r.specification || '',
+    quantityInvolved: r.quantityInvolved ?? '',
+    productionLineName: r.productionLine?.name || '',
+    shiftTeam: r.shiftTeam || '',
+    machineNo: r.machineNo || '',
+    batchNo: r.batchNo || '',
+    feedbackContent: r.feedbackContent || '',
+    category: r.category || '',
+    closureStatus: statusMap[r.closureStatus] || r.closureStatus || '',
+    responsibleDeptName: r.responsibleDept?.name || '',
+    responsibleProcessName: r.responsibleProcess?.name || '',
+    rootCauseAnalysis: r.rootCauseAnalysis || '',
+    correctiveAction: r.correctiveAction || '',
+    improvementAction: r.improvementAction || '',
+    lessonsLearned: r.lessonsLearned || '',
+    reviewConclusion: r.reviewConclusion || '',
+    isPublic: r.isPublic ? '公开' : '私密',
+    remark: r.remark || ''
+  }
+}
+
+/**
+ * 为单个 Sheet 填充数据（表头 + 数据行 + 附件 + 样式）
+ */
+async function fillSheetData(
+  workbook: any,
+  ws: any,
+  records: any[],
+  templateFields: any[],
+  attachmentsByDataId: Map<number, any[]>,
+  currentUser: any
+) {
+  // 构建列：DB 固定列 + 模板自定义字段列 + 附件列
+  const columns: Array<{ header: string; key: string; width: number }> = [...BASE_DB_COLUMNS]
+  for (const tf of templateFields) {
+    columns.push({ header: tf.fieldLabel, key: `_tpl_${tf.fieldKey}`, width: 16 })
+  }
+  columns.push({ header: '附件', key: '_attachments', width: 30 })
+
+  ws.columns = columns
+  const attachColIndex = columns.length - 1
+
+  const MAX_IMG_HEIGHT = 180
+  const MAX_IMG_WIDTH = 260
+
+  for (let i = 0; i < records.length; i++) {
+    const r = records[i]
+    const rowNum = i + 2 // 行1=信息行（后面插入）, 行2=表头, 行3开始才是数据
+
+    let templateData: Record<string, any> = {}
+    if (r.templateData) {
+      try { templateData = JSON.parse(r.templateData) } catch {}
+    }
+
+    const rowData = buildRowData(r)
+
+    // 填充模板自定义字段
+    for (const tf of templateFields) {
+      rowData[`_tpl_${tf.fieldKey}`] = templateData[tf.fieldKey] ?? ''
+    }
+
+    rowData._attachments = ''
+
+    const row = ws.addRow(rowData)
+    row.alignment = { vertical: 'top', wrapText: true }
+
+    // 附件处理
+    const attachments = attachmentsByDataId.get(r.id) || []
+    if (attachments.length > 0) {
+      const imageAttachments = attachments.filter(a => a.fileType && a.fileType.startsWith('image/'))
+      const otherAttachments = attachments.filter(a => !a.fileType || !a.fileType.startsWith('image/'))
+
+      if (otherAttachments.length > 0) {
+        const fileNames = otherAttachments.map(a => a.fileName).join('\n')
+        const attachCell = row.getCell(attachColIndex + 1)
+        attachCell.value = fileNames
+      }
+
+      if (imageAttachments.length > 0) {
+        let imgOffset = 0
+
+        for (const img of imageAttachments) {
+          try {
+            const retrieved = await ossRetrieve(img.storagePath)
+            if (!retrieved || !retrieved.buffer) continue
+
+            const ext = img.fileType.includes('png') ? 'png'
+              : img.fileType.includes('jpeg') || img.fileType.includes('jpg') ? 'jpeg'
+              : img.fileType.includes('gif') ? 'gif'
+              : 'png'
+
+            const imageId = workbook.addImage({
+              buffer: retrieved.buffer,
+              extension: ext as 'png' | 'jpeg' | 'gif'
+            })
+
+            let imgW = img.width || 200
+            let imgH = img.height || 150
+            const ratio = Math.min(MAX_IMG_WIDTH / imgW, MAX_IMG_HEIGHT / imgH, 1)
+            const scaledW = Math.round(imgW * ratio)
+            const scaledH = Math.round(imgH * ratio)
+
+            ws.addImage(imageId, {
+              tl: { col: attachColIndex, row: rowNum - 1 + imgOffset / 20 },
+              ext: { width: scaledW, height: scaledH }
+            })
+
+            imgOffset += scaledH + 4
+          } catch {
+            // skip
+          }
+        }
+
+        if (imgOffset > 0) {
+          const minRowHeight = Math.max(imgOffset / 1.2, 20)
+          row.height = Math.min(minRowHeight, 400)
+        }
+      }
+    }
+  }
+
+  // 顶部导出信息行
+  ws.spliceRows(1, 0, [
+    `导出人: ${currentUser.name}  导出时间: ${new Date().toISOString().slice(0, 10)}  共 ${records.length} 条记录  内部使用，请勿外传`
+  ])
+  ws.mergeCells(1, 1, 1, columns.length)
+  ws.getRow(1).font = { bold: true, italic: true, size: 10, color: { argb: 'FF6B7280' } }
+  ws.getRow(1).alignment = { horizontal: 'center', vertical: 'middle' }
+  ws.getRow(1).height = 22
+
+  // 表头行样式
+  ws.getRow(2).font = { bold: true, size: 11 }
+  ws.getRow(2).fill = {
+    type: 'pattern', pattern: 'solid',
+    fgColor: { argb: 'FFE8F0FE' }
+  }
+  ws.getRow(2).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
+  ws.getRow(2).height = 24
 }
 
 export default defineEventHandler(async (event) => {
@@ -153,8 +359,6 @@ export default defineEventHandler(async (event) => {
     // 关键词搜索（仅过滤模式）
     if (!params.selectedIds && params.keyword) {
       const kw = params.keyword
-      // 注意：不能直接用 where.OR = [...]，因为 buildVisibilityFilter 可能已设置了 where.OR
-      // 必须用 AND 包裹关键词搜索条件，避免覆盖可见性过滤
       if (!where.AND) where.AND = []
       where.AND.push({
         OR: [
@@ -271,29 +475,55 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // ─── 加载模板字段定义 ───
-    let templateFields: any[] = []
-    if (params.templateId) {
-      templateFields = await prisma.formTemplateField.findMany({
-        where: { templateId: params.templateId },
-        orderBy: { sortOrder: 'asc' }
-      })
-    } else {
-      // 没有指定模板时，从所有记录的 templateIds 中提取所有模板 ID
-      const allTemplateIds = new Set<number>()
-      for (const r of records) {
-        if (r.templateIds) {
-          try {
-            const ids: number[] = JSON.parse(r.templateIds)
-            ids.forEach(id => allTemplateIds.add(id))
-          } catch {}
+    if (records.length === 0) {
+      throw createError({ statusCode: 404, message: '没有符合条件的数据可导出' })
+    }
+
+    // ─── 按模板分组记录 ───
+    // 每条记录可能有多个 templateIds，取第一个作为主模板进行分组
+    // 没有关联模板的记录分到 "未关联模板" 组
+    const recordsByTemplate = new Map<number, any[]>() // templateId -> records
+    const noTemplateRecords: any[] = []
+
+    for (const r of records) {
+      const tplIds = parseTemplateIds(r.templateIds)
+      if (tplIds.length > 0) {
+        const primaryTplId = tplIds[0]
+        if (!recordsByTemplate.has(primaryTplId)) {
+          recordsByTemplate.set(primaryTplId, [])
         }
+        recordsByTemplate.get(primaryTplId)!.push(r)
+      } else {
+        noTemplateRecords.push(r)
       }
-      if (allTemplateIds.size > 0) {
-        templateFields = await prisma.formTemplateField.findMany({
-          where: { templateId: { in: [...allTemplateIds] } },
-          orderBy: [{ templateId: 'asc' }, { sortOrder: 'asc' }]
+    }
+
+    // ─── 获取所有涉及的模板信息 ───
+    const allTemplateIds = [...recordsByTemplate.keys()]
+    const templates = allTemplateIds.length > 0
+      ? await prisma.formTemplate.findMany({
+          where: { id: { in: allTemplateIds } },
+          select: { id: true, name: true }
         })
+      : []
+
+    const templateNameMap = new Map<number, string>()
+    for (const t of templates) {
+      templateNameMap.set(t.id, t.name)
+    }
+
+    // ─── 获取每个模板的字段定义 ───
+    const templateFieldsMap = new Map<number, any[]>()
+    if (allTemplateIds.length > 0) {
+      const allFields = await prisma.formTemplateField.findMany({
+        where: { templateId: { in: allTemplateIds } },
+        orderBy: [{ templateId: 'asc' }, { sortOrder: 'asc' }]
+      })
+      for (const f of allFields) {
+        if (!templateFieldsMap.has(f.templateId)) {
+          templateFieldsMap.set(f.templateId, [])
+        }
+        templateFieldsMap.get(f.templateId)!.push(f)
       }
     }
 
@@ -314,178 +544,68 @@ export default defineEventHandler(async (event) => {
       attachmentsByDataId.get(att.dataId)!.push(att)
     }
 
-    // ─── 使用 ExcelJS 构建 Excel ───
+    // ─── 使用 ExcelJS 构建 Excel（多 Sheet） ───
     const ExcelJS = await import('exceljs')
     const workbook = new ExcelJS.Workbook()
-    const ws = workbook.addWorksheet('数据导出', {
-      properties: { defaultRowHeight: 20 }
-    })
 
-    // 固定列（DB 字段）
-    const dbColumns: Array<{ header: string; key: string; width: number }> = [
-      { header: '记录编号', key: 'dataNo', width: 16 },
-      { header: '反馈日期', key: 'feedbackDate', width: 12 },
-      { header: '生产日期', key: 'productionTime', width: 12 },
-      { header: '客户名称', key: 'customerName', width: 14 },
-      { header: '产品型号', key: 'productModelName', width: 14 },
-      { header: '轴数', key: 'shaftCount', width: 8 },
-      { header: '厚度', key: 'thickness', width: 10 },
-      { header: '轴号', key: 'rollNo', width: 12 },
-      { header: '规格', key: 'specification', width: 12 },
-      { header: '涉及数量', key: 'quantityInvolved', width: 10 },
-      { header: '产线', key: 'productionLineName', width: 10 },
-      { header: '班组', key: 'shiftTeam', width: 8 },
-      { header: '机台', key: 'machineNo', width: 8 },
-      { header: '批次号', key: 'batchNo', width: 12 },
-      { header: '反馈内容', key: 'feedbackContent', width: 30 },
-      { header: '数据分类', key: 'category', width: 12 },
-      { header: '闭环状态', key: 'closureStatus', width: 10 },
-      { header: '责任部门', key: 'responsibleDeptName', width: 12 },
-      { header: '责任工序', key: 'responsibleProcessName', width: 12 },
-      { header: '原因分析', key: 'rootCauseAnalysis', width: 30 },
-      { header: '纠正措施', key: 'correctiveAction', width: 30 },
-      { header: '改善措施', key: 'improvementAction', width: 30 },
-      { header: '经验总结', key: 'lessonsLearned', width: 25 },
-      { header: '复盘结论', key: 'reviewConclusion', width: 25 },
-      { header: '公开状态', key: 'isPublic', width: 8 },
-      { header: '备注', key: 'remark', width: 20 }
-    ]
+    // 用于检测 Sheet 名称重复
+    const usedSheetNames = new Set<string>()
 
-    // 模板自定义字段列
-    for (const tf of templateFields) {
-      const key = `_tpl_${tf.fieldKey}`
-      dbColumns.push({ header: tf.fieldLabel, key, width: 16 })
+    function getUniqueSheetName(name: string): string {
+      const base = sanitizeSheetName(name)
+      let unique = base
+      let suffix = 2
+      while (usedSheetNames.has(unique)) {
+        const suffixStr = `_${suffix}`
+        unique = base.substring(0, 31 - suffixStr.length) + suffixStr
+        suffix++
+      }
+      usedSheetNames.add(unique)
+      return unique
     }
 
-    // 附件列
-    dbColumns.push({ header: '附件', key: '_attachments', width: 30 })
+    // ─── 为每个模板创建独立的 Sheet ───
+    for (const [tplId, tplRecords] of recordsByTemplate) {
+      const tplName = templateNameMap.get(tplId) || `模板${tplId}`
+      const tplFields = templateFieldsMap.get(tplId) || []
+      const sheetName = getUniqueSheetName(tplName)
 
-    ws.columns = dbColumns
-    const attachColIndex = dbColumns.length - 1
+      const ws = workbook.addWorksheet(sheetName, {
+        properties: { defaultRowHeight: 20 }
+      })
 
-    // ─── 添加数据行 ───
-    const MAX_IMG_HEIGHT = 180
-    const MAX_IMG_WIDTH = 260
-
-    for (let i = 0; i < records.length; i++) {
-      const r = records[i]
-      const rowNum = i + 2
-
-      let templateData: Record<string, any> = {}
-      if (r.templateData) {
-        try { templateData = JSON.parse(r.templateData) } catch {}
-      }
-
-      const rowData: any = {
-        dataNo: r.dataNo || '',
-        feedbackDate: r.feedbackDate ? formatDateSafe(r.feedbackDate) : '',
-        productionTime: r.productionTime ? formatDateSafe(r.productionTime) : '',
-        customerName: r.customer?.name || '',
-        productModelName: r.productModel?.name || '',
-        shaftCount: r.shaftCount ?? '',
-        thickness: r.thickness || '',
-        rollNo: r.rollNo || '',
-        specification: r.specification || '',
-        quantityInvolved: r.quantityInvolved ?? '',
-        productionLineName: r.productionLine?.name || '',
-        shiftTeam: r.shiftTeam || '',
-        machineNo: r.machineNo || '',
-        batchNo: r.batchNo || '',
-        feedbackContent: r.feedbackContent || '',
-        category: r.category || '',
-        closureStatus: statusMap[r.closureStatus] || r.closureStatus || '',
-        responsibleDeptName: r.responsibleDept?.name || '',
-        responsibleProcessName: r.responsibleProcess?.name || '',
-        rootCauseAnalysis: r.rootCauseAnalysis || '',
-        correctiveAction: r.correctiveAction || '',
-        improvementAction: r.improvementAction || '',
-        lessonsLearned: r.lessonsLearned || '',
-        reviewConclusion: r.reviewConclusion || '',
-        isPublic: r.isPublic ? '公开' : '私密',
-        remark: r.remark || ''
-      }
-
-      for (const tf of templateFields) {
-        rowData[`_tpl_${tf.fieldKey}`] = templateData[tf.fieldKey] ?? ''
-      }
-
-      rowData._attachments = ''
-
-      const row = ws.addRow(rowData)
-      row.alignment = { vertical: 'top', wrapText: true }
-
-      // 附件处理
-      const attachments = attachmentsByDataId.get(r.id) || []
-      if (attachments.length > 0) {
-        const imageAttachments = attachments.filter(a => a.fileType && a.fileType.startsWith('image/'))
-        const otherAttachments = attachments.filter(a => !a.fileType || !a.fileType.startsWith('image/'))
-
-        if (otherAttachments.length > 0) {
-          const fileNames = otherAttachments.map(a => a.fileName).join('\n')
-          const attachCell = row.getCell(attachColIndex + 1)
-          attachCell.value = fileNames
-        }
-
-        if (imageAttachments.length > 0) {
-          let imgOffset = 0
-
-          for (const img of imageAttachments) {
-            try {
-              const retrieved = await ossRetrieve(img.storagePath)
-              if (!retrieved || !retrieved.buffer) continue
-
-              const ext = img.fileType.includes('png') ? 'png'
-                : img.fileType.includes('jpeg') || img.fileType.includes('jpg') ? 'jpeg'
-                : img.fileType.includes('gif') ? 'gif'
-                : 'png'
-
-              const imageId = workbook.addImage({
-                buffer: retrieved.buffer,
-                extension: ext as 'png' | 'jpeg' | 'gif'
-              })
-
-              let imgW = img.width || 200
-              let imgH = img.height || 150
-              const ratio = Math.min(MAX_IMG_WIDTH / imgW, MAX_IMG_HEIGHT / imgH, 1)
-              const scaledW = Math.round(imgW * ratio)
-              const scaledH = Math.round(imgH * ratio)
-
-              ws.addImage(imageId, {
-                tl: { col: attachColIndex, row: rowNum - 1 + imgOffset / 20 },
-                ext: { width: scaledW, height: scaledH }
-              })
-
-              imgOffset += scaledH + 4
-            } catch {
-              // skip
-            }
-          }
-
-          if (imgOffset > 0) {
-            const minRowHeight = Math.max(imgOffset / 1.2, 20)
-            row.height = Math.min(minRowHeight, 400)
-          }
-        }
-      }
+      await fillSheetData(
+        workbook,
+        ws,
+        tplRecords,
+        tplFields,
+        attachmentsByDataId,
+        currentUser
+      )
     }
 
-    // 顶部导出信息行
-    ws.spliceRows(1, 0, [
-      `导出人: ${currentUser.name}  导出时间: ${new Date().toISOString().slice(0, 10)}  共 ${records.length} 条记录  内部使用，请勿外传`
-    ])
-    ws.mergeCells(1, 1, 1, dbColumns.length)
-    ws.getRow(1).font = { bold: true, italic: true, size: 10, color: { argb: 'FF6B7280' } }
-    ws.getRow(1).alignment = { horizontal: 'center', vertical: 'middle' }
-    ws.getRow(1).height = 22
+    // ─── 未关联模板的记录单独一个 Sheet ───
+    if (noTemplateRecords.length > 0) {
+      const sheetName = getUniqueSheetName('未关联模板')
+      const ws = workbook.addWorksheet(sheetName, {
+        properties: { defaultRowHeight: 20 }
+      })
 
-    // 表头行样式
-    ws.getRow(2).font = { bold: true, size: 11 }
-    ws.getRow(2).fill = {
-      type: 'pattern', pattern: 'solid',
-      fgColor: { argb: 'FFE8F0FE' }
+      await fillSheetData(
+        workbook,
+        ws,
+        noTemplateRecords,
+        [], // 无模板字段
+        attachmentsByDataId,
+        currentUser
+      )
     }
-    ws.getRow(2).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
-    ws.getRow(2).height = 24
+
+    // 如果没有任何 Sheet（理论上不会发生），创建一个空 Sheet
+    if (workbook.worksheets.length === 0) {
+      const ws = workbook.addWorksheet('数据导出')
+      ws.addRow(['没有符合条件的数据'])
+    }
 
     const buffer = await workbook.xlsx.writeBuffer()
 
