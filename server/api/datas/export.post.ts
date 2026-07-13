@@ -87,20 +87,6 @@ function applyDynamicFilter(where: any, fieldName: string, operator: string, val
   }
 }
 
-// ─── 日期格式化 ───
-function formatDateSafe(date: Date | string | null | undefined): string {
-  if (!date) return ''
-  const d = new Date(date)
-  if (isNaN(d.getTime())) return ''
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
-const statusMap: Record<string, string> = {
-  pending: '待分析',
-  processing: '处理中',
-  closed: '已结案'
-}
-
 /**
  * 构建数据可见性 where 条件
  * - superadmin: 可见全部
@@ -123,36 +109,6 @@ function buildVisibilityFilter(user: any): Record<string, any> {
     ]
   }
 }
-
-// ─── 固定列（DB 字段）定义 ───
-const BASE_DB_COLUMNS: Array<{ header: string; key: string; width: number }> = [
-  { header: '记录编号', key: 'dataNo', width: 16 },
-  { header: '反馈日期', key: 'feedbackDate', width: 12 },
-  { header: '生产日期', key: 'productionTime', width: 12 },
-  { header: '客户名称', key: 'customerName', width: 14 },
-  { header: '产品型号', key: 'productModelName', width: 14 },
-  { header: '轴数', key: 'shaftCount', width: 8 },
-  { header: '厚度', key: 'thickness', width: 10 },
-  { header: '轴号', key: 'rollNo', width: 12 },
-  { header: '规格', key: 'specification', width: 12 },
-  { header: '涉及数量', key: 'quantityInvolved', width: 10 },
-  { header: '产线', key: 'productionLineName', width: 10 },
-  { header: '班组', key: 'shiftTeam', width: 8 },
-  { header: '机台', key: 'machineNo', width: 8 },
-  { header: '批次号', key: 'batchNo', width: 12 },
-  { header: '反馈内容', key: 'feedbackContent', width: 30 },
-  { header: '数据分类', key: 'category', width: 12 },
-  { header: '闭环状态', key: 'closureStatus', width: 10 },
-  { header: '责任部门', key: 'responsibleDeptName', width: 12 },
-  { header: '责任工序', key: 'responsibleProcessName', width: 12 },
-  { header: '原因分析', key: 'rootCauseAnalysis', width: 30 },
-  { header: '纠正措施', key: 'correctiveAction', width: 30 },
-  { header: '改善措施', key: 'improvementAction', width: 30 },
-  { header: '经验总结', key: 'lessonsLearned', width: 25 },
-  { header: '复盘结论', key: 'reviewConclusion', width: 25 },
-  { header: '公开状态', key: 'isPublic', width: 8 },
-  { header: '备注', key: 'remark', width: 20 }
-]
 
 // ─── Excel Sheet 名称安全化 ───
 function sanitizeSheetName(name: string): string {
@@ -179,41 +135,8 @@ function parseTemplateIds(templateIds: string | null): number[] {
 }
 
 /**
- * 构建单条记录的行数据（DB 字段部分）
- */
-function buildRowData(r: any): any {
-  return {
-    dataNo: r.dataNo || '',
-    feedbackDate: r.feedbackDate ? formatDateSafe(r.feedbackDate) : '',
-    productionTime: r.productionTime ? formatDateSafe(r.productionTime) : '',
-    customerName: r.customer?.name || '',
-    productModelName: r.productModel?.name || '',
-    shaftCount: r.shaftCount ?? '',
-    thickness: r.thickness || '',
-    rollNo: r.rollNo || '',
-    specification: r.specification || '',
-    quantityInvolved: r.quantityInvolved ?? '',
-    productionLineName: r.productionLine?.name || '',
-    shiftTeam: r.shiftTeam || '',
-    machineNo: r.machineNo || '',
-    batchNo: r.batchNo || '',
-    feedbackContent: r.feedbackContent || '',
-    category: r.category || '',
-    closureStatus: statusMap[r.closureStatus] || r.closureStatus || '',
-    responsibleDeptName: r.responsibleDept?.name || '',
-    responsibleProcessName: r.responsibleProcess?.name || '',
-    rootCauseAnalysis: r.rootCauseAnalysis || '',
-    correctiveAction: r.correctiveAction || '',
-    improvementAction: r.improvementAction || '',
-    lessonsLearned: r.lessonsLearned || '',
-    reviewConclusion: r.reviewConclusion || '',
-    isPublic: r.isPublic ? '公开' : '私密',
-    remark: r.remark || ''
-  }
-}
-
-/**
  * 为单个 Sheet 填充数据（表头 + 数据行 + 附件 + 样式）
+ * 只导出模板定义的字段 + 附件列，不包含任何固定 DB 列
  */
 async function fillSheetData(
   workbook: any,
@@ -223,10 +146,10 @@ async function fillSheetData(
   attachmentsByDataId: Map<number, any[]>,
   currentUser: any
 ) {
-  // 构建列：DB 固定列 + 模板自定义字段列 + 附件列
-  const columns: Array<{ header: string; key: string; width: number }> = [...BASE_DB_COLUMNS]
+  // 构建列：仅模板字段 + 附件列
+  const columns: Array<{ header: string; key: string; width: number }> = []
   for (const tf of templateFields) {
-    columns.push({ header: tf.fieldLabel, key: `_tpl_${tf.fieldKey}`, width: 16 })
+    columns.push({ header: tf.fieldLabel, key: tf.fieldKey, width: 16 })
   }
   columns.push({ header: '附件', key: '_attachments', width: 30 })
 
@@ -245,13 +168,11 @@ async function fillSheetData(
       try { templateData = JSON.parse(r.templateData) } catch {}
     }
 
-    const rowData = buildRowData(r)
-
-    // 填充模板自定义字段
+    // 行数据：只从 templateData 中取值
+    const rowData: any = {}
     for (const tf of templateFields) {
-      rowData[`_tpl_${tf.fieldKey}`] = templateData[tf.fieldKey] ?? ''
+      rowData[tf.fieldKey] = templateData[tf.fieldKey] ?? ''
     }
-
     rowData._attachments = ''
 
     const row = ws.addRow(rowData)
