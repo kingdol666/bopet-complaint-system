@@ -403,3 +403,45 @@ export function canCreateForDepartment(user: SessionUser, departmentId: number |
 export function canAccessDepartment(user: SessionUser, departmentId: number | null): boolean {
   return canViewDepartment(user, departmentId)
 }
+
+// ==================== Raw SQL 可见性过滤 ====================
+
+/**
+ * 构建 SQL 可见性过滤子句，用于 raw SQL 查询（如 $queryRawUnsafe）。
+ *
+ * 可见性规则与 `buildDepartmentFilter` 完全一致：
+ * - superadmin: 不加过滤（返回空子句）
+ * - 其他用户：
+ *   1) 部门范围内公开数据（isPublic=1）
+ *   2) 自己创建的数据（无论公开/私密）
+ *   3) 无部门但公开的数据
+ *
+ * @param user 当前用户
+ * @param tableAlias SQL 表别名（如 'cr'），为空时直接使用列名
+ * @returns { clause: string; params: any[] } — clause 为空字符串表示不加过滤
+ */
+export function buildVisibilitySQL(
+  user: SessionUser,
+  tableAlias: string = ''
+): { clause: string; params: any[] } {
+  if (isSuperAdmin(user)) {
+    return { clause: '', params: [] }
+  }
+
+  const deptIds = getViewableDepartmentIds(user)
+  const p = tableAlias ? `${tableAlias}.` : ''
+
+  if (!deptIds || deptIds.length === 0) {
+    // 没有部门权限，只能看自己创建的
+    return {
+      clause: `${p}createdById = ?`,
+      params: [user.id]
+    }
+  }
+
+  const placeholders = deptIds.map(() => '?').join(',')
+  return {
+    clause: `((${p}responsibleDeptId IN (${placeholders}) AND ${p}isPublic = 1) OR ${p}createdById = ? OR (${p}responsibleDeptId IS NULL AND ${p}isPublic = 1))`,
+    params: [...deptIds, user.id]
+  }
+}

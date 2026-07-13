@@ -1,5 +1,5 @@
 import { prisma } from '~/server/utils/prisma'
-import { requireSessionUser, buildDepartmentFilter } from '~/server/utils/auth'
+import { requireSessionUser, buildVisibilitySQL } from '~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -7,32 +7,21 @@ export default defineEventHandler(async (event) => {
     const query = getQuery(event)
     const year = parseInt(query.year as string) || new Date().getFullYear()
 
-    // Department filter: buildDepartmentFilter returns { responsibleDeptId: { in: [...] } } or {}
-    const deptFilter = buildDepartmentFilter(currentUser)
-    const deptIds = currentUser.role === 'superadmin' ? null : [...new Set([...currentUser.departmentIds, ...currentUser.grantedDepartmentIds])]
-
     // Dates are stored as Unix millisecond integers in SQLite
     const yearStart = new Date(year, 0, 1).getTime()
     const yearEnd = new Date(year + 1, 0, 1).getTime()
 
-    // Build department filter SQL clause
-    let deptSql = ''
-    const sqlParams: any[] = [yearStart, yearEnd]
-    if (deptIds && deptIds.length > 0) {
-      const placeholders = deptIds.map(() => '?').join(',')
-      deptSql = `AND responsibleDeptId IN (${placeholders})`
-      sqlParams.push(...deptIds)
-    } else if (deptIds && deptIds.length === 0) {
-      // No departments assigned — show nothing
-      deptSql = 'AND responsibleDeptId = -1'
-    }
+    // Build visibility SQL clause (respects isPublic + createdById + department access)
+    const vis = buildVisibilitySQL(currentUser)
+    const visSql = vis.clause ? `AND ${vis.clause}` : ''
+    const sqlParams: any[] = [yearStart, yearEnd, ...vis.params]
 
     const rawResults = await prisma.$queryRawUnsafe<
       Array<{ month: string; closureStatus: string; count: bigint }>
     >(
       `SELECT strftime('%m', feedbackDate/1000, 'unixepoch') as month, closureStatus, COUNT(*) as count
        FROM data_records
-       WHERE feedbackDate >= ? AND feedbackDate < ? ${deptSql}
+       WHERE feedbackDate >= ? AND feedbackDate < ? ${visSql}
        GROUP BY month, closureStatus
        ORDER BY month`,
       ...sqlParams

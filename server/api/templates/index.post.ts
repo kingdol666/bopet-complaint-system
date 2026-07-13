@@ -5,7 +5,7 @@ import { requireWritePermission, isSuperAdmin, canModifyDepartment } from '~/ser
 const fieldSchema = z.object({
   fieldKey: z.string().min(1).max(100),
   fieldLabel: z.string().min(1).max(200),
-  fieldType: z.enum(['text', 'textarea', 'number', 'select', 'date', 'switch', 'select-config']),
+  fieldType: z.enum(['text', 'textarea', 'number', 'select', 'date', 'switch', 'select-config', 'auto-complete', 'upload']),
   required: z.boolean().default(false),
   sortOrder: z.number().int().default(0),
   options: z.string().optional().nullable(),

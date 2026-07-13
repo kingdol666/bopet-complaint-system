@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client'
 import { prisma } from '~/server/utils/prisma'
-import { requireSessionUser, buildDepartmentFilter } from '~/server/utils/auth'
+import { requireSessionUser, buildDepartmentFilter, buildVisibilitySQL } from '~/server/utils/auth'
 import { GROUPABLE_STRING_COLUMNS, DB_DATE_COLUMNS, CONFIG_TYPE_FK_MAP, DB_COLUMNS } from '~/server/utils/db-columns'
 
 // 使用共享的 DB_DATE_COLUMNS 替代局部 DB_TIMESTAMP_COLUMNS
@@ -97,7 +97,7 @@ export default defineEventHandler(async (event) => {
   try {
     const user = await requireSessionUser(event)
     const deptFilter = buildDepartmentFilter(user)
-    const deptIds = user.role === 'superadmin' ? null : [...new Set([...user.departmentIds, ...user.grantedDepartmentIds])]
+    const visSQL = buildVisibilitySQL(user)
     const query = getQuery(event)
 
     // groupBy 可能是字符串（"field1,field2"）或数组（["field1","field2"]，当 URL 中出现多个 groupBy 参数时）
@@ -146,12 +146,9 @@ export default defineEventHandler(async (event) => {
       // Build where clause (完全基于模板字段，无内置字段假设)
       const whereParts: string[] = ['1=1']
       const sqlParams: any[] = []
-      if (deptIds && deptIds.length > 0) {
-        const placeholders = deptIds.map(() => '?').join(',')
-        whereParts.push(`responsibleDeptId IN (${placeholders})`)
-        sqlParams.push(...deptIds)
-      } else if (deptIds && deptIds.length === 0) {
-        whereParts.push('responsibleDeptId = -1')
+      if (visSQL.clause) {
+        whereParts.push(visSQL.clause)
+        sqlParams.push(...visSQL.params)
       }
       // Apply field filters (date ranges are handled through the filter system)
       if (fieldFilters.length > 0) {
@@ -275,12 +272,9 @@ export default defineEventHandler(async (event) => {
       // Build where clause (完全基于模板字段，无内置字段假设)
       const whereParts: string[] = ['1=1']
       const sqlParams: any[] = []
-      if (deptIds && deptIds.length > 0) {
-        const placeholders = deptIds.map(() => '?').join(',')
-        whereParts.push(`responsibleDeptId IN (${placeholders})`)
-        sqlParams.push(...deptIds)
-      } else if (deptIds && deptIds.length === 0) {
-        whereParts.push('responsibleDeptId = -1')
+      if (visSQL.clause) {
+        whereParts.push(visSQL.clause)
+        sqlParams.push(...visSQL.params)
       }
       // Apply field filters (date ranges handled through filter system)
       if (fieldFilters.length > 0) {
@@ -419,6 +413,8 @@ export default defineEventHandler(async (event) => {
 
       let sql = `SELECT json_extract(templateData, '$.${safeFieldKey}') as value, COUNT(*) as _count FROM data_records WHERE templateData IS NOT NULL AND json_extract(templateData, '$.${safeFieldKey}') IS NOT NULL`
       const params: any[] = []
+      // Apply visibility filter (department + isPublic)
+      if (visSQL.clause) { sql += ' AND ' + visSQL.clause; params.push(...visSQL.params) }
       // Apply field filters (date ranges handled through filter system)
       if (fieldFilters.length > 0) {
         const fr = buildFilterSQL(fieldFilters, templateFieldMap, 'data_records')
@@ -431,6 +427,8 @@ export default defineEventHandler(async (event) => {
 
       let countSql = `SELECT COUNT(*) as total FROM data_records WHERE templateData IS NOT NULL AND json_extract(templateData, '$.${safeFieldKey}') IS NOT NULL`
       const countParams: any[] = []
+      // Apply visibility filter to count query
+      if (visSQL.clause) { countSql += ' AND ' + visSQL.clause; countParams.push(...visSQL.params) }
       // Apply field filters to count query
       if (fieldFilters.length > 0) {
         const fr = buildFilterSQL(fieldFilters, templateFieldMap, 'data_records')
@@ -463,12 +461,9 @@ export default defineEventHandler(async (event) => {
     const sqlParams: any[] = []
 
     // Department filter (data isolation for non-superadmin)
-    if (deptIds && deptIds.length > 0) {
-      const placeholders = deptIds.map(() => '?').join(',')
-      whereParts.push(`cr.responsibleDeptId IN (${placeholders})`)
-      sqlParams.push(...deptIds)
-    } else if (deptIds && deptIds.length === 0) {
-      whereParts.push('cr.responsibleDeptId = -1')
+    if (visSQL.clause) {
+      whereParts.push(visSQL.clause.replace(/\bresponsibleDeptId\b/g, 'cr.responsibleDeptId').replace(/\bisPublic\b/g, 'cr.isPublic').replace(/\bcreatedById\b/g, 'cr.createdById'))
+      sqlParams.push(...visSQL.params)
     }
     // Date filter removed — date ranges are handled entirely through the filter system
     // based on template field definitions
