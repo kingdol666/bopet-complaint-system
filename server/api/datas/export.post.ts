@@ -480,10 +480,9 @@ export default defineEventHandler(async (event) => {
     }
 
     // ─── 按模板分组记录 ───
-    // 每条记录可能有多个 templateIds，取第一个作为主模板进行分组
-    // 无模板记录会自动分配到默认模板
+    // 每条记录取 templateIds 中的第一个作为主模板进行分组
+    // 无模板的记录直接跳过（不导出）
     const recordsByTemplate = new Map<number, any[]>() // templateId -> records
-    const noTemplateRecordIds: number[] = []
 
     for (const r of records) {
       const tplIds = parseTemplateIds(r.templateIds)
@@ -493,44 +492,6 @@ export default defineEventHandler(async (event) => {
           recordsByTemplate.set(primaryTplId, [])
         }
         recordsByTemplate.get(primaryTplId)!.push(r)
-      } else {
-        noTemplateRecordIds.push(r.id)
-      }
-    }
-
-    // ─── 自动为无模板记录分配默认模板 ───
-    if (noTemplateRecordIds.length > 0) {
-      // 查找系统默认模板
-      let defaultTemplate = await prisma.formTemplate.findFirst({
-        where: { isDefault: true, enabled: true },
-        select: { id: true, name: true }
-      })
-      // 如果没有默认模板，取第一个可用模板
-      if (!defaultTemplate) {
-        defaultTemplate = await prisma.formTemplate.findFirst({
-          where: { enabled: true },
-          select: { id: true, name: true }
-        })
-      }
-
-      if (defaultTemplate) {
-        // 更新数据库：为无模板记录补充分配默认模板
-        await prisma.dataRecord.updateMany({
-          where: { id: { in: noTemplateRecordIds } },
-          data: { templateIds: JSON.stringify([defaultTemplate.id]) }
-        })
-
-        // 将这些记录归入默认模板分组
-        const defaultTplId = defaultTemplate.id
-        if (!recordsByTemplate.has(defaultTplId)) {
-          recordsByTemplate.set(defaultTplId, [])
-        }
-        for (const r of records) {
-          if (noTemplateRecordIds.includes(r.id)) {
-            r.templateIds = JSON.stringify([defaultTplId])
-            recordsByTemplate.get(defaultTplId)!.push(r)
-          }
-        }
       }
     }
 

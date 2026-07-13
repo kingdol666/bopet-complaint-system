@@ -295,7 +295,21 @@ async function main() {
       createdById: operatorUser.id,
       updatedById: adminUser.id,
       remark: '首次反馈，已闭环处理',
-      templateIds: JSON.stringify([template1.id])
+      templateIds: JSON.stringify([excelTemplate.id]),
+      templateData: JSON.stringify({
+        feedbackDate: '2025-03-15',
+        customerId: '深圳市明辉光电有限公司',
+        responsibleDeptId: '生产部',
+        productModelId: 'BOPET-12μm-A',
+        rollNo: 'RL-2025-0321',
+        specification: '1200*8000*12μm',
+        feedbackContent: '客户反馈产品表面有轻微划痕，要求排查原因。',
+        quantityInvolved: 3,
+        productionTime: '2025-03-10',
+        category: '成品外观',
+        improvementAction: '建立刀片寿命管理台账，预设更换周期。',
+        remark: '首次反馈，已闭环处理'
+      })
     },
     {
       dataNo: 'DR-2025-0002',
@@ -320,7 +334,21 @@ async function main() {
       correctiveAction: '校准横拉段温控系统，增加温度监测点位。',
       createdById: operatorUser.id,
       remark: '正在验证温控系统校准效果',
-      templateIds: JSON.stringify([template1.id])
+      templateIds: JSON.stringify([excelTemplate.id]),
+      templateData: JSON.stringify({
+        feedbackDate: '2025-04-02',
+        customerId: '东莞华星薄膜科技有限公司',
+        responsibleDeptId: '生产部',
+        productModelId: 'BOPET-23μm-A',
+        rollNo: 'RL-2025-0456',
+        specification: '1500*12000*23μm',
+        feedbackContent: '膜面出现周期性横向条纹，影响涂胶均匀性。',
+        quantityInvolved: 1,
+        productionTime: '2025-03-28',
+        category: '膜面平整性',
+        improvementAction: '校准横拉段温控系统，增加温度监测点位。',
+        remark: '正在验证温控系统校准效果'
+      })
     },
     {
       dataNo: 'DR-2025-0003',
@@ -343,7 +371,21 @@ async function main() {
       responsibleProcessId: procMap['PROC-04'],
       createdById: qualityUser.id,
       remark: '待技术部联合分析涂布配方',
-      templateIds: JSON.stringify([template1.id])
+      templateIds: JSON.stringify([excelTemplate.id]),
+      templateData: JSON.stringify({
+        feedbackDate: '2025-05-20',
+        customerId: '苏州鑫源新材料股份有限公司',
+        responsibleDeptId: '生产部',
+        productModelId: 'BOPET-36μm-A',
+        rollNo: 'RL-2025-0789',
+        specification: '1000*6000*36μm',
+        feedbackContent: '涂布层出现局部脱落，影响产品耐候性。',
+        quantityInvolved: 5,
+        productionTime: '2025-05-15',
+        category: '涂布表观',
+        improvementAction: '',
+        remark: '待技术部联合分析涂布配方'
+      })
     }
   ]
 
