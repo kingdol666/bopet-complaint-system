@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client'
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
 import { requireSessionUser, canCreateForDepartment } from '~/server/utils/auth'
-import { DATA_INCLUDE } from '~/server/utils/db-columns'
+import { DATA_INCLUDE, DB_COLUMNS, EDITABLE_DATE_COLUMNS, DB_INT_COLUMNS, isFKColumn, getFKMeta } from '~/server/utils/db-columns'
 
 const createSchema = z.object({
   feedbackDate: z.string().transform((v) => new Date(v)),
@@ -79,6 +79,49 @@ function isDataNoConflict(error: unknown): error is Prisma.PrismaClientKnownRequ
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002'
 }
 
+/**
+ * 从 templateData 中提取匹配 DB 列名的字段值，合并到 createData 中。
+ * 这样模板字段如果 fieldKey 恰好等于 DB 列名，值会同时写入 DB 列，
+ * 便于后续查询、筛选和统计。
+ */
+function mergeTemplateDataToDBColumns(
+  createData: Record<string, any>,
+  templateData: Record<string, any> | null | undefined
+): void {
+  if (!templateData || typeof templateData !== 'object') return
+
+  for (const [key, val] of Object.entries(templateData)) {
+    if (val === null || val === undefined || val === '') continue
+    if (!DB_COLUMNS.has(key)) continue
+
+    // 如果 createData 中已有非 null 值，不覆盖
+    if (createData[key] !== undefined && createData[key] !== null) continue
+
+    const fkMeta = isFKColumn(key) ? getFKMeta(key) : null
+    if (fkMeta) {
+      // FK 字段：如果是数字直接赋值
+      if (typeof val === 'number') {
+        createData[key] = val
+      }
+    } else if (EDITABLE_DATE_COLUMNS.has(key)) {
+      // 日期字段
+      const parsed = new Date(val)
+      if (!isNaN(parsed.getTime())) {
+        createData[key] = parsed
+      }
+    } else if (DB_INT_COLUMNS.has(key)) {
+      // 整数字段
+      const n = parseInt(String(val), 10)
+      if (!isNaN(n)) {
+        createData[key] = n
+      }
+    } else {
+      // 字符串字段
+      createData[key] = String(val)
+    }
+  }
+}
+
 export default defineEventHandler(async (event) => {
   try {
     const currentUser = await requireSessionUser(event)
@@ -131,6 +174,10 @@ export default defineEventHandler(async (event) => {
         createdById: currentUser.id,
         updatedById: currentUser.id
       }
+
+      // 从 templateData 中提取匹配 DB 列名的值，同时写入 DB 列
+      // （与导入 API 行为一致，便于查询/筛选/统计）
+      mergeTemplateDataToDBColumns(createData, data.templateData)
 
       try {
         const record = await prisma.$transaction(async (tx) => {

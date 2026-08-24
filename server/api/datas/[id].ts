@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
 import { requireSessionUser, canViewDepartment, canModifyDepartment, isSuperAdmin, isNormalUser } from '~/server/utils/auth'
 import { ossDelete } from '~/server/utils/oss'
-import { DATA_INCLUDE, DATA_INCLUDE_FULL } from '~/server/utils/db-columns'
+import { DATA_INCLUDE, DATA_INCLUDE_FULL, DB_COLUMNS, EDITABLE_DATE_COLUMNS, DB_INT_COLUMNS, isFKColumn, getFKMeta } from '~/server/utils/db-columns'
 
 const updateSchema = z.object({
   feedbackDate: z.string().transform((v) => new Date(v)).optional(),
@@ -141,6 +141,30 @@ export default defineEventHandler(async (event) => {
       }
 
       const { attachments, ...updateFields } = data
+
+      // 从 templateData 中提取匹配 DB 列名的值，同时写入 DB 列
+      // （与创建 API 和导入 API 行为一致）
+      if (data.templateData && typeof data.templateData === 'object') {
+        for (const [key, val] of Object.entries(data.templateData)) {
+          if (val === null || val === undefined || val === '') continue
+          if (!DB_COLUMNS.has(key)) continue
+          // 如果 updateFields 中已有该字段，不覆盖
+          if (updateFields[key] !== undefined) continue
+
+          const fkMeta = isFKColumn(key) ? getFKMeta(key) : null
+          if (fkMeta) {
+            if (typeof val === 'number') updateFields[key] = val
+          } else if (EDITABLE_DATE_COLUMNS.has(key)) {
+            const parsed = new Date(val as string)
+            if (!isNaN(parsed.getTime())) updateFields[key] = parsed as any
+          } else if (DB_INT_COLUMNS.has(key)) {
+            const n = parseInt(String(val), 10)
+            if (!isNaN(n)) updateFields[key] = n as any
+          } else {
+            updateFields[key] = String(val)
+          }
+        }
+      }
 
       const record = await prisma.dataRecord.update({
         where: { id },
