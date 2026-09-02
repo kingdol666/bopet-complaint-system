@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module'
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat.js'
 import { prisma } from '~/server/utils/prisma'
@@ -146,7 +147,8 @@ async function parseFile(file: { filename: string; data: Buffer }): Promise<{ he
     return { headers, rows }
   }
 
-  const XLSX = await import('xlsx')
+  // Nitro 内联打包 xlsx 可能破坏其 CJS 互操作，用 createRequire 运行时加载真实模块
+  const XLSX = createRequire(import.meta.url)('xlsx') as typeof import('xlsx')
   const workbook = XLSX.read(file.data, { type: 'buffer' })
   const sheet = workbook.Sheets[workbook.SheetNames[0]]
   const data = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false }) as any[][]

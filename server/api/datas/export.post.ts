@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module'
 import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
 import { requireSessionUser, isSuperAdmin } from '~/server/utils/auth'
@@ -463,7 +464,10 @@ export default defineEventHandler(async (event) => {
     }
 
     // ─── 使用 ExcelJS 构建 Excel（多 Sheet） ───
-    const ExcelJS = await import('exceljs')
+    // 通过 createRequire 在运行时加载 CJS 版 exceljs：
+    // Nitro 内联打包 exceljs 时会破坏其内部 require('jszip') 的互操作
+    // （JSZip$1 is not a constructor），运行时加载真实模块可绕过该问题
+    const ExcelJS = createRequire(import.meta.url)('exceljs') as typeof import('exceljs')
     const workbook = new ExcelJS.Workbook()
 
     // 用于检测 Sheet 名称重复

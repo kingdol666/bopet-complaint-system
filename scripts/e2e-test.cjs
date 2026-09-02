@@ -2,7 +2,7 @@
  * 端到端 API 测试脚本
  * 测试内容：登录、数据列表、数据可见性、导出（筛选+选中）、PATCH 切换公开/私密
  */
-const BASE = 'http://localhost:3001'
+const BASE = process.env.BASE_URL || 'http://localhost:3001'
 
 let passCount = 0
 let failCount = 0
@@ -201,9 +201,9 @@ async function main() {
     }
   }
 
-  // 4.3 导出带关键词筛选
+  // 4.3 导出带关键词筛选（"2025" 可匹配种子数据 dataNo）
   const keywordExportResp = await api('POST', '/api/datas/export', {
-    keyword: 'test',
+    keyword: '2025',
     sortBy: 'feedbackDate',
     sortOrder: 'desc'
   }, superadminToken)
@@ -211,6 +211,16 @@ async function main() {
     log('带关键词筛选导出', 'PASS', `大小=${keywordExportResp.buffer.length} bytes`)
   } else {
     log('带关键词筛选导出', 'FAIL', `status=${keywordExportResp.status}`)
+  }
+
+  // 4.4 关键词无匹配数据时导出应返回 404（前端会提示"没有符合条件的数据可导出"）
+  const emptyExportResp = await api('POST', '/api/datas/export', {
+    keyword: 'NO_SUCH_KEYWORD_XYZ'
+  }, superadminToken)
+  if (emptyExportResp.status === 404) {
+    log('无匹配数据导出返回404', 'PASS', '符合设计预期')
+  } else {
+    log('无匹配数据导出返回404', 'FAIL', `status=${emptyExportResp.status}`)
   }
 
   // ─── 5. 关键词搜索安全测试 ───
@@ -234,7 +244,7 @@ async function main() {
     feedbackContent: 'E2E测试记录 - isPublic=false',
     category: '测试',
     isPublic: false,
-    templateIds: []
+    templateIds: [1]
   }
   const createResp = await api('POST', '/api/datas', createBody, superadminToken)
   let createdId = null
@@ -255,7 +265,7 @@ async function main() {
     feedbackContent: 'E2E测试记录 - isPublic=true',
     category: '测试',
     isPublic: true,
-    templateIds: []
+    templateIds: [1]
   }, superadminToken)
   let createdPublicId = null
   if (createPublicResp.ok && createPublicResp.data?.success) {

@@ -111,7 +111,7 @@ async function main() {
     category: '成品外观',
     isPublic: true,
     responsibleDeptId: dept01?.id,
-    templateIds: []
+    templateIds: [1]
   }, operator.token)
 
   let operatorRecordId = null
@@ -129,7 +129,7 @@ async function main() {
     category: '成品外观',
     isPublic: false,
     responsibleDeptId: dept01?.id,
-    templateIds: []
+    templateIds: [1]
   }, operator.token)
 
   let operatorPrivateId = null
@@ -147,7 +147,7 @@ async function main() {
     category: '成品外观',
     isPublic: true,
     responsibleDeptId: dept02?.id, // 质量部 - operator 不属于
-    templateIds: []
+    templateIds: [1]
   }, operator.token)
 
   if (operatorOtherDeptResp.status === 403) {
@@ -235,7 +235,7 @@ async function main() {
     category: '成品外观',
     isPublic: true,
     responsibleDeptId: dept02?.id,
-    templateIds: []
+    templateIds: [1]
   }, quality.token)
 
   let qualityRecordId = null
@@ -300,7 +300,7 @@ async function main() {
     feedbackContent: 'operator创建用于删除测试的数据',
     isPublic: true,
     responsibleDeptId: dept01?.id,
-    templateIds: []
+    templateIds: [1]
   }, operator.token)
 
   if (operatorDeleteResp.ok && operatorDeleteResp.data?.success) {

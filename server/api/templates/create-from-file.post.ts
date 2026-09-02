@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module'
 import { prisma } from '~/server/utils/prisma'
 import { requireWritePermission, isSuperAdmin, canModifyDepartment } from '~/server/utils/auth'
 
@@ -40,7 +41,8 @@ function sanitizeKey(name: string, index: number): string {
 }
 
 async function parseFileContent(file: { filename: string; data: Buffer }): Promise<{ headers: string[]; rows: any[][] }> {
-  const XLSX = await import('xlsx')
+  // Nitro 内联打包 xlsx 可能破坏其 CJS 互操作，用 createRequire 运行时加载真实模块
+  const XLSX = createRequire(import.meta.url)('xlsx') as typeof import('xlsx')
   if (file.filename.endsWith('.csv')) {
     const text = file.data.toString('utf-8')
     const cleanText = text.charCodeAt(0) === 0xFEFF ? text.slice(1) : text
