@@ -19,83 +19,60 @@ BOPET（双向拉伸聚酯薄膜）企业数据管理与分析平台，用于高
 - Node.js >= 18.0.0
 - npm >= 9.0.0
 
-### 方式一：一键运行（推荐）
+### 一键启动（推荐）
 
-#### 首次运行
-
-双击运行 `init.bat`，脚本将自动完成以下步骤：
-
-1. 检查 Node.js 环境
-2. 安装项目依赖
-3. 创建 `.env` 配置文件
-4. 初始化数据库并导入初始数据
-5. 构建项目
+只需两步：
 
 ```bash
-# 或者在命令行中运行
-.\init.bat
-```
-
-#### 日常启动（生产模式）
-
-双击运行 `start.bat`，脚本将自动检查环境并启动生产服务器。
-
-```bash
-# 或者在命令行中运行
-.\start.bat
-```
-
-#### 开发模式启动
-
-如需开发模式（支持热更新），双击运行 `dev.bat`。
-
-```bash
-# 或者在命令行中运行
-.\dev.bat
-```
-
-### 方式二：手动运行
-
-#### 1. 安装依赖
-
-```bash
+# 1. 安装依赖
 npm install
+
+# 2. 启动（二选一）
+npm run dev      # 开发模式（热更新，默认端口 3100）
+npm run start    # 生产模式（无构建产物时自动 build，默认端口 3001）
 ```
 
-#### 2. 配置环境变量
+启动脚本会自动完成以下检查，缺什么补什么：
+
+1. `.env` / `.env.production` 缺失时自动创建（生产环境额外默认 `HOST=0.0.0.0`、`PORT=3001`）
+2. 依据 `PRISMA_DB_PROVIDER` 生成 `prisma/schema.prisma`
+3. `prisma db push` 同步数据库结构（幂等，未变化时秒级完成）
+4. Prisma Client 缺失时自动生成
+5. 数据库为空时自动写入种子数据（已有数据则跳过）
+6. 生产模式：`.output` 构建产物缺失时自动执行 `npm run build`
+7. 按 `HOST:PORT` 配置启动服务，默认监听 `0.0.0.0`，**局域网/外网可直接访问**
+
+### 端口与网络配置
+
+在 `.env`（开发）或 `.env.production`（生产）中修改：
 
 ```bash
-# 复制环境配置文件
-copy .env.example .env
+HOST=0.0.0.0    # 监听所有网络接口，局域网/外网可访问；改为 127.0.0.1 则仅本机可访问
+PORT=3100       # 端口号（生产环境默认 3001）
 ```
 
-#### 3. 初始化数据库
+### Windows 双击启动
+
+- `dev.bat` — 一键开发模式（依赖缺失时自动 npm install）
+- `start.bat` — 一键生产模式（依赖缺失时自动 npm install，产物缺失时自动 build）
+
+### 其他常用命令
 
 ```bash
-# 生成 Prisma Client
-npm run db:generate
-
-# 同步数据库结构
-npm run db:push
-
-# 导入初始数据
-npm run db:seed
+npm run init        # 手动完整初始化数据库（等价于启动时的自动检查）
+npm run db:reset    # 删除 SQLite 数据库，下次启动自动重建 + 重新 seed
+npm run dev:fresh   # 重置数据库并一键启动开发模式
+npm run db:studio   # 打开 Prisma Studio 数据库管理界面
 ```
-
-#### 4. 启动开发服务器
-
-```bash
-npm run dev
-```
-
-服务器将在 http://localhost:3000 启动。
 
 ## 默认账号
 
-| 角色       | 用户名 | 密码     |
-| ---------- | ------ | -------- |
-| 超级管理员 | admin  | admin123 |
-| 普通用户   | user1  | user123  |
+| 角色       | 用户名    | 密码         |
+| ---------- | --------- | ------------ |
+| 超级管理员 | admin     | admin123     |
+| 部门管理员 | deptadmin | deptadmin123 |
+| 普通用户   | operator  | operator123  |
+| 质检员     | quality   | quality123   |
 
 ## 可用脚本
 
@@ -172,7 +149,7 @@ bopet-eda-platform/
 
 ## 数据库
 
-默认使用 SQLite 数据库，数据文件位于 `prisma/data/data.db`。
+默认使用 SQLite 数据库，数据文件位于 `data/data.db`。
 
 如需切换到 PostgreSQL，请修改 `.env` 文件中的 `DATABASE_URL`。
 

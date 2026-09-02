@@ -9,7 +9,7 @@
     "prisma:prepare": "node scripts/prepare-prisma-schema.mjs",
     "init": "node scripts/init.mjs",
     "build": "npm run prisma:prepare && node scripts/build.mjs",
-    "dev": "npm run prisma:prepare && npx prisma generate && npx prisma db push && nuxt dev --port 3100",
+    "dev": "node scripts/launch.mjs",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "npm run prisma:prepare && nuxt prepare",
@@ -18,15 +18,15 @@
     "db:migrate": "npm run prisma:prepare && prisma migrate dev --name init",
     "db:seed": "npm run prisma:prepare && npx prisma generate && tsx prisma/seed.ts",
     "db:studio": "npm run prisma:prepare && prisma studio",
-    "db:reset": "npm run prisma:prepare && prisma migrate reset --force",
+    "db:reset": "node scripts/reset-db.mjs",
     "setup": "npm install && npm run db:generate && npm run db:push && npm run db:seed",
     "dev:init": "npm run db:generate && npm run db:push && npm run db:seed && npm run dev",
-    "dev:fresh": "npm run db:reset && npm run db:generate && npm run db:push && npm run db:seed && npm run dev",
+    "dev:fresh": "npm run db:reset && npm run dev",
     "deploy:vercel": "npm install && npx vercel --prod",
     "deploy:local": "npm install && npm run build && npm run preview",
     "postbuild": "node scripts/fix-unhead.mjs",
-    "start": "node --env-file=.env.production scripts/start.mjs",
-    "start:prod": "node --env-file=.env.production scripts/start.mjs",
+    "start": "node scripts/launch.mjs --prod",
+    "start:prod": "node scripts/launch.mjs --prod",
     "pm2:start": "pm2 start ecosystem.config.cjs",
     "pm2:restart": "pm2 restart ecosystem.config.cjs --update-env",
     "pm2:stop": "pm2 stop bopet-eda",
@@ -62,5 +62,16 @@
     "typescript": "^5.3.0",
     "vue-tsc": "^1.8.27"
   },
-  "packageManager": "pnpm@10.26.1+sha512.664074abc367d2c9324fdc18037097ce0a8f126034160f709928e9e9f95d98714347044e5c3164d65bd5da6c59c6be362b107546292a8eecb7999196e5ce58fa"
+  "packageManager": "pnpm@10.26.1+sha512.664074abc367d2c9324fdc18037097ce0a8f126034160f709928e9e9f95d98714347044e5c3164d65bd5da6c59c6be362b107546292a8eecb7999196e5ce58fa",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild",
+      "prisma",
+      "vue-demi",
+      "vue-echarts"
+    ]
+  }
 }

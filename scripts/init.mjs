@@ -17,7 +17,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = resolve(__dirname, "..");
-const dataDir = resolve(rootDir, "prisma", "data");
+const dataDir = resolve(rootDir, "data");
 
 // 颜色输出
 const colors = {
