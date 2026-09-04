@@ -38,6 +38,12 @@ model User {
   // 跨部门访问申请
   accessRequests         CrossDepartmentAccessRequest[]   @relation("AccessRequester")
   approvedAccessRequests CrossDepartmentAccessRequest[]   @relation("AccessApprover")
+  // 模板级访问授权
+  grantedTemplateAccess  TemplateAccess[]                 @relation("TemplateAccessUser")
+  grantedTemplateBy      TemplateAccess[]                 @relation("TemplateAccessGranter")
+  // 模板级访问申请
+  templateAccessRequests TemplateAccessRequest[]          @relation("TemplateRequester")
+  approvedTemplateRequests TemplateAccessRequest[]        @relation("TemplateApprover")
 
   @@map("users")
 }
@@ -261,6 +267,10 @@ model FormTemplate {
   createdBy    User?                  @relation(fields: [createdById], references: [id], onDelete: SetNull)
   fields       FormTemplateField[]
 
+  // 模板级访问授权 / 申请
+  accessGrants   TemplateAccess[]
+  accessRequests TemplateAccessRequest[]
+
   @@index([departmentId, enabled, sortOrder])
   @@map("form_templates")
 }
@@ -387,6 +397,55 @@ model CrossDepartmentAccessRequest {
   @@index([departmentId])
   @@index([status])
   @@map("cross_department_access_requests")
+}
+
+// ==================== 模板级访问授权表 ====================
+// 授权用户查看某个特定模板下的数据（粒度到模板，不含编辑权限）
+model TemplateAccess {
+  id           Int        @id @default(autoincrement())
+  userId       Int
+  templateId   Int
+  grantedById  Int?
+  requestId    Int?       @unique
+  expiresAt    DateTime?  // null = 永不过期
+  createdAt    DateTime   @default(now())
+
+  user         User                     @relation("TemplateAccessUser", fields: [userId], references: [id], onDelete: Cascade)
+  template     FormTemplate             @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  grantedBy    User?                    @relation("TemplateAccessGranter", fields: [grantedById], references: [id], onDelete: SetNull)
+  request      TemplateAccessRequest?   @relation(fields: [requestId], references: [id])
+
+  @@unique([userId, templateId])
+  @@index([userId])
+  @@index([templateId])
+  @@map("template_access")
+}
+
+// ==================== 模板级访问申请表 ====================
+// 用户向模板所属部门的管理员申请查看该模板下的数据
+model TemplateAccessRequest {
+  id             Int       @id @default(autoincrement())
+  requesterId    Int
+  templateId     Int
+  reason         String?
+  status         String    @default("pending") // pending, approved, rejected
+  approverId     Int?
+  approvedAt     DateTime?
+  rejectedReason String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  requester      User              @relation("TemplateRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  template       FormTemplate      @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  approver       User?             @relation("TemplateApprover", fields: [approverId], references: [id], onDelete: SetNull)
+  access         TemplateAccess?
+
+  // 注意：不对 (requesterId, templateId, status) 加唯一约束 —— 同一用户同一模板可多次申请（历史轮次），
+  // pending 重复申请已在应用层（findExistingRequest）拦截
+  @@index([requesterId])
+  @@index([templateId])
+  @@index([status])
+  @@map("template_access_requests")
 }
 
 // ==================== 用户保存的分析配置 ====================

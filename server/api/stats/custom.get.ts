@@ -5,6 +5,29 @@ import { GROUPABLE_STRING_COLUMNS, DB_DATE_COLUMNS, CONFIG_TYPE_FK_MAP, DB_COLUM
 
 // 使用共享的 DB_DATE_COLUMNS 替代局部 DB_TIMESTAMP_COLUMNS
 const DB_TIMESTAMP_COLUMNS = DB_DATE_COLUMNS
+
+// 聚合方式白名单 → SQL 聚合函数
+const AGG_FN_MAP: Record<string, string> = { sum: 'SUM', avg: 'AVG', max: 'MAX', min: 'MIN' }
+
+// ─── 数值聚合辅助：校验数字类型字段并构建取值表达式 ───
+
+function validateValueField(valueField: string, templateFieldMap: Map<string, any>): any {
+  const vf = templateFieldMap.get(valueField)
+  if (!vf || vf.fieldType !== 'number') {
+    throw createError({ statusCode: 400, message: '数值聚合字段必须是数字类型字段' })
+  }
+  return vf
+}
+
+function buildNumericValueExpr(valueField: string, templateFieldMap: Map<string, any>, tableRef: string): string {
+  if (DB_COLUMNS.has(valueField)) {
+    return `CAST(${tableRef}."${valueField}" AS REAL)`
+  }
+  const safeKey = valueField.replace(/[^\w一-鿿-]/g, '')
+  if (!safeKey) throw createError({ statusCode: 400, message: '数值字段名无效' })
+  return `CAST(json_extract(${tableRef}.templateData, '$.${safeKey}') AS REAL)`
+}
+
 interface ParsedFilter {
   field: string
   operator: 'eq' | 'contains' | 'in' | 'gt' | 'lt' | 'gte' | 'lte' | 'date_range'
@@ -111,6 +134,11 @@ export default defineEventHandler(async (event) => {
     const timeFieldRaw = (query.timeField as string) || undefined
     // Normalize built-in time fields (strip __ prefix)
     const timeField = timeFieldRaw?.startsWith('__') ? timeFieldRaw.slice(2) : timeFieldRaw
+    // 数值聚合：valueField 为数字类型模板字段，aggFunc 为聚合方式（sum/avg/max/min）
+    const valueFieldRaw = (query.valueField as string) || undefined
+    const valueField = valueFieldRaw?.startsWith('__') ? valueFieldRaw.slice(2) : valueFieldRaw
+    const aggFuncRaw = (query.aggFunc as string) || 'sum'
+    const aggFunc = AGG_FN_MAP[aggFuncRaw] ? aggFuncRaw : 'sum'
 
     if (groupByFields.length === 0) {
       throw createError({ statusCode: 400, message: '缺少groupBy参数' })
@@ -128,6 +156,7 @@ export default defineEventHandler(async (event) => {
     if (templateId) {
       const lookupKeys = [...groupByFields]
       if (timeField && !lookupKeys.includes(timeField)) lookupKeys.push(timeField)
+      if (valueField && !lookupKeys.includes(valueField)) lookupKeys.push(valueField)
       for (const ff of fieldFilters) {
         if (ff.field && !lookupKeys.includes(ff.field)) lookupKeys.push(ff.field)
       }
@@ -301,11 +330,53 @@ export default defineEventHandler(async (event) => {
       }
       whereParts.push(`${dateExpr} IS NOT NULL`)
 
+      // 可选：在日期分组基础上聚合数字字段（求和/平均/最大/最小）
+      let valueExpr: string | null = null
+      let aggFnSQL: string | null = null
+      let vfLabel: string | null = null
+      if (valueField) {
+        const vf = validateValueField(valueField, templateFieldMap)
+        valueExpr = buildNumericValueExpr(valueField, templateFieldMap, 'data_records')
+        aggFnSQL = AGG_FN_MAP[aggFunc]
+        vfLabel = vf.fieldLabel || valueField
+        whereParts.push(`${valueExpr} IS NOT NULL`)
+      }
+
       const whereClause = whereParts.join(' AND ')
 
+      const valueSelect = aggFnSQL
+        ? `COUNT(*) as cnt, ${aggFnSQL}(${valueExpr}) as agg_val`
+        : 'COUNT(*) as cnt'
       // Group by date string (YYYY-MM-DD format)
-      const dataSQL = `SELECT ${dateGroupExpr} as date_val, COUNT(*) as cnt FROM data_records WHERE ${whereClause} GROUP BY date_val ORDER BY date_val ASC LIMIT ?`
+      const dataSQL = `SELECT ${dateGroupExpr} as date_val, ${valueSelect} FROM data_records WHERE ${whereClause} GROUP BY date_val ORDER BY date_val ASC LIMIT ?`
       const rows = await prisma.$queryRawUnsafe(dataSQL, ...sqlParams, limit) as any[]
+
+      if (aggFnSQL && valueExpr) {
+        // 聚合模式：占比基于所有日期分组的聚合值总和
+        const grandSQL = `SELECT COALESCE(SUM(sub.agg_val), 0) as grand_val, COALESCE(SUM(sub.cnt), 0) as cnt FROM (SELECT ${dateGroupExpr} as date_val, COUNT(*) as cnt, ${aggFnSQL}(${valueExpr}) as agg_val FROM data_records WHERE ${whereClause} GROUP BY date_val) sub`
+        const grandRows = await prisma.$queryRawUnsafe(grandSQL, ...sqlParams) as any[]
+        const grandVal = Number(grandRows[0]?.grand_val || 0)
+        const recordCount = Number(grandRows[0]?.cnt || 0)
+
+        const results = rows.map((r: any) => ({
+          name: r.date_val || '(空)',
+          value: Number(Number(r.agg_val || 0).toFixed(2)),
+          count: Number(r.cnt),
+          percentage: grandVal > 0 ? (Number(r.agg_val || 0) / grandVal * 100).toFixed(1) : '0'
+        }))
+
+        return {
+          success: true,
+          data: {
+            groupBy: field, fields: [field],
+            fieldLabels: [templateField?.fieldLabel || field],
+            valueField, valueLabel: vfLabel, aggFunc,
+            total: Number(grandVal.toFixed(2)), recordCount,
+            mode: 'date_group', aggregate: true,
+            results
+          }
+        }
+      }
 
       const total = rows.reduce((sum, r) => sum + Number(r.cnt), 0)
       const results = rows.map((r: any) => ({
@@ -321,6 +392,99 @@ export default defineEventHandler(async (event) => {
           groupBy: field, fields: [field],
           fieldLabels: [templateField?.fieldLabel || field],
           total, mode: 'date_group',
+          results
+        }
+      }
+    }
+
+    // ─── Aggregate mode: 按分组字段聚合数字字段的值（求和/平均/最大/最小），并计算占比 ───
+    if (valueField) {
+      const vf = validateValueField(valueField, templateFieldMap)
+      const aggValueExpr = buildNumericValueExpr(valueField, templateFieldMap, 'cr')
+      const aggFnSQL = AGG_FN_MAP[aggFunc]
+
+      const fieldLabels: string[] = []
+      const selectParts: string[] = []
+      const groupParts: string[] = []
+      const joinClauses: string[] = []
+      const whereParts: string[] = ['1=1']
+      const sqlParams: any[] = []
+
+      // Department filter (data isolation for non-superadmin)
+      if (visSQL.clause) {
+        whereParts.push(visSQL.clause.replace(/\bresponsibleDeptId\b/g, 'cr.responsibleDeptId').replace(/\bisPublic\b/g, 'cr.isPublic').replace(/\bcreatedById\b/g, 'cr.createdById'))
+        sqlParams.push(...visSQL.params)
+      }
+      // Apply field filters
+      if (fieldFilters.length > 0) {
+        const fr = buildFilterSQL(fieldFilters, templateFieldMap, 'cr')
+        whereParts.push(...fr.parts)
+        sqlParams.push(...fr.params)
+      }
+
+      for (const field of groupByFields) {
+        const tf = templateFieldMap.get(field)
+        const label = tf?.fieldLabel || field
+        fieldLabels.push(label)
+
+        if (GROUPABLE_STRING_COLUMNS.has(field)) {
+          // Direct column
+          selectParts.push(`COALESCE(CAST(cr."${field}" AS TEXT), '(空)') as v_${field}`)
+          groupParts.push(`cr."${field}"`)
+          whereParts.push(`cr."${field}" IS NOT NULL`)
+        } else if (tf?.configType && CONFIG_TYPE_FK_MAP[tf.configType]) {
+          // FK field: JOIN reference table
+          const meta = CONFIG_TYPE_FK_MAP[tf.configType]
+          const alias = `j_${field}`
+          joinClauses.push(`LEFT JOIN ${meta.sqlTable} ${alias} ON cr.${meta.fkColumn} = ${alias}.id`)
+          selectParts.push(`COALESCE(${alias}.${meta.nameColumn}, '(空)') as v_${field}`)
+          groupParts.push(`${alias}.${meta.nameColumn}`)
+        } else {
+          // JSON templateData field
+          const safeKey = field.replace(/[^\w一-鿿-]/g, '')
+          selectParts.push(`COALESCE(CAST(json_extract(cr.templateData, '$.${safeKey}') AS TEXT), '(空)') as v_${field}`)
+          groupParts.push(`json_extract(cr.templateData, '$.${safeKey}')`)
+          whereParts.push(`json_extract(cr.templateData, '$.${safeKey}') IS NOT NULL`)
+        }
+      }
+      // 数值字段必须存在（json_extract 为 NULL 时 CAST 仍为 NULL，会被排除）
+      whereParts.push(`${aggValueExpr} IS NOT NULL`)
+
+      const selectClause = selectParts.join(', ')
+      const groupClause = groupParts.join(', ')
+      const joinClause = joinClauses.join('\n  ')
+      const whereClause = whereParts.join(' AND ')
+
+      const dataSQL = `SELECT ${selectClause}, ${aggFnSQL}(${aggValueExpr}) as agg_val, COUNT(*) as _count FROM data_records cr ${joinClause} WHERE ${whereClause} GROUP BY ${groupClause} ORDER BY agg_val DESC LIMIT ?`
+      const rows = await prisma.$queryRawUnsafe(dataSQL, ...sqlParams, limit * 2) as any[]
+
+      // 总计与占比基于所有分组的聚合值总和（子查询不含 LIMIT）
+      const grandSQL = `SELECT COALESCE(SUM(sub.agg_val), 0) as grand_val, COALESCE(SUM(sub._count), 0) as cnt FROM (SELECT ${selectClause}, ${aggFnSQL}(${aggValueExpr}) as agg_val, COUNT(*) as _count FROM data_records cr ${joinClause} WHERE ${whereClause} GROUP BY ${groupClause}) sub`
+      const grandRows = await prisma.$queryRawUnsafe(grandSQL, ...sqlParams) as any[]
+      const grandVal = Number(grandRows[0]?.grand_val || 0)
+      const recordCount = Number(grandRows[0]?.cnt || 0)
+
+      const results = rows.map((r: any) => {
+        const vals: string[] = []
+        for (const field of groupByFields) {
+          const v = r[`v_${field}`]
+          vals.push(v != null ? String(v) : '(空)')
+        }
+        return {
+          name: vals.join(' | '),
+          values: vals,
+          count: Number(r._count),
+          value: Number(Number(r.agg_val || 0).toFixed(2)),
+          percentage: grandVal > 0 ? (Number(r.agg_val || 0) / grandVal * 100).toFixed(1) : '0'
+        }
+      }).slice(0, limit)
+
+      return {
+        success: true,
+        data: {
+          groupBy: groupByRaw, fields: groupByFields, fieldLabels,
+          valueField, valueLabel: vf.fieldLabel || valueField, aggFunc,
+          total: Number(grandVal.toFixed(2)), recordCount, mode: 'aggregate',
           results
         }
       }

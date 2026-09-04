@@ -51,6 +51,23 @@ const dataInclude = {
   attachments: true
 } as const
 
+/**
+ * 检查记录的 templateIds 是否与已授权模板列表有交集。
+ * templateIds 存储为 JSON 数组字符串（如 "[1,2]"），需精确匹配数字避免 1 误匹配 11。
+ */
+async function hasTemplateAccess(templateIdsJson: string | null, grantedTemplateIds: number[]): Promise<boolean> {
+  if (!templateIdsJson || grantedTemplateIds.length === 0) return false
+  let ids: number[] = []
+  try {
+    const parsed = JSON.parse(templateIdsJson)
+    if (Array.isArray(parsed)) ids = parsed
+  } catch {
+    return false
+  }
+  const granted = new Set(grantedTemplateIds)
+  return ids.some(id => granted.has(Number(id)))
+}
+
 export default defineEventHandler(async (event) => {
   const id = Number.parseInt(getRouterParam(event, 'id') || '0', 10)
 
@@ -80,10 +97,15 @@ export default defineEventHandler(async (event) => {
     if (!isSuperAdmin(currentUser)) {
       // 私密数据：只有创建者可查看
       // 公开数据：本部门 + 跨部门授权 + 无部门公开数据 可查看
+      // 模板级授权：数据关联了已授权的模板且为公开数据时可查看
       const isOwner = record.createdById === currentUser.id
       const canViewDept = canViewDepartment(currentUser, record.responsibleDeptId)
       const isPublicNoDept = !record.responsibleDeptId && record.isPublic
-      if (!isOwner && !isPublicNoDept && !(canViewDept && record.isPublic)) {
+      let canViewTemplateAccess = false
+      if (!isOwner && record.isPublic && !canViewDept && (currentUser.grantedTemplateIds || []).length > 0) {
+        canViewTemplateAccess = await hasTemplateAccess(record.templateIds, currentUser.grantedTemplateIds)
+      }
+      if (!isOwner && !isPublicNoDept && !canViewTemplateAccess && !(canViewDept && record.isPublic)) {
         throw createError({
           statusCode: 403,
           message: '您没有查看该记录的权限'
@@ -333,10 +355,11 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 404, message: '数据记录不存在' })
     }
 
-    // 权限：superadmin 或创建者或本部门 admin
+    // 权限：仅数据的创建者可以设置公开/私密（管理员也不可修改他人数据的私密状态）。
+    // superadmin 作为系统最高权限例外可操作。
     const isOwner = existing.createdById === currentUser.id
-    if (!isSuperAdmin(currentUser) && !isOwner && !canModifyDepartment(currentUser, existing.responsibleDeptId)) {
-      throw createError({ statusCode: 403, message: '您没有修改该记录的权限' })
+    if (!isOwner && !isSuperAdmin(currentUser)) {
+      throw createError({ statusCode: 403, message: '只有数据的创建者才能设置公开/私密状态' })
     }
 
     const record = await prisma.dataRecord.update({

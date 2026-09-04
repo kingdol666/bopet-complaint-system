@@ -22,6 +22,8 @@ export interface SessionUser {
   departmentIds: number[]
   /** 跨部门授权可查看的部门ID列表（不含本部门） */
   grantedDepartmentIds: number[]
+  /** 模板级授权可查看的模板ID列表（未过期） */
+  grantedTemplateIds: number[]
 }
 
 let devJwtSecret: string | null = null
@@ -208,6 +210,15 @@ export async function getOptionalSessionUser(event: H3Event): Promise<SessionUse
           ]
         },
         select: { departmentId: true }
+      },
+      grantedTemplateAccess: {
+        where: {
+          OR: [
+            { expiresAt: null },
+            { expiresAt: { gt: new Date() } }
+          ]
+        },
+        select: { templateId: true }
       }
     }
   })
@@ -222,7 +233,8 @@ export async function getOptionalSessionUser(event: H3Event): Promise<SessionUse
     name: user.name,
     role: user.role,
     departmentIds: user.departments.map(d => d.departmentId),
-    grantedDepartmentIds: user.grantedAccess.map(g => g.departmentId)
+    grantedDepartmentIds: user.grantedAccess.map(g => g.departmentId),
+    grantedTemplateIds: user.grantedTemplateAccess.map(g => g.templateId)
   }
 }
 
@@ -306,6 +318,8 @@ export function getModifiableDepartmentIds(user: SessionUser): number[] | null {
  * - admin/normal: 可查看
  *   1) 本部门 + 跨部门授权范围内的公开数据（isPublic=true）
  *   2) 自己创建的数据（无论公开/私密）
+ *   3) 无部门但公开的数据
+ *   4) 已获模板级授权的模板所关联的数据（按 templateIds JSON 匹配，公开数据）
  *
  * @param fieldName 部门字段名，默认 'responsibleDeptId'
  */
@@ -315,21 +329,44 @@ export function buildDepartmentFilter(user: SessionUser, fieldName = 'responsibl
     // superadmin 可看全部
     return {}
   }
+
+  // 模板级授权：通过 templateIds JSON 字符串匹配已授权的模板
+  const tplConditions = buildTemplateIdsConditions(user.grantedTemplateIds || [])
+
+  const baseConditions: any[] = [
+    { [fieldName]: { in: deptIds }, isPublic: true },
+    { createdById: user.id },
+    { [fieldName]: null, isPublic: true }
+  ]
+  if (tplConditions.length > 0) {
+    baseConditions.push({ AND: [{ isPublic: true }, { OR: tplConditions }] })
+  }
+
   if (deptIds.length === 0) {
-    // 没有部门权限，只能看自己创建的
-    return { createdById: user.id }
+    // 没有部门权限：自己创建的 + 模板级授权的公开数据
+    return tplConditions.length > 0
+      ? { OR: [{ createdById: user.id }, { AND: [{ isPublic: true }, { OR: tplConditions }] }] }
+      : { createdById: user.id }
   }
-  // 可查看：
-  // 1) 部门范围内的公开数据（isPublic=true）
-  // 2) 自己创建的所有数据
-  // 3) 没有指定部门但公开的数据（isPublic=true 且 responsibleDeptId 为 null）
-  return {
-    OR: [
-      { [fieldName]: { in: deptIds }, isPublic: true },
-      { createdById: user.id },
-      { [fieldName]: null, isPublic: true }
-    ]
-  }
+  return { OR: baseConditions }
+}
+
+/**
+ * 构建 templateIds JSON 字符串匹配条件（Prisma 格式）。
+ * templateIds 存储为 JSON 数组字符串，如 "[1,2]"，需精确匹配数字避免 1 误匹配 11。
+ */
+export function buildTemplateIdsConditions(templateIds: number[]): any[] {
+  return templateIds.map(tid => {
+    const t = String(tid)
+    return {
+      OR: [
+        { templateIds: { contains: `[${t}]` } },
+        { templateIds: { contains: `[${t},` } },
+        { templateIds: { contains: `,${t}]` } },
+        { templateIds: { contains: `,${t},` } }
+      ]
+    }
+  })
 }
 
 /**
@@ -431,8 +468,30 @@ export function buildVisibilitySQL(
   const deptIds = getViewableDepartmentIds(user)
   const p = tableAlias ? `${tableAlias}.` : ''
 
+  // 模板级授权：templateIds JSON 匹配已授权模板（公开数据）
+  const grantedTpl = user.grantedTemplateIds || []
+  let tplClause = ''
+  const tplParams: any[] = []
+  if (grantedTpl.length > 0) {
+    const orParts = grantedTpl.map(() => {
+      // 4 种位置模式：[id] / [id, / ,id] / ,id,
+      return `(${p}templateIds = ? OR ${p}templateIds LIKE ? OR ${p}templateIds LIKE ? OR ${p}templateIds LIKE ?)`
+    })
+    tplClause = orParts.join(' OR ')
+    for (const tid of grantedTpl) {
+      tplParams.push(`[${tid}]`, `[${tid},%`, `%,${tid}]`, `%,${tid},%`)
+    }
+  }
+  const tplCondition = tplClause ? `(${tplClause} AND ${p}isPublic = 1)` : ''
+
   if (!deptIds || deptIds.length === 0) {
-    // 没有部门权限，只能看自己创建的
+    // 没有部门权限：自己创建的 + 模板级授权的公开数据
+    if (tplCondition) {
+      return {
+        clause: `(${p}createdById = ? OR ${tplCondition})`,
+        params: [user.id, ...tplParams]
+      }
+    }
     return {
       clause: `${p}createdById = ?`,
       params: [user.id]
@@ -440,8 +499,17 @@ export function buildVisibilitySQL(
   }
 
   const placeholders = deptIds.map(() => '?').join(',')
+  const baseClause = `((${p}responsibleDeptId IN (${placeholders}) AND ${p}isPublic = 1) OR ${p}createdById = ? OR (${p}responsibleDeptId IS NULL AND ${p}isPublic = 1))`
+  const baseParams = [...deptIds, user.id]
+
+  if (tplCondition) {
+    return {
+      clause: `(${baseClause} OR ${tplCondition})`,
+      params: [...baseParams, ...tplParams]
+    }
+  }
   return {
-    clause: `((${p}responsibleDeptId IN (${placeholders}) AND ${p}isPublic = 1) OR ${p}createdById = ? OR (${p}responsibleDeptId IS NULL AND ${p}isPublic = 1))`,
-    params: [...deptIds, user.id]
+    clause: baseClause,
+    params: baseParams
   }
 }

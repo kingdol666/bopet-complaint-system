@@ -15,6 +15,22 @@
           </div>
         </div>
         <div class="header-actions">
+          <n-button class="action-btn" @click="showMyDataModal = true">
+            <template #icon>
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </template>
+            我创建的数据
+          </n-button>
+          <n-button class="action-btn" @click="showTplAccessModal = true">
+            <template #icon>
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 7a3 3 0 11-6 0 3 3 0 016 0zm-4 10v4m4-4v4M8 21h8m-5-14a3 3 0 11-6 0 3 3 0 016 0zM12 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </template>
+            模板访问权限
+          </n-button>
           <n-button class="action-btn" @click="handleExport(false)" :loading="exporting">
             <template #icon>
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -165,6 +181,12 @@
       </div>
     </div>
   </div>
+
+  <!-- 我创建的数据 Modal（仅自己创建的数据，可设置公开/私密） -->
+  <MyDataModal v-model:show="showMyDataModal" />
+
+  <!-- 模板访问权限 Modal（模板目录/申请/审批/撤销） -->
+  <TemplateAccessModal v-model:show="showTplAccessModal" />
 </template>
 
 <script setup lang="ts">
@@ -191,6 +213,10 @@ const loading = ref(false)
 const exporting = ref(false)
 const batchProcessing = ref(false)
 const checkedRowKeys = ref<any[]>([])
+
+// Modal 状态
+const showMyDataModal = ref(false)
+const showTplAccessModal = ref(false)
 
 // Table data
 const tableData = ref<any[]>([])
@@ -424,22 +450,10 @@ const columns: DataTableColumn<any>[] = [
         }, () => '查看')
       ]
       // 判断当前用户是否可操作此记录（创建者或 admin/superadmin）
+      // 权限规则：编辑/删除 = 创建者本人 或 管理员（本部门数据）
       const isOwner = row.createdById === authStore.user?.id
       const canManage = authStore.canWrite || isOwner
-      // 公开/私密切换按钮（创建者或 admin/superadmin 可操作）
-      if (canManage) {
-        buttons.push(
-          h(NTooltip, { trigger: 'hover' }, {
-            trigger: () => h(NButton, {
-              size: 'small',
-              type: row.isPublic ? 'success' : 'warning',
-              ghost: true,
-              onClick: () => handleTogglePublic(row)
-            }, () => row.isPublic ? '公开' : '私密'),
-            default: () => row.isPublic ? '点击设为私密（仅自己可见）' : '点击设为公开（同部门可见）'
-          })
-        )
-      }
+      // 公开/私密设置仅在"我创建的数据"Modal 中操作（仅创建者可设置）
       if (canManage) {
         buttons.push(
           h(NButton, {
@@ -621,20 +635,7 @@ async function handleProcessedChange(row: any, value: string) {
   }
 }
 
-async function handleTogglePublic(row: any) {
-  const newIsPublic = !row.isPublic
-  try {
-    await $fetch(`/api/datas/${row.id}`, {
-      method: 'PATCH',
-      headers: authStore.getAuthHeaders(),
-      body: { isPublic: newIsPublic }
-    })
-    row.isPublic = newIsPublic
-    message.success(newIsPublic ? '已设为公开（同部门可见）' : '已设为私密（仅自己可见）')
-  } catch (e: any) {
-    message.error(e?.data?.message || '切换失败')
-  }
-}
+// 公开/私密设置已移至「我创建的数据」Modal（仅创建者可操作）
 
 async function batchMarkProcessed() {
   if (checkedRowKeys.value.length === 0) return

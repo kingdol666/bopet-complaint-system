@@ -91,7 +91,7 @@ function applyDynamicFilter(where: any, fieldName: string, operator: string, val
 /**
  * 构建数据可见性 where 条件
  * - superadmin: 可见全部
- * - 其他: 部门内公开数据 + 自己创建的所有数据
+ * - 其他: 部门内公开数据 + 自己创建的所有数据 + 模板级授权的公开数据
  */
 function buildVisibilityFilter(user: any): Record<string, any> {
   if (isSuperAdmin(user)) {
@@ -99,16 +99,37 @@ function buildVisibilityFilter(user: any): Record<string, any> {
   }
 
   const deptIds = [...new Set([...user.departmentIds, ...user.grantedDepartmentIds])]
+
+  // 模板级授权：templateIds JSON 匹配已授权模板（公开数据）
+  const grantedTpl = user.grantedTemplateIds || []
+  let tplCondition: any = null
+  if (grantedTpl.length > 0) {
+    const orParts = grantedTpl.map((tid: number) => {
+      const t = String(tid)
+      return {
+        OR: [
+          { templateIds: { contains: `[${t}]` } },
+          { templateIds: { contains: `[${t},` } },
+          { templateIds: { contains: `,${t}]` } },
+          { templateIds: { contains: `,${t},` } }
+        ]
+      }
+    })
+    tplCondition = { AND: [{ isPublic: true }, { OR: orParts }] }
+  }
+
   if (deptIds.length === 0) {
-    return { createdById: user.id }
+    return tplCondition
+      ? { OR: [{ createdById: user.id }, tplCondition] }
+      : { createdById: user.id }
   }
-  return {
-    OR: [
-      { responsibleDeptId: { in: deptIds }, isPublic: true },
-      { createdById: user.id },
-      { responsibleDeptId: null, isPublic: true }
-    ]
-  }
+  const baseConditions: any[] = [
+    { responsibleDeptId: { in: deptIds }, isPublic: true },
+    { createdById: user.id },
+    { responsibleDeptId: null, isPublic: true }
+  ]
+  if (tplCondition) baseConditions.push(tplCondition)
+  return { OR: baseConditions }
 }
 
 // ─── Excel Sheet 名称安全化 ───

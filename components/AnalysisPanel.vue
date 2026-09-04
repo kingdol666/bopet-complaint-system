@@ -6,7 +6,7 @@
           <div class="panel-status-indicator" :class="result ? 'active' : 'inactive'" />
           <span class="panel-title">{{ displayTitle }}</span>
           <n-tag v-if="result" :type="isTrendMode ? 'success' : 'primary'" size="small" :bordered="false" class="data-count-tag">
-            {{ trendStats ? trendStats.count + '点' : total + '条' }}
+            {{ headerTagText }}
           </n-tag>
         </div>
         <div class="flex items-center gap-1 shrink-0 panel-actions">
@@ -35,14 +35,21 @@
         <n-select v-model:value="chartType" :options="chartOpts" size="small" class="control-select-chart" :disabled="!gField.length" />
       </div>
 
-      <div v-if="isNumericField && chartType === 'line'" class="control-row">
+      <!-- Step 3: Numeric aggregation — 按分组聚合数字字段的值（求和/平均/最大/最小） -->
+      <div v-if="numericFieldOpts.length" class="control-row">
         <div class="control-step-badge">3</div>
+        <n-select v-model:value="valueField" :options="numericFieldOpts" placeholder="数值聚合字段（可选，按其求和等）" size="small" filterable clearable :disabled="!tid" @update:value="onValueFieldChange" class="control-select" />
+        <n-select v-if="valueField" v-model:value="aggFunc" :options="aggFuncOpts" size="small" class="control-select-agg" @update:value="scheduleRun" />
+      </div>
+
+      <div v-if="isNumericField && chartType === 'line'" class="control-row">
+        <div class="control-step-badge">{{ badgeTime }}</div>
         <n-select v-model:value="timeField" :options="timeOpts" size="small" class="control-select-time" placeholder="时间列（可选）" clearable @update:value="onFilterChange" />
       </div>
 
       <!-- Step 4: Field filters -->
       <div v-if="tid && allFilterFields.length" class="control-row control-row-filter">
-        <div class="control-step-badge">4</div>
+        <div class="control-step-badge">{{ badgeFilter }}</div>
         <div class="filter-container">
           <div class="filter-header-row">
             <span class="filter-section-title">字段过滤</span>
@@ -119,7 +126,7 @@
 
       <div v-else-if="isDateGroupMode" class="stats-bar date-group-bar">
         <div class="stat-item">
-          <p class="stat-label">总计</p>
+          <p class="stat-label">{{ isAggMode ? '聚合总计' : '总计' }}</p>
           <p class="stat-value">{{ total }}</p>
         </div>
         <div class="stat-divider"></div>
@@ -130,6 +137,33 @@
         <div class="stat-divider"></div>
         <div class="stat-item stat-item-wide">
           <p class="stat-label">最高日</p>
+          <p class="stat-value stat-value-truncate" :title="topItem?.name">{{ topItem?.name || '-' }}</p>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <p class="stat-label">占比</p>
+          <p class="stat-value text-amber-600">{{ topItem?.percentage || '0' }}%</p>
+        </div>
+      </div>
+
+      <div v-else-if="isAggMode" class="stats-bar agg-bar">
+        <div class="stat-item">
+          <p class="stat-label">聚合总计</p>
+          <p class="stat-value">{{ total }}</p>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <p class="stat-label">分类</p>
+          <p class="stat-value text-primary-600">{{ data.length }}</p>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <p class="stat-label">记录数</p>
+          <p class="stat-value text-blue-600">{{ aggMeta?.recordCount ?? '-' }}</p>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item stat-item-wide">
+          <p class="stat-label">最高项</p>
           <p class="stat-value stat-value-truncate" :title="topItem?.name">{{ topItem?.name || '-' }}</p>
         </div>
         <div class="stat-divider"></div>
@@ -170,11 +204,11 @@
 
       <div class="table-section">
         <div class="table-header">
-          <span class="table-title">{{ isTrendMode ? '趋势' : isDateGroupMode ? '日期分布' : '分布' }}明细</span>
+          <span class="table-title">{{ isTrendMode ? '趋势' : isAggMode ? '聚合' : isDateGroupMode ? '日期分布' : '分布' }}明细</span>
           <n-input v-model:value="tableSearch" size="small" placeholder="搜索..." clearable class="table-search" />
         </div>
         <n-data-table
-          :columns="isTrendMode ? trendCols : cols"
+          :columns="isTrendMode ? trendCols : isAggMode ? aggregateCols : cols"
           :data="filteredData"
           size="small"
           :max-height="220"
@@ -187,7 +221,7 @@
 
       <div v-if="!isTrendMode && data.length" class="tags-section">
         <n-tag v-for="d in data.slice(0, 10)" :key="d.name" size="small" closable type="info" @click="filterBy(d.name)" class="data-tag">
-          {{ d.name }} ({{ d.count }})
+          {{ d.name }} ({{ isAggMode ? d.value : d.count }})
         </n-tag>
       </div>
     </template>
@@ -224,6 +258,10 @@ const tableSearch = ref('')
 const trendStats = ref<{ avg: number; min: number; max: number; count: number } | null>(null)
 const isTrendMode = ref(false)
 const isDateGroupMode = ref(false)
+const isAggMode = ref(false)
+const aggMeta = ref<{ recordCount: number } | null>(null)
+const valueField = ref<string | null>(props.initialConfig?.valueField || null)
+const aggFunc = ref<string>(props.initialConfig?.aggFunc || 'sum')
 const timeField = ref<string | null>(null)
 const activeFilters = ref<Array<{ field: string; value: string; values: string[]; dateRange: [number, number] | null }>>([])
 
@@ -235,6 +273,10 @@ const selectedTemplateName = computed(() => {
 const displayTitle = computed(() => {
   if (props.title && result.value) return props.title
   if (selectedTemplateName.value) {
+    if (valueField.value) {
+      const vfLabel = fields.value.find((f: any) => f.fieldKey === valueField.value)?.fieldLabel || valueField.value
+      return `${selectedTemplateName.value} · ${aggFuncLabel.value}${vfLabel}`
+    }
     const prefix = gField.value.length ? '分析' : '选择字段'
     return `${selectedTemplateName.value} · ${prefix}`
   }
@@ -252,6 +294,30 @@ const fieldOpts = computed(() => fields.value.map((f: any) => {
 const isNumericField = computed(() => {
   if (!gField.value.length) return false
   return gField.value.some(k => fields.value.find((f: any) => f.fieldKey === k)?.fieldType === 'number')
+})
+// 模板中所有数字类型字段（可作为数值聚合字段）
+const numericFieldOpts = computed(() => fields.value
+  .filter((f: any) => f.fieldType === 'number')
+  .map((f: any) => ({ label: f.fieldLabel, value: f.fieldKey }))
+)
+const aggFuncOpts = [
+  { label: '求和', value: 'sum' },
+  { label: '平均', value: 'avg' },
+  { label: '最大', value: 'max' },
+  { label: '最小', value: 'min' },
+]
+const aggFuncLabel = computed(() => aggFuncOpts.find(o => o.value === aggFunc.value)?.label || '求和')
+const headerTagText = computed(() => {
+  if (trendStats.value) return trendStats.value.count + '点'
+  if (isAggMode.value && aggMeta.value) return aggMeta.value.recordCount + '条'
+  return total.value + '条'
+})
+const badgeTime = computed(() => valueField.value ? 4 : 3)
+const badgeFilter = computed(() => {
+  let n = 3
+  if (numericFieldOpts.value.length) n++
+  if (isNumericField.value && chartType.value === 'line') n++
+  return n
 })
 const chartOpts = computed(() => {
   const opts = [
@@ -359,6 +425,14 @@ const fLabel = computed(() => {
   if (!gField.value.length) return ''
   return gField.value.map(k => fields.value.find((f: any) => f.fieldKey === k)?.fieldLabel || k).join(' / ')
 })
+const valueLabel = computed(() => {
+  if (!valueField.value) return ''
+  return fields.value.find((f: any) => f.fieldKey === valueField.value)?.fieldLabel || valueField.value
+})
+const aggTooltipFormatter = (params: any) => {
+  const p = Array.isArray(params) ? params[0] : params
+  return `${p.name}<br/><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3b82f6;margin-right:6px"></span>${valueLabel.value}(${aggFuncLabel.value}): <b>${p.value}</b>${p.data?.__pct != null ? ` · 占比 <b>${p.data.__pct}%</b>` : ''}`
+}
 const topItem = computed(() => data.value[0] || null)
 
 const cols = [
@@ -367,6 +441,13 @@ const cols = [
   { title: '数量', key: 'count', width: 70 },
   { title: '占比', key: 'percentage', width: 65 }
 ]
+const aggregateCols = computed(() => [
+  { title: '#', key: 'rank', width: 40 },
+  { title: '名称', key: 'name', ellipsis: { tooltip: true } },
+  { title: '记录数', key: 'count', width: 70 },
+  { title: `${aggFuncLabel.value}值`, key: 'value', width: 85 },
+  { title: '占比', key: 'percentage', width: 65 }
+])
 const trendCols = [
   { title: '#', key: 'rank', width: 40 },
   { title: '时间/序号', key: 'name', ellipsis: { tooltip: true } },
@@ -381,6 +462,7 @@ const filteredData = computed(() => {
 
 const currentConfig = computed(() => ({
   templateId: tid.value, groupByField: gField.value, fieldLabel: fLabel.value, chartType: chartType.value,
+  valueField: valueField.value, aggFunc: aggFunc.value,
   timeField: timeField.value,
   filters: activeFilters.value.map(f => ({
     field: f.field,
@@ -399,14 +481,15 @@ const chartOption = computed(() => {
   const d = data.value; if (!d.length) return {}
   if (chartType.value === 'line' || (isDateGroupMode.value && chartType.value === 'date_group')) {
     const isDateX = d.length > 0 && /^\d{4}-\d{2}-\d{2}/.test(String(d[0].name))
-    const values = isDateGroupMode.value ? d.map((x: any) => x.count) : d.map((x: any) => x.value)
+    const values = isDateGroupMode.value ? d.map((x: any) => isAggMode.value ? x.value : x.count) : d.map((x: any) => x.value)
     return {
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'cross' },
         formatter: (params: any) => {
           const p = Array.isArray(params) ? params[0] : params
-          return `${p.name}<br/><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3b82f6;margin-right:6px"></span>${fLabel.value}: <b>${p.value}</b>`
+          const seriesLabel = isDateGroupMode.value && isAggMode.value ? `${valueLabel.value}(${aggFuncLabel.value})` : fLabel.value
+          return `${p.name}<br/><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3b82f6;margin-right:6px"></span>${seriesLabel}: <b>${p.value}</b>`
         }
       },
       grid: { left: 8, right: 12, bottom: isDateX ? 24 : 8, top: 12, containLabel: true },
@@ -448,30 +531,34 @@ const chartOption = computed(() => {
   }
   if (chartType.value === 'pie' || chartType.value === 'donut') {
     const innerRadius = chartType.value === 'donut' ? ['40%', '70%'] : ['0%', '65%']
+    const pickVal = (x: any) => isAggMode.value ? x.value : x.count
     const pieData = d.length > 12
-      ? [...d.slice(0, 12).map((x: any, i: number) => ({ name: x.name, value: x.count, itemStyle: { color: COLORS[i % 16] } })), { name: '其他', value: d.slice(12).reduce((s: number, x: any) => s + x.count, 0), itemStyle: { color: '#d1d5db' } }]
-      : d.map((x: any, i: number) => ({ name: x.name, value: x.count, itemStyle: { color: COLORS[i % 16] } }))
+      ? [...d.slice(0, 12).map((x: any, i: number) => ({ name: x.name, value: pickVal(x), itemStyle: { color: COLORS[i % 16] } })), { name: '其他', value: d.slice(12).reduce((s: number, x: any) => s + pickVal(x), 0), itemStyle: { color: '#d1d5db' } }]
+      : d.map((x: any, i: number) => ({ name: x.name, value: pickVal(x), itemStyle: { color: COLORS[i % 16] } }))
     return {
-      tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+      tooltip: {
+        trigger: 'item',
+        formatter: (p: any) => isAggMode.value ? `${p.name}<br/>${valueLabel.value}(${aggFuncLabel.value}): <b>${p.value}</b> (${p.percent}%)` : `${p.name}: ${p.value} (${p.percent}%)`
+      },
       legend: { type: 'scroll', orient: 'vertical', right: 8, top: 'center', textStyle: { fontSize: 10 } },
       series: [{ type: 'pie', radius: innerRadius, center: ['38%', '50%'], itemStyle: { borderRadius: 3, borderColor: '#fff', borderWidth: 1.5 }, label: { show: false }, emphasis: { label: { show: true, fontSize: 11, fontWeight: 'bold' } }, data: pieData }]
     }
   }
   if (chartType.value === 'hbar') {
     return {
-      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: isAggMode.value ? aggTooltipFormatter : undefined },
       grid: { left: 3, right: 4, bottom: 3, top: 3, containLabel: true },
       xAxis: { type: 'value', splitLine: { lineStyle: { color: '#f3f4f6' } } },
       yAxis: { type: 'category', data: d.map((x: any) => x.name).reverse(), axisLabel: { width: 110, overflow: 'truncate', fontSize: 10 }, axisTick: { show: false } },
-      series: [{ type: 'bar', data: d.map((x: any, i: number) => ({ value: x.count, itemStyle: { color: COLORS[(d.length - 1 - i) % 16], borderRadius: [0, 3, 3, 0] } })).reverse() }]
+      series: [{ type: 'bar', data: d.map((x: any, i: number) => ({ value: isAggMode.value ? x.value : x.count, __pct: x.percentage, itemStyle: { color: COLORS[(d.length - 1 - i) % 16], borderRadius: [0, 3, 3, 0] } })).reverse() }]
     }
   }
   return {
-    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: isAggMode.value ? aggTooltipFormatter : undefined },
     grid: { left: 3, right: 4, bottom: 8, top: 8, containLabel: true },
     xAxis: { type: 'category', data: d.map((x: any) => x.name), axisLabel: { rotate: 35, width: 80, overflow: 'truncate', fontSize: 9 }, axisTick: { show: false } },
     yAxis: { type: 'value', splitLine: { lineStyle: { color: '#f3f4f6' } } },
-    series: [{ type: 'bar', data: d.map((x: any, i: number) => ({ value: x.count, itemStyle: { color: COLORS[i % 16], borderRadius: [3, 3, 0, 0] } })) }]
+    series: [{ type: 'bar', data: d.map((x: any, i: number) => ({ value: isAggMode.value ? x.value : x.count, __pct: x.percentage, itemStyle: { color: COLORS[i % 16], borderRadius: [3, 3, 0, 0] } })) }]
   }
 })
 
@@ -484,7 +571,7 @@ function scheduleRun() {
 }
 
 async function onTemplateChange(val: number | null) {
-  fields.value = []; gField.value = []; result.value = false; data.value = []; trendStats.value = null; isTrendMode.value = false; timeField.value = null; activeFilters.value = []
+  fields.value = []; gField.value = []; result.value = false; data.value = []; trendStats.value = null; isTrendMode.value = false; isAggMode.value = false; aggMeta.value = null; valueField.value = null; timeField.value = null; activeFilters.value = []
   if (!val) return
   try {
     const resp = await $fetch(`/api/templates/${val}/filter-fields`) as any
@@ -492,8 +579,16 @@ async function onTemplateChange(val: number | null) {
   } catch (e: any) { message.error('加载字段失败') }
 }
 
+function onValueFieldChange(val: string | null) {
+  // 选择数值聚合字段后清空趋势/日期等专用模式，统一走聚合统计
+  if (val && chartType.value === 'line') chartType.value = 'bar'
+  scheduleRun()
+}
+
 function onFieldChange() {
-  if (isNumericField.value && chartType.value !== 'line' && chartType.value !== 'date_group') {
+  if (valueField.value) {
+    // 数值聚合模式下不自动切换图表类型（bar/pie/hbar/line 均按聚合值渲染）
+  } else if (isNumericField.value && chartType.value !== 'line' && chartType.value !== 'date_group') {
     chartType.value = 'line'
   } else if (isDateField.value && !isNumericField.value && chartType.value === 'line') {
     chartType.value = 'date_group'
@@ -508,9 +603,9 @@ function onFilterChange() {
 }
 
 async function run() {
-  if (!gField.value.length) return; loading.value = true; result.value = false; data.value = []; trendStats.value = null; isTrendMode.value = false; isDateGroupMode.value = false
+  if (!gField.value.length) return; loading.value = true; result.value = false; data.value = []; trendStats.value = null; isTrendMode.value = false; isDateGroupMode.value = false; isAggMode.value = false; aggMeta.value = null
   try {
-    const useTrend = isNumericField.value && chartType.value === 'line'
+    const useTrend = !valueField.value && isNumericField.value && chartType.value === 'line'
     const useDateGroup = isDateField.value && chartType.value === 'date_group'
     const params: any = { groupBy: gField.value.join(','), limit: 50 }
     if (tid.value) params.templateId = tid.value
@@ -521,6 +616,15 @@ async function run() {
       if (timeField.value) params.timeField = timeField.value
     } else if (useDateGroup) {
       params.mode = 'date_group'
+      // 日期分组上聚合数字字段（后端 date_group 分支支持 valueField）
+      if (valueField.value) {
+        params.valueField = valueField.value
+        params.aggFunc = aggFunc.value
+      }
+    } else if (valueField.value) {
+      // 数值聚合模式：按分组字段聚合数字字段（sum/avg/max/min）
+      params.valueField = valueField.value
+      params.aggFunc = aggFunc.value
     }
     const resp = await $fetch('/api/stats/custom', { params }) as any
     if (resp.success) {
@@ -533,10 +637,14 @@ async function run() {
       if (resp.data.mode === 'date_group') {
         isDateGroupMode.value = true
       }
+      if (resp.data.valueField) {
+        isAggMode.value = true
+        aggMeta.value = { recordCount: resp.data.recordCount ?? 0 }
+      }
       result.value = true
     }
   } catch (e: any) {
-    message.error('分析失败')
+    message.error(e?.message?.includes('数字类型') ? '数值聚合字段必须是数字类型字段' : '分析失败')
     result.value = false
   } finally { loading.value = false }
 }
@@ -548,13 +656,16 @@ function exportCSV() {
   if (isTrendMode.value) {
     header = '序号,时间/序号,数值\n'
     rows = data.value.map((d: any) => `${d.rank},"${d.name}",${d.value}`).join('\n')
+  } else if (isAggMode.value) {
+    header = `排名,名称,记录数,${valueLabel.value}(${aggFuncLabel.value}),占比(%)\n`
+    rows = data.value.map((d: any) => `${d.rank},"${d.name}",${d.count},${d.value},${d.percentage}`).join('\n')
   } else {
     header = '排名,名称,数量,占比(%)\n'
     rows = data.value.map((d: any) => `${d.rank},"${d.name}",${d.count},${d.percentage}`).join('\n')
   }
   const blob = new Blob([BOM + header + rows], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
-  const a = document.createElement('a'); a.href = url; a.download = `${fLabel.value}_${isTrendMode.value ? '趋势' : '分析'}_${dayjs().format('YYYYMMDD')}.csv`; a.click()
+  const a = document.createElement('a'); a.href = url; a.download = `${fLabel.value}_${isTrendMode.value ? '趋势' : isAggMode.value ? `按${aggFuncLabel.value}${valueLabel.value}` : '分析'}_${dayjs().format('YYYYMMDD')}.csv`; a.click()
   URL.revokeObjectURL(url); message.success('导出成功')
 }
 
@@ -568,6 +679,10 @@ onMounted(async () => {
     const gbf = props.initialConfig.groupByField
     gField.value = Array.isArray(gbf) ? gbf : (gbf ? [gbf] : [])
     if (timeFieldInit) timeField.value = timeFieldInit
+    if (props.initialConfig.valueField) {
+      valueField.value = props.initialConfig.valueField
+      aggFunc.value = props.initialConfig.aggFunc || 'sum'
+    }
     // Restore filters
     if (props.initialConfig.filters && Array.isArray(props.initialConfig.filters)) {
       activeFilters.value = props.initialConfig.filters.map((f: any) => ({
@@ -695,6 +810,11 @@ onBeforeUnmount(() => {
 
 .control-select-time {
   width: 150px;
+  flex-shrink: 0;
+}
+
+.control-select-agg {
+  width: 90px;
   flex-shrink: 0;
 }
 
@@ -842,6 +962,10 @@ onBeforeUnmount(() => {
 
 .stats-bar.date-group-bar {
   background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+}
+
+.stats-bar.agg-bar {
+  background: linear-gradient(135deg, #faf5ff 0%, #ffffff 100%);
 }
 
 .stat-item {
