@@ -432,8 +432,8 @@ export default defineEventHandler(async (event) => {
           selectParts.push(`COALESCE(CAST(cr."${field}" AS TEXT), '(空)') as v_${field}`)
           groupParts.push(`cr."${field}"`)
           whereParts.push(`cr."${field}" IS NOT NULL`)
-        } else if (tf?.configType && CONFIG_TYPE_FK_MAP[tf.configType]) {
-          // FK field: JOIN reference table
+        } else if (tf?.configType && CONFIG_TYPE_FK_MAP[tf.configType]?.fkColumn === field) {
+          // FK field: 仅当 fieldKey 本身就是 FK 列名（数据实际存储在 DB 列，如导入写入的数字 ID）时走 JOIN
           const meta = CONFIG_TYPE_FK_MAP[tf.configType]
           const alias = `j_${field}`
           joinClauses.push(`LEFT JOIN ${meta.sqlTable} ${alias} ON cr.${meta.fkColumn} = ${alias}.id`)
@@ -496,7 +496,9 @@ export default defineEventHandler(async (event) => {
       const templateField = templateFieldMap.get(groupBy) || null
 
       const isColumnField = GROUPABLE_STRING_COLUMNS.has(groupBy)
-      const isFKField = templateField?.configType && CONFIG_TYPE_FK_MAP[templateField.configType]
+      // FK 路径仅当 fieldKey 本身就是 FK 列名（数据实际存储在 DB 列）时生效；
+      // 自定义 fieldKey + configType 的字段数据在 templateData JSON 中，必须走 JSON 路径
+      const isFKField = !!(templateField?.configType && CONFIG_TYPE_FK_MAP[templateField.configType]?.fkColumn === groupBy)
 
       if (isColumnField) {
         const where: any = { ...deptFilter }
@@ -648,8 +650,8 @@ export default defineEventHandler(async (event) => {
         selectParts.push(`COALESCE(CAST(cr."${field}" AS TEXT), '(空)') as v_${field}`)
         groupParts.push(`cr."${field}"`)
         whereParts.push(`cr."${field}" IS NOT NULL`)
-      } else if (tf?.configType && CONFIG_TYPE_FK_MAP[tf.configType]) {
-        // FK field: JOIN reference table
+      } else if (tf?.configType && CONFIG_TYPE_FK_MAP[tf.configType]?.fkColumn === field) {
+        // FK field: 仅当 fieldKey 本身就是 FK 列名时 JOIN 关联表（否则数据在 JSON 中，走下方 JSON 路径）
         const meta = CONFIG_TYPE_FK_MAP[tf.configType]
         const alias = `j_${field}`
         joinClauses.push(`LEFT JOIN ${meta.sqlTable} ${alias} ON cr.${meta.fkColumn} = ${alias}.id`)
