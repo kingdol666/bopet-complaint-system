@@ -8,7 +8,8 @@ const createSchema = z.object({
   dashboardId: z.number().int().positive().nullable().optional(),
   sortOrder: z.number().int().min(0).optional(),
   gridW: z.number().int().min(1).max(3).optional(),
-  gridH: z.number().int().min(1).max(3).optional()
+  gridH: z.number().int().min(1).max(3).optional(),
+  visibility: z.enum(['private', 'department']).default('private')
 })
 
 export default defineEventHandler(async (event) => {
@@ -25,7 +26,8 @@ export default defineEventHandler(async (event) => {
         dashboardId: validated.dashboardId ?? null,
         sortOrder: validated.sortOrder ?? 0,
         gridW: validated.gridW ?? 1,
-        gridH: validated.gridH ?? 1
+        gridH: validated.gridH ?? 1,
+        visibility: validated.visibility
       }
     })
 

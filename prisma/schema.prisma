@@ -454,6 +454,7 @@ model SavedAnalysis {
   userId      Int
   name        String
   config      String              // JSON: { templateId, groupByField, fieldLabel, chartType, dateRange, limit }
+  visibility  String              @default("private") // private=仅自己可见, department=同部门可见
   dashboardId Int?                // 所属看板（null = 独立面板）
   sortOrder   Int                 @default(0)
   gridW       Int                 @default(1)
@@ -475,6 +476,7 @@ model AnalysisDashboard {
   userId      Int
   name        String
   description String?
+  visibility  String          @default("private") // private=仅自己可见, department=同部门可见
   layout      String          @default("{}") // JSON: {"columns":2}
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt

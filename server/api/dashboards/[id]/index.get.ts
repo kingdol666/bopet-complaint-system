@@ -15,7 +15,20 @@ export default defineEventHandler(async (event) => {
       }
     })
 
-    if (!dashboard || dashboard.userId !== user.id) {
+    let canRead = dashboard && dashboard.userId === user.id
+    if (!canRead && dashboard && dashboard.visibility === 'department') {
+      // 同部门共享：创建者与当前用户存在共同部门，或当前用户为 superadmin
+      if (user.role === 'superadmin') {
+        canRead = true
+      } else {
+        const owner = await prisma.user.findUnique({
+          where: { id: dashboard.userId },
+          select: { departments: { select: { departmentId: true } } }
+        })
+        canRead = !!(owner?.departments || []).some(d => user.departmentIds.includes(d.departmentId))
+      }
+    }
+    if (!canRead) {
       throw createError({ statusCode: 404, message: '看板不存在' })
     }
 

@@ -47,26 +47,34 @@
         <n-select v-model:value="timeField" :options="timeOpts" size="small" class="control-select-time" placeholder="时间列（可选）" clearable @update:value="onFilterChange" />
       </div>
 
-      <!-- Step 4: Field filters -->
+      <!-- Step 4: Field filters — 按字段类型的智能过滤（EDA 风格） -->
       <div v-if="tid && allFilterFields.length" class="control-row control-row-filter">
         <div class="control-step-badge">{{ badgeFilter }}</div>
         <div class="filter-container">
           <div class="filter-header-row">
-            <span class="filter-section-title">字段过滤</span>
+            <span class="filter-section-title">
+              字段过滤
+              <span class="filter-type-hint">📅 时间段 · 🔢 数值比较 · ✏️ 关键词 · ☑ 多选</span>
+            </span>
             <n-button size="tiny" quaternary type="primary" @click="addFilter">
               <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg></template>
               添加条件
             </n-button>
           </div>
           <div v-for="(f, idx) in activeFilters" :key="idx" class="filter-item-row">
-            <n-select v-model:value="f.field" :options="filterFieldOpts" size="small" placeholder="选择字段" class="filter-field-select" @update:value="onFilterFieldChange(idx)" />
+            <n-select v-model:value="f.field" :options="filterFieldOpts" size="small" placeholder="选择字段" class="filter-field-select" filterable @update:value="onFilterFieldChange(idx)">
+              <template #empty>无字段</template>
+            </n-select>
             <template v-if="f.field">
-              <!-- Date range -->
-              <n-date-picker v-if="isFilterDateField(f.field)" v-model:value="f.dateRange" type="daterange" size="small" clearable class="filter-value-input" @update:value="onFilterChange" />
-              <!-- Multi-select -->
-              <n-select v-else-if="isFilterSelectField(f.field)" v-model:value="f.values" :options="getFilterOptions(f.field)" size="small" multiple filterable class="filter-value-input" placeholder="选择值" @update:value="onFilterChange" />
-              <!-- Text input -->
-              <n-input v-else v-model:value="f.value" size="small" placeholder="输入过滤值" clearable class="filter-value-input" @update:value="onFilterChange" />
+              <!-- 运算符（时间字段固定为时间段，选项字段固定为多选） -->
+              <n-select v-if="getFilterOperators(f.field).length > 1" v-model:value="f.operator" :options="getFilterOperators(f.field)" size="small" class="filter-op-select" @update:value="onFilterOperatorChange(idx)" />
+              <span v-else class="filter-op-label">{{ getFilterOperators(f.field)[0]?.label }}</span>
+              <!-- 值输入：按运算符类型 -->
+              <n-date-picker v-if="f.operator === 'date_range'" v-model:value="f.dateRange" type="daterange" size="small" clearable class="filter-value-input" @update:value="onFilterChange" />
+              <n-select v-else-if="f.operator === 'in'" v-model:value="f.values" :options="getFilterOptions(f.field)" size="small" multiple filterable class="filter-value-input" placeholder="选择值（可多选）" @update:value="onFilterChange" />
+              <n-select v-else-if="f.operator === 'bool_eq'" v-model:value="f.value" :options="[{ label: '是 (true)', value: '1' }, { label: '否 (false)', value: '0' }]" size="small" class="filter-value-input" placeholder="选择" @update:value="onFilterChange" />
+              <n-input-number v-else-if="isNumOperator(f.operator)" v-model:value="f.numValue" size="small" class="filter-value-input" placeholder="数值" @update:value="onFilterChange" />
+              <n-input v-else v-model:value="f.value" size="small" placeholder="输入关键词" clearable class="filter-value-input" @update:value="onFilterChange" />
             </template>
             <n-button size="tiny" quaternary type="error" @click="removeFilter(idx)">
               <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></template>
@@ -263,7 +271,7 @@ const aggMeta = ref<{ recordCount: number } | null>(null)
 const valueField = ref<string | null>(props.initialConfig?.valueField || null)
 const aggFunc = ref<string>(props.initialConfig?.aggFunc || 'sum')
 const timeField = ref<string | null>(null)
-const activeFilters = ref<Array<{ field: string; value: string; values: string[]; dateRange: [number, number] | null }>>([])
+const activeFilters = ref<Array<{ field: string; operator: string; value: any; numValue: number | null; values: string[]; dateRange: [number, number] | null }>>([])
 
 const selectedTemplateName = computed(() => {
   if (!tid.value) return ''
@@ -339,36 +347,63 @@ const isDateField = computed(() => {
   return gField.value.some(k => fields.value.find((f: any) => f.fieldKey === k)?.fieldType === 'date')
 })
 
-// ─── 过滤条件辅助（完全基于模板字段，无内置字段） ───
+// ─── 过滤条件辅助（EDA 风格：按字段类型设计运算符与值输入） ───
 const allFilterFields = computed(() => fields.value)
 
 const filterFieldOpts = computed(() =>
-  allFilterFields.value.map((f: any) => ({ label: f.fieldLabel, value: f.fieldKey }))
+  allFilterFields.value.map((f: any) => {
+    const icon = f.fieldType === 'number' ? '🔢 ' : f.fieldType === 'date' ? '📅 ' : f.fieldType === 'switch' ? '☑ ' : (f.fieldType === 'select' || f.fieldType === 'select-config' || f.fieldType === 'auto-complete') ? '▾ ' : '✏️ '
+    return { label: `${icon}${f.fieldLabel}`, value: f.fieldKey }
+  })
 )
 
-function isFilterDateField(fieldKey: string): boolean {
-  const f = allFilterFields.value.find((x: any) => x.fieldKey === fieldKey)
-  return f?.fieldType === 'date'
+function getFilterField(fieldKey: string): any {
+  return allFilterFields.value.find((x: any) => x.fieldKey === fieldKey) || null
 }
 
-function isFilterSelectField(fieldKey: string): boolean {
-  const f = allFilterFields.value.find((x: any) => x.fieldKey === fieldKey)
-  if (!f) return false
-  // select / select-config / auto-complete 类型，且拥有选项数据时，使用多选下拉
-  if (f.fieldType === 'select' || f.fieldType === 'select-config' || f.fieldType === 'auto-complete') {
-    return f.options && f.options.length > 0
+/** 按字段类型返回可用运算符（EDA 语义） */
+function getFilterOperators(fieldKey: string): { label: string; value: string }[] {
+  const f = getFilterField(fieldKey)
+  if (!f) return []
+  switch (f.fieldType) {
+    case 'number':
+      return [
+        { label: '=', value: 'num_eq' },
+        { label: '>', value: 'gt' },
+        { label: '≥', value: 'gte' },
+        { label: '<', value: 'lt' },
+        { label: '≤', value: 'lte' }
+      ]
+    case 'date':
+      return [{ label: '时间段', value: 'date_range' }]
+    case 'switch':
+      return [{ label: '等于', value: 'bool_eq' }]
+    default: {
+      // select / select-config / auto-complete 有选项时用多选
+      if ((f.fieldType === 'select' || f.fieldType === 'select-config' || f.fieldType === 'auto-complete') && f.options?.length > 0) {
+        return [{ label: '属于', value: 'in' }]
+      }
+      return [
+        { label: '包含', value: 'contains' },
+        { label: '不包含', value: 'not_contains' },
+        { label: '等于', value: 'eq' }
+      ]
+    }
   }
-  return false
+}
+
+function isNumOperator(op: string): boolean {
+  return ['num_eq', 'gt', 'gte', 'lt', 'lte'].includes(op)
 }
 
 function getFilterOptions(fieldKey: string): { label: string; value: string }[] {
-  const f = allFilterFields.value.find((x: any) => x.fieldKey === fieldKey)
+  const f = getFilterField(fieldKey)
   if (f?.options) return f.options
   return []
 }
 
 function addFilter() {
-  activeFilters.value.push({ field: '', value: '', values: [], dateRange: null })
+  activeFilters.value.push({ field: '', operator: '', value: '', numValue: null, values: [], dateRange: null })
 }
 
 function removeFilter(idx: number) {
@@ -378,7 +413,19 @@ function removeFilter(idx: number) {
 
 function onFilterFieldChange(idx: number) {
   const f = activeFilters.value[idx]
+  const ops = getFilterOperators(f.field)
+  f.operator = ops[0]?.value || 'contains'
   f.value = ''
+  f.numValue = null
+  f.values = []
+  f.dateRange = null
+  onFilterChange()
+}
+
+function onFilterOperatorChange(idx: number) {
+  const f = activeFilters.value[idx]
+  f.value = ''
+  f.numValue = null
   f.values = []
   f.dateRange = null
   onFilterChange()
@@ -387,8 +434,8 @@ function onFilterFieldChange(idx: number) {
 function buildFiltersParam(): any[] | undefined {
   const result: any[] = []
   for (const f of activeFilters.value) {
-    if (!f.field) continue
-    if (isFilterDateField(f.field)) {
+    if (!f.field || !f.operator) continue
+    if (f.operator === 'date_range') {
       if (f.dateRange && f.dateRange.length === 2) {
         result.push({
           field: f.field,
@@ -397,13 +444,22 @@ function buildFiltersParam(): any[] | undefined {
           valueEnd: dayjs(f.dateRange[1]).format('YYYY-MM-DD')
         })
       }
-    } else if (isFilterSelectField(f.field)) {
+    } else if (f.operator === 'in') {
       if (f.values.length > 0) {
         result.push({ field: f.field, operator: 'in', values: f.values })
       }
+    } else if (f.operator === 'bool_eq') {
+      // switch 字段 JSON 存储为 true/false，json_extract 取出为 1/0
+      if (f.value === '1' || f.value === '0') {
+        result.push({ field: f.field, operator: 'num_eq', value: Number(f.value) })
+      }
+    } else if (isNumOperator(f.operator)) {
+      if (f.numValue !== null && f.numValue !== undefined) {
+        result.push({ field: f.field, operator: f.operator, value: f.numValue })
+      }
     } else {
       if (f.value && f.value.trim()) {
-        result.push({ field: f.field, operator: 'contains', value: f.value.trim() })
+        result.push({ field: f.field, operator: f.operator, value: f.value.trim() })
       }
     }
   }
@@ -466,9 +522,9 @@ const currentConfig = computed(() => ({
   timeField: timeField.value,
   filters: activeFilters.value.map(f => ({
     field: f.field,
-    isDate: isFilterDateField(f.field),
-    isSelect: isFilterSelectField(f.field),
+    operator: f.operator,
     value: f.value,
+    numValue: f.numValue,
     values: f.values,
     dateRange: f.dateRange
   })),
@@ -477,50 +533,77 @@ const currentConfig = computed(() => ({
 
 const COLORS = ['#ef4444','#f97316','#f59e0b','#84cc16','#22c55e','#14b8a6','#06b6d4','#3b82f6','#8b5cf6','#ec4899','#6366f1','#0ea5e9','#10b981','#f43f5e','#a855f7','#d946ef']
 
+// 渐变色工厂：为柱形生成上亮下暗的专业渐变
+function barGradient(color: string, horizontal = false) {
+  const c = color
+  return {
+    type: 'linear', x: 0, y: 0, x2: horizontal ? 1 : 0, y2: horizontal ? 0 : 1,
+    colorStops: [
+      { offset: 0, color: c },
+      { offset: 1, color: c + 'B0' }
+    ]
+  }
+}
+
+// 统一 tooltip 样式
+const tooltipStyle = {
+  backgroundColor: 'rgba(255,255,255,0.96)',
+  borderColor: '#e2e8f0',
+  borderWidth: 1,
+  padding: [8, 12],
+  textStyle: { color: '#1e293b', fontSize: 12 },
+  extraCssText: 'box-shadow: 0 4px 16px rgba(15,23,42,0.12); border-radius: 8px;'
+}
+
 const chartOption = computed(() => {
   const d = data.value; if (!d.length) return {}
   if (chartType.value === 'line' || (isDateGroupMode.value && chartType.value === 'date_group')) {
     const isDateX = d.length > 0 && /^\d{4}-\d{2}-\d{2}/.test(String(d[0].name))
     const values = isDateGroupMode.value ? d.map((x: any) => isAggMode.value ? x.value : x.count) : d.map((x: any) => x.value)
     return {
+      color: ['#3b82f6'],
       tooltip: {
         trigger: 'axis',
-        axisPointer: { type: 'cross' },
+        axisPointer: { type: 'line', lineStyle: { color: '#94a3b8', type: 'dashed' } },
         formatter: (params: any) => {
           const p = Array.isArray(params) ? params[0] : params
           const seriesLabel = isDateGroupMode.value && isAggMode.value ? `${valueLabel.value}(${aggFuncLabel.value})` : fLabel.value
-          return `${p.name}<br/><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3b82f6;margin-right:6px"></span>${seriesLabel}: <b>${p.value}</b>`
-        }
+          return `${p.name}<br/><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3b82f6;margin-right:6px"></span>${seriesLabel}: <b>${p.value}</b>`
+        },
+        ...tooltipStyle
       },
-      grid: { left: 8, right: 12, bottom: isDateX ? 24 : 8, top: 12, containLabel: true },
+      grid: { left: 8, right: 16, bottom: isDateX ? 24 : 8, top: 20, containLabel: true },
       xAxis: {
         type: 'category',
         data: d.map((x: any) => x.name),
-        axisLabel: { rotate: isDateX ? 35 : 0, width: 90, overflow: 'truncate', fontSize: 9, interval: isDateX ? 'auto' : Math.max(1, Math.floor(d.length / 15)) },
-        axisLine: { lineStyle: { color: '#e5e7eb' } },
+        axisLabel: { rotate: isDateX ? 35 : 0, width: 90, overflow: 'truncate', fontSize: 9, color: '#64748b', interval: isDateX ? 'auto' : Math.max(1, Math.floor(d.length / 15)) },
+        axisLine: { lineStyle: { color: '#e2e8f0' } },
         axisTick: { show: false }
       },
       yAxis: {
         type: 'value', scale: true,
-        splitLine: { lineStyle: { color: '#f3f4f6' } },
-        axisLabel: { fontSize: 10 }
+        splitLine: { lineStyle: { color: '#f1f5f9' } },
+        axisLabel: { fontSize: 10, color: '#94a3b8' }
       },
+      animationDuration: 500,
+      animationEasing: 'cubicOut',
       series: [{
         type: 'line',
         data: values,
         smooth: d.length < 50,
         symbol: d.length > 30 ? 'none' : 'circle',
-        symbolSize: 4,
-        lineStyle: { width: 2, color: '#3b82f6' },
-        itemStyle: { color: '#3b82f6' },
+        symbolSize: 5,
+        lineStyle: { width: 2.5, color: '#3b82f6', shadowColor: 'rgba(59,130,246,0.3)', shadowBlur: 6, shadowOffsetY: 2 },
+        itemStyle: { color: '#3b82f6', borderColor: '#fff', borderWidth: 1.5 },
         areaStyle: {
           color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
             colorStops: [
-              { offset: 0, color: 'rgba(59,130,246,0.2)' },
+              { offset: 0, color: 'rgba(59,130,246,0.25)' },
               { offset: 1, color: 'rgba(59,130,246,0.02)' }
             ]
           }
         },
+        emphasis: { scale: 1.5 },
         markLine: (isTrendMode.value && trendStats.value) ? {
           silent: true, symbol: 'none',
           lineStyle: { type: 'dashed', color: '#9ca3af', width: 1 },
@@ -530,35 +613,81 @@ const chartOption = computed(() => {
     }
   }
   if (chartType.value === 'pie' || chartType.value === 'donut') {
-    const innerRadius = chartType.value === 'donut' ? ['40%', '70%'] : ['0%', '65%']
+    const innerRadius = chartType.value === 'donut' ? ['45%', '72%'] : ['0%', '65%']
     const pickVal = (x: any) => isAggMode.value ? x.value : x.count
     const pieData = d.length > 12
       ? [...d.slice(0, 12).map((x: any, i: number) => ({ name: x.name, value: pickVal(x), itemStyle: { color: COLORS[i % 16] } })), { name: '其他', value: d.slice(12).reduce((s: number, x: any) => s + pickVal(x), 0), itemStyle: { color: '#d1d5db' } }]
       : d.map((x: any, i: number) => ({ name: x.name, value: pickVal(x), itemStyle: { color: COLORS[i % 16] } }))
+    const grandTotal = pieData.reduce((s: number, x: any) => s + Number(x.value || 0), 0)
     return {
       tooltip: {
         trigger: 'item',
-        formatter: (p: any) => isAggMode.value ? `${p.name}<br/>${valueLabel.value}(${aggFuncLabel.value}): <b>${p.value}</b> (${p.percent}%)` : `${p.name}: ${p.value} (${p.percent}%)`
+        formatter: (p: any) => isAggMode.value ? `${p.name}<br/>${valueLabel.value}(${aggFuncLabel.value}): <b>${p.value}</b> (${p.percent}%)` : `${p.name}: <b>${p.value}</b> (${p.percent}%)`,
+        ...tooltipStyle
       },
-      legend: { type: 'scroll', orient: 'vertical', right: 8, top: 'center', textStyle: { fontSize: 10 } },
-      series: [{ type: 'pie', radius: innerRadius, center: ['38%', '50%'], itemStyle: { borderRadius: 3, borderColor: '#fff', borderWidth: 1.5 }, label: { show: false }, emphasis: { label: { show: true, fontSize: 11, fontWeight: 'bold' } }, data: pieData }]
+      legend: { type: 'scroll', orient: 'vertical', right: 8, top: 'center', textStyle: { fontSize: 10, color: '#475569' }, pageIconSize: 10 },
+      animationDuration: 500,
+      animationEasing: 'cubicOut',
+      series: [{
+        type: 'pie',
+        radius: innerRadius,
+        center: ['38%', '50%'],
+        itemStyle: { borderRadius: 4, borderColor: '#fff', borderWidth: 2 },
+        label: { show: false },
+        emphasis: {
+          label: { show: true, fontSize: 11, fontWeight: 'bold' },
+          itemStyle: { shadowBlur: 12, shadowColor: 'rgba(15,23,42,0.2)' }
+        },
+        data: pieData,
+        ...(chartType.value === 'donut' ? {
+          markArea: undefined,
+          graphic: undefined
+        } : {})
+      }],
+      // 环形图中心显示总计
+      ...(chartType.value === 'donut' ? {
+        title: {
+          text: String(Number(grandTotal.toFixed(2))),
+          subtext: isAggMode.value ? `${aggFuncLabel.value}总计` : '总计',
+          left: '30.5%', top: '42%', textAlign: 'center',
+          textStyle: { fontSize: 18, fontWeight: 700, color: '#1e293b' },
+          subtextStyle: { fontSize: 10, color: '#94a3b8' },
+          silent: true
+        }
+      } : {})
     }
   }
   if (chartType.value === 'hbar') {
     return {
-      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: isAggMode.value ? aggTooltipFormatter : undefined },
-      grid: { left: 3, right: 4, bottom: 3, top: 3, containLabel: true },
-      xAxis: { type: 'value', splitLine: { lineStyle: { color: '#f3f4f6' } } },
-      yAxis: { type: 'category', data: d.map((x: any) => x.name).reverse(), axisLabel: { width: 110, overflow: 'truncate', fontSize: 10 }, axisTick: { show: false } },
-      series: [{ type: 'bar', data: d.map((x: any, i: number) => ({ value: isAggMode.value ? x.value : x.count, __pct: x.percentage, itemStyle: { color: COLORS[(d.length - 1 - i) % 16], borderRadius: [0, 3, 3, 0] } })).reverse() }]
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(148,163,184,0.08)' } }, formatter: isAggMode.value ? aggTooltipFormatter : undefined, ...tooltipStyle },
+      grid: { left: 3, right: 20, bottom: 3, top: 3, containLabel: true },
+      xAxis: { type: 'value', splitLine: { lineStyle: { color: '#f1f5f9' } }, axisLabel: { color: '#94a3b8', fontSize: 10 } },
+      yAxis: { type: 'category', data: d.map((x: any) => x.name).reverse(), axisLabel: { width: 110, overflow: 'truncate', fontSize: 10, color: '#475569' }, axisTick: { show: false }, axisLine: { show: false } },
+      animationDuration: 500,
+      animationEasing: 'cubicOut',
+      series: [{
+        type: 'bar',
+        data: d.map((x: any, i: number) => ({ value: isAggMode.value ? x.value : x.count, __pct: x.percentage, itemStyle: { color: barGradient(COLORS[(d.length - 1 - i) % 16], true), borderRadius: [0, 4, 4, 0] } })).reverse(),
+        barMaxWidth: 22,
+        emphasis: { itemStyle: { shadowBlur: 8, shadowColor: 'rgba(15,23,42,0.18)' } },
+        label: { show: d.length <= 10, position: 'right', fontSize: 10, color: '#64748b' }
+      }]
     }
   }
   return {
-    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: isAggMode.value ? aggTooltipFormatter : undefined },
-    grid: { left: 3, right: 4, bottom: 8, top: 8, containLabel: true },
-    xAxis: { type: 'category', data: d.map((x: any) => x.name), axisLabel: { rotate: 35, width: 80, overflow: 'truncate', fontSize: 9 }, axisTick: { show: false } },
-    yAxis: { type: 'value', splitLine: { lineStyle: { color: '#f3f4f6' } } },
-    series: [{ type: 'bar', data: d.map((x: any, i: number) => ({ value: isAggMode.value ? x.value : x.count, __pct: x.percentage, itemStyle: { color: COLORS[i % 16], borderRadius: [3, 3, 0, 0] } })) }]
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(148,163,184,0.08)' } }, formatter: isAggMode.value ? aggTooltipFormatter : undefined, ...tooltipStyle },
+    grid: { left: 3, right: 8, bottom: 8, top: 16, containLabel: true },
+    xAxis: { type: 'category', data: d.map((x: any) => x.name), axisLabel: { rotate: 35, width: 80, overflow: 'truncate', fontSize: 9, color: '#64748b' }, axisTick: { show: false }, axisLine: { lineStyle: { color: '#e2e8f0' } } },
+    yAxis: { type: 'value', splitLine: { lineStyle: { color: '#f1f5f9' } }, axisLabel: { color: '#94a3b8', fontSize: 10 } },
+    animationDuration: 500,
+    animationEasing: 'cubicOut',
+    series: [{
+      type: 'bar',
+      data: d.map((x: any, i: number) => ({ value: isAggMode.value ? x.value : x.count, __pct: x.percentage, itemStyle: { color: barGradient(COLORS[i % 16]), borderRadius: [4, 4, 0, 0] } })),
+      barMaxWidth: 32,
+      emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(15,23,42,0.2)', shadowOffsetY: 2 } },
+      label: { show: d.length <= 10, position: 'top', fontSize: 10, color: '#64748b' }
+    }]
   }
 })
 
@@ -683,14 +812,23 @@ onMounted(async () => {
       valueField.value = props.initialConfig.valueField
       aggFunc.value = props.initialConfig.aggFunc || 'sum'
     }
-    // Restore filters
+    // Restore filters（兼容旧格式：无 operator 时按字段类型推导默认运算符）
     if (props.initialConfig.filters && Array.isArray(props.initialConfig.filters)) {
-      activeFilters.value = props.initialConfig.filters.map((f: any) => ({
-        field: f.field || '',
-        value: f.value || '',
-        values: f.values || [],
-        dateRange: f.dateRange || null
-      }))
+      activeFilters.value = props.initialConfig.filters.map((f: any) => {
+        const restored: any = {
+          field: f.field || '',
+          operator: f.operator || '',
+          value: f.value ?? '',
+          numValue: f.numValue ?? null,
+          values: f.values || [],
+          dateRange: f.dateRange || null
+        }
+        if (!restored.operator && restored.field) {
+          const ops = getFilterOperators(restored.field)
+          restored.operator = ops[0]?.value || 'contains'
+        }
+        return restored
+      })
     }
     await nextTick()
     if (gField.value.length) run()
@@ -849,8 +987,31 @@ onBeforeUnmount(() => {
 }
 
 .filter-field-select {
-  width: 140px;
+  width: 150px;
   flex-shrink: 0;
+}
+
+.filter-op-select {
+  width: 84px;
+  flex-shrink: 0;
+}
+
+.filter-op-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #475569;
+  background: #f1f5f9;
+  border-radius: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.filter-type-hint {
+  margin-left: 0.5rem;
+  font-size: 0.6875rem;
+  color: #b6c2d2;
+  font-weight: 400;
 }
 
 .filter-value-input {

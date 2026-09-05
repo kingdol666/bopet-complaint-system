@@ -8,7 +8,8 @@ const updateSchema = z.object({
   dashboardId: z.number().positive().nullable().optional(),
   sortOrder: z.number().int().min(0).optional(),
   gridW: z.number().int().min(1).max(3).optional(),
-  gridH: z.number().int().min(1).max(3).optional()
+  gridH: z.number().int().min(1).max(3).optional(),
+  visibility: z.enum(['private', 'department']).optional()
 })
 
 export default defineEventHandler(async (event) => {
@@ -30,6 +31,8 @@ export default defineEventHandler(async (event) => {
     if (validated.sortOrder !== undefined) data.sortOrder = validated.sortOrder
     if (validated.gridW !== undefined) data.gridW = validated.gridW
     if (validated.gridH !== undefined) data.gridH = validated.gridH
+    if (validated.visibility !== undefined) data.visibility = validated.visibility
+    if (validated.visibility !== undefined) data.visibility = validated.visibility
 
     const analysis = await prisma.savedAnalysis.update({
       where: { id },

@@ -5,10 +5,24 @@ export default defineEventHandler(async (event) => {
   try {
     const user = await requireSessionUser(event)
 
+    const myDeptIds = user.departmentIds
+    const where: any = user.role === 'superadmin'
+      ? {}
+      : {
+          OR: [
+            { userId: user.id },
+            {
+              visibility: 'department',
+              user: { departments: { some: { departmentId: { in: myDeptIds } } } }
+            }
+          ]
+        }
+
     const dashboards = await prisma.analysisDashboard.findMany({
-      where: { userId: user.id },
+      where,
       orderBy: { updatedAt: 'desc' },
       include: {
+        user: { select: { id: true, name: true, username: true } },
         _count: { select: { analyses: true } }
       }
     })

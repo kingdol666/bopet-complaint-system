@@ -99,6 +99,18 @@ function buildFilterSQL(
         parts.push(`CAST(${fieldExpr} AS TEXT) = ?`)
         params.push(String(f.value))
       }
+    } else if (f.operator === 'neq') {
+      // 文本不等于
+      parts.push(`(CAST(${fieldExpr} AS TEXT) != ? OR ${fieldExpr} IS NULL)`)
+      params.push(String(f.value))
+    } else if (f.operator === 'not_contains') {
+      // 文本不包含（JSON 字段为 NULL 时视为不包含，保留记录）
+      parts.push(`(${fieldExpr} IS NULL OR CAST(${fieldExpr} AS TEXT) NOT LIKE ?)`)
+      params.push(`%${String(f.value)}%`)
+    } else if (f.operator === 'num_eq') {
+      // 数值等于
+      parts.push(`CAST(${fieldExpr} AS REAL) = ?`)
+      params.push(Number(f.value))
     } else if (f.operator === 'contains') {
       if (fkMeta && isColumnField) {
         parts.push(`${tableRef}."${fkMeta.fkColumn}" IN (SELECT id FROM ${fkMeta.sqlTable} WHERE name LIKE ?)`)

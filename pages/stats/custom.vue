@@ -81,7 +81,7 @@
           <div class="sidebar-card-header">
             <div class="header-left">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 8a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zm12 0a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
-              <h3>我的看板</h3>
+              <h3>看板</h3>
             </div>
             <n-tag :bordered="false" type="info" size="small" class="count-badge">{{ dashboards.length }}</n-tag>
           </div>
@@ -95,11 +95,15 @@
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
                 </div>
                 <div class="item-text">
-                  <p class="item-title">{{ db.name }}</p>
-                  <p class="item-meta">{{ db._count?.analyses || 0 }} 面板 · {{ dayjs(db.updatedAt).format('MM-DD HH:mm') }}</p>
+                  <p class="item-title">
+                    {{ db.name }}
+                    <n-tag v-if="db.visibility === 'department'" size="tiny" type="success" :bordered="false" class="vis-tag">部门共享</n-tag>
+                    <n-tag v-else size="tiny" type="default" :bordered="false" class="vis-tag">私有</n-tag>
+                  </p>
+                  <p class="item-meta">{{ db._count?.analyses || 0 }} 面板 · {{ db.user?.name || '我' }} · {{ dayjs(db.updatedAt).format('MM-DD HH:mm') }}</p>
                 </div>
               </div>
-              <div class="item-actions">
+              <div v-if="isOwnerOf(db)" class="item-actions">
                 <n-button size="tiny" quaternary circle @click.stop="renameDashboard(db)">
                   <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></template>
                 </n-button>
@@ -129,11 +133,15 @@
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                 </div>
                 <div class="item-text">
-                  <p class="item-title">{{ sa.name }}</p>
-                  <p class="item-meta">{{ dayjs(sa.updatedAt).format('MM-DD HH:mm') }}</p>
+                  <p class="item-title">
+                    {{ sa.name }}
+                    <n-tag v-if="sa.visibility === 'department'" size="tiny" type="success" :bordered="false" class="vis-tag">部门共享</n-tag>
+                    <n-tag v-else size="tiny" type="default" :bordered="false" class="vis-tag">私有</n-tag>
+                  </p>
+                  <p class="item-meta">{{ sa.user?.name || '我' }} · {{ dayjs(sa.updatedAt).format('MM-DD HH:mm') }}</p>
                 </div>
               </div>
-              <div class="item-actions">
+              <div v-if="isOwnerOf(sa)" class="item-actions">
                 <n-button size="tiny" quaternary circle @click.stop="renameSaved(sa)">
                   <template #icon><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></template>
                 </n-button>
@@ -216,10 +224,16 @@
       <n-form-item label="分析名称" required>
         <n-input v-model:value="saveName" placeholder="例如：客诉分类月度分析" />
       </n-form-item>
+      <n-form-item label="可见范围">
+        <n-radio-group v-model:value="saveVisibility">
+          <n-radio-button value="private">仅自己（私有）</n-radio-button>
+          <n-radio-button value="department">同部门可见</n-radio-button>
+        </n-radio-group>
+      </n-form-item>
       <template #footer>
         <div class="flex justify-end gap-2">
           <n-button @click="saveModal = false">取消</n-button>
-          <n-button v-if="saveTarget?.savedAnalysisId" type="info" :loading="saving" @click="doUpdate">更新已有配置</n-button>
+          <n-button v-if="saveTarget?.savedAnalysisId && isOwnerOf(saveTarget)" type="info" :loading="saving" @click="doUpdate">更新已有配置</n-button>
           <n-button type="primary" :loading="saving" @click="doSave">保存为新配置</n-button>
         </div>
       </template>
@@ -232,6 +246,12 @@
       </n-form-item>
       <n-form-item label="描述（可选）">
         <n-input v-model:value="dashboardDesc" type="textarea" placeholder="看板用途说明" :autosize="{ minRows: 2, maxRows: 4 }" />
+      </n-form-item>
+      <n-form-item label="可见范围">
+        <n-radio-group v-model:value="dashboardVisibility">
+          <n-radio-button value="private">仅自己（私有）</n-radio-button>
+          <n-radio-button value="department">同部门可见</n-radio-button>
+        </n-radio-group>
       </n-form-item>
       <template #footer>
         <div class="flex justify-end gap-2">
@@ -248,11 +268,13 @@ import dayjs from 'dayjs'
 import { h } from 'vue'
 import { VueDraggableNext } from 'vue-draggable-next'
 import { NInput } from 'naive-ui'
+import { useAuthStore } from '~/stores/auth'
 
 definePageMeta({ title: '自定义分析' })
 
 const message = useMessage()
 const dialog = useDialog()
+const authStore = useAuthStore()
 
 const panels = ref<any[]>([])
 const dashboards = ref<any[]>([])
@@ -268,11 +290,13 @@ const saveModal = ref(false)
 const saveName = ref('')
 const saveTarget = ref<any>(null)
 const saving = ref(false)
+const saveVisibility = ref<'private' | 'department'>('private')
 
 const dashboardSaveModal = ref(false)
 const dashboardName = ref('')
 const dashboardDesc = ref('')
 const dashboardSaving = ref(false)
+const dashboardVisibility = ref<'private' | 'department'>('private')
 const renameTarget = ref('')
 
 const gridColumns = computed(() => {
@@ -319,6 +343,13 @@ function handleRemovePanel(panelId: number) {
 function onDragEnd() {}
 function onPanelChange() {}
 
+function isOwnerOf(item: any): boolean {
+  if (!item) return false
+  // 无 user 信息（面板对象）或未保存过的面板视为本人
+  if (!item.user) return true
+  return item.userId === authStore.user?.id
+}
+
 function handleSaveConfig(panel: any, config: any) {
   panel.config = config
   saveTarget.value = panel
@@ -330,7 +361,7 @@ async function doSave() {
   if (!saveName.value.trim()) { message.error('请输入分析名称'); return }
   saving.value = true
   try {
-    const body: any = { name: saveName.value.trim(), config: saveTarget.value?.config || {} }
+    const body: any = { name: saveName.value.trim(), config: saveTarget.value?.config || {}, visibility: saveVisibility.value }
     if (currentDashboard.value) body.dashboardId = currentDashboard.value.id
     const resp = await $fetch('/api/analyses', { method: 'POST', body }) as any
     if (resp.success) {
@@ -347,7 +378,7 @@ async function doUpdate() {
   const id = saveTarget.value?.savedAnalysisId; if (!id) return
   saving.value = true
   try {
-    await $fetch(`/api/analyses/${id}`, { method: 'PUT', body: { name: saveName.value.trim(), config: saveTarget.value?.config || {} } })
+    await $fetch(`/api/analyses/${id}`, { method: 'PUT', body: { name: saveName.value.trim(), config: saveTarget.value?.config || {}, visibility: saveVisibility.value } })
     message.success('更新成功')
     saveModal.value = false
     if (saveTarget.value) saveTarget.value.title = saveName.value.trim()
@@ -425,16 +456,16 @@ async function doSaveDashboard() {
         await $fetch(`/api/analyses/${p.savedAnalysisId}`, { method: 'PUT', body: { name: p.title, config: p.config || {}, sortOrder: i, gridW: p.gridW, gridH: p.gridH } })
         panelIds.push(p.savedAnalysisId)
       } else if (p.config) {
-        const resp = await $fetch('/api/analyses', { method: 'POST', body: { name: p.title, config: p.config, sortOrder: i, gridW: p.gridW, gridH: p.gridH } }) as any
+        const resp = await $fetch('/api/analyses', { method: 'POST', body: { name: p.title, config: p.config, sortOrder: i, gridW: p.gridW, gridH: p.gridH, visibility: dashboardVisibility.value } }) as any
         if (resp.success) { p.savedAnalysisId = resp.data.id; panelIds.push(resp.data.id) }
       }
     }
     if (currentDashboard.value) {
-      await $fetch(`/api/dashboards/${currentDashboard.value.id}`, { method: 'PUT', body: { name: dashboardName.value.trim(), description: dashboardDesc.value || null, panelIds } })
+      await $fetch(`/api/dashboards/${currentDashboard.value.id}`, { method: 'PUT', body: { name: dashboardName.value.trim(), description: dashboardDesc.value || null, panelIds, visibility: dashboardVisibility.value } })
       message.success('看板已更新')
       currentDashboard.value.name = dashboardName.value.trim()
     } else {
-      const resp = await $fetch('/api/dashboards', { method: 'POST', body: { name: dashboardName.value.trim(), description: dashboardDesc.value || null, panelIds } }) as any
+      const resp = await $fetch('/api/dashboards', { method: 'POST', body: { name: dashboardName.value.trim(), description: dashboardDesc.value || null, panelIds, visibility: dashboardVisibility.value } }) as any
       if (resp.success) { currentDashboard.value = resp.data; message.success('看板保存成功') }
     }
     dashboardSaveModal.value = false
@@ -711,6 +742,14 @@ onMounted(async () => { await refreshData() })
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.vis-tag {
+  margin-left: 4px;
+  flex-shrink: 0;
+  font-size: 10px;
+  padding: 0 4px;
+  vertical-align: 1px;
 }
 
 .item-meta {

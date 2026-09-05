@@ -6,7 +6,8 @@ const createSchema = z.object({
   name: z.string().min(1, '名称不能为空').max(100),
   description: z.string().max(500).optional(),
   panelIds: z.array(z.number()).optional(), // 要加入此看板的已保存分析 ID 列表
-  layout: z.any().optional()
+  layout: z.any().optional(),
+  visibility: z.enum(['private', 'department']).default('private')
 })
 
 export default defineEventHandler(async (event) => {
@@ -20,7 +21,8 @@ export default defineEventHandler(async (event) => {
         userId: user.id,
         name: validated.name,
         description: validated.description || null,
-        layout: validated.layout ? JSON.stringify(validated.layout) : '{}'
+        layout: validated.layout ? JSON.stringify(validated.layout) : '{}',
+        visibility: validated.visibility
       }
     })
 

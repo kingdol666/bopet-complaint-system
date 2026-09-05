@@ -6,6 +6,7 @@ const updateSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   description: z.string().max(500).nullable().optional(),
   layout: z.any().optional(),
+  visibility: z.enum(['private', 'department']).optional(),
   panelIds: z.array(z.number()).optional() // 更新看板成员面板列表
 })
 
@@ -25,6 +26,7 @@ export default defineEventHandler(async (event) => {
     if (validated.name) data.name = validated.name
     if (validated.description !== undefined) data.description = validated.description
     if (validated.layout) data.layout = JSON.stringify(validated.layout)
+    if (validated.visibility !== undefined) data.visibility = validated.visibility
 
     const dashboard = await prisma.analysisDashboard.update({
       where: { id },
