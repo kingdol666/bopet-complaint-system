@@ -15,6 +15,8 @@ export default defineEventHandler(async (event) => {
       : {
           OR: [
             { userId: user.id },
+            // superadmin 创建的部门共享内容对所有用户可见（superadmin 跨部门管理全局数据）
+            { visibility: 'department', user: { role: 'superadmin' } },
             {
               visibility: 'department',
               user: { departments: { some: { departmentId: { in: myDeptIds } } } }

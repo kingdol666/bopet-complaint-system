@@ -169,7 +169,8 @@ function parseSelectOptions(optionsStr: string | null | undefined) {
     }
     return []
   } catch {
-    return []
+    // 兼容旧数据：逗号分隔字符串格式
+    return String(optionsStr).split(/[,，]/).map(s => s.trim()).filter(s => s.length > 0).map(v => ({ label: v, value: v }))
   }
 }
 

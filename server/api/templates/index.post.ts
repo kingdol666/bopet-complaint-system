@@ -2,6 +2,22 @@ import { z } from 'zod'
 import { prisma } from '~/server/utils/prisma'
 import { requireWritePermission, isSuperAdmin, canModifyDepartment } from '~/server/utils/auth'
 
+
+// 规范化 select 字段选项存储：兼容逗号分隔字符串与 JSON 数组字符串，统一存为 JSON 数组
+function normalizeSelectOptions(options) {
+  if (options === null || options === undefined || options === '') return null
+  const raw = String(options).trim()
+  try {
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed)) {
+      const cleaned = parsed.map(v => typeof v === 'object' ? JSON.stringify(v) : String(v).trim()).filter(v => v.length > 0)
+      return JSON.stringify(cleaned)
+    }
+  } catch {}
+  const parts = raw.split(/[,，]/).map(s => s.trim()).filter(s => s.length > 0)
+  return parts.length > 0 ? JSON.stringify(parts) : null
+}
+
 const fieldSchema = z.object({
   fieldKey: z.string().min(1).max(100),
   fieldLabel: z.string().min(1).max(200),
@@ -59,7 +75,7 @@ export default defineEventHandler(async (event) => {
             fieldType: f.fieldType,
             required: f.required,
             sortOrder: f.sortOrder ?? index,
-            options: f.options,
+            options: normalizeSelectOptions(f.options),
             configType: f.configType,
             defaultValue: f.defaultValue,
             placeholder: f.placeholder

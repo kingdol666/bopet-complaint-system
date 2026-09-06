@@ -18,6 +18,23 @@ const fieldSchema = z.object({
   placeholder: z.string().max(200).optional().nullable()
 })
 
+
+// 规范化 select 字段选项存储：兼容逗号分隔字符串与 JSON 数组字符串，统一存为 JSON 数组
+function normalizeSelectOptions(options) {
+  if (options === null || options === undefined || options === '') return null
+  const raw = String(options).trim()
+  try {
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed)) {
+      const cleaned = parsed.map(v => typeof v === 'object' ? JSON.stringify(v) : String(v).trim()).filter(v => v.length > 0)
+      return JSON.stringify(cleaned)
+    }
+  } catch {}
+  // 逗号分隔字符串 → JSON 数组
+  const parts = raw.split(/[,，]/).map(s => s.trim()).filter(s => s.length > 0)
+  return parts.length > 0 ? JSON.stringify(parts) : null
+}
+
 const updateTemplateSchema = z.object({
   name: z.string().min(1).max(200).optional(),
   description: z.string().max(500).optional().nullable(),
@@ -130,7 +147,7 @@ export default defineEventHandler(async (event) => {
             fieldType: f.fieldType,
             required: f.required,
             sortOrder: f.sortOrder ?? i,
-            options: f.options,
+            options: normalizeSelectOptions(f.options),
             configType: f.configType,
             defaultValue: f.defaultValue,
             placeholder: f.placeholder

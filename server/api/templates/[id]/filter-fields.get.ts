@@ -48,7 +48,12 @@ export default defineEventHandler(async (event) => {
       }
       // ─── 2. select 类型：直接解析 options JSON ───
       else if (f.fieldType === 'select' && f.options) {
-        try { ff.options = JSON.parse(f.options).map((v: string) => ({ label: v, value: v })) } catch {}
+        // 兼容两种历史格式：JSON 数组字符串 / 逗号分隔字符串
+        try {
+          ff.options = JSON.parse(f.options).map((v: string) => ({ label: v, value: v }))
+        } catch {
+          ff.options = String(f.options).split(/[,，]/).map((s: string) => s.trim()).filter((s: string) => s.length > 0).map((v: string) => ({ label: v, value: v }))
+        }
       }
       // ─── 3. 其他 select-config 类型：从 FieldOptionConfig 表查找 ───
       else if (f.fieldType === 'select-config' && f.configType) {
