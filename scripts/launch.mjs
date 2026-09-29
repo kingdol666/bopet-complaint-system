@@ -276,8 +276,10 @@ if (needGenerate) {
   }
 }
 
-if (userCount === 0) {
-  if (!run('npx tsx prisma/seed.ts', '步骤 3/4: 初始化种子数据')) process.exit(1)
+// userCount === null：Prisma Client 刚在本进程内生成，缓存可能导致计数仍为 null；
+// seed.ts 自带幂等检查（已有用户自动跳过），此时执行种子是安全的
+if (userCount === 0 || userCount === null) {
+  if (!run('npx tsx prisma/seed.ts', userCount === null ? '步骤 3/4: 初始化种子数据（用户计数未知，按幂等方式执行）' : '步骤 3/4: 初始化种子数据')) process.exit(1)
 } else {
   log(`\n▶ 步骤 3/4: 数据库已有 ${userCount} 个用户，跳过种子数据`, 'green')
 }
